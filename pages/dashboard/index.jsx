@@ -1,22 +1,12 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
-import { Table, Form, Input, Row, Col, Select } from 'antd'
+import { Row, Col, Select } from 'antd'
 
 import dynamic from 'next/dynamic'
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const chart = {
-  series: [
-    {
-      name: 'Negatif',
-      data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
-    }, 
-    {
-      name: 'Positif',
-      data: [76, 85, 101, 98, 87, 105, 91, 114, 94]
-    }
-  ],
   options: {
     chart: {
       type: 'bar',
@@ -84,17 +74,67 @@ const chart = {
       opacity: 1
     },
     tooltip: {
-      y: {
-        formatter: function (val) {
-          return "$ " + val + " thousands"
-        }
-      }
+      enabled: false,
     },
   }
 }
 
+const denpasar = [
+  {
+    name: 'Negatif',
+    data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
+  }, 
+  {
+    name: 'Positif',
+    data: [12, 32, 19, 8, 0, 2, 41, 14, 52]
+  }
+]
+
+const tabanan = [
+  {
+    name: 'Negatif',
+    data: [61, 55, 57, 56, 66, 58, 63, 44, 60]
+  }, 
+  {
+    name: 'Positif',
+    data: [8, 12, 0, 32, 2, 41, 14, 19, 52]
+  }
+]
+
+const bypass = [
+  {
+    name: 'Negatif',
+    data: [58, 63, 61, 60, 57, 56, 66, 44, 55]
+  }, 
+  {
+    name: 'Positif',
+    data: [8, 12, 0, 14, 32, 41, 52, 19, 2]
+  }
+]
+
+const gilimanuk = [
+  {
+    name: 'Negatif',
+    data: [58, 60, 63, 55, 57, 56, 66, 61, 44]
+  }, 
+  {
+    name: 'Positif',
+    data: [8, 12, 0, 14, 32, 41, 52, 19, 2]
+  }
+]
 
 const Dashboard = () => {
+  const [series, setSeries] = useState(denpasar)
+  const [instansi, setInstansi] = useState("denpasar")
+
+  const onChangeInstansiHandler = value => {
+    setInstansi(value)
+    if(value == "denpasar") setSeries(denpasar)
+    else if(value == "tabanan") setSeries(tabanan)
+    else if(value == "bypass") setSeries(bypass)
+    else if(value == "gilimanuk") setSeries(gilimanuk)
+    else setSeries(denpasar)
+  }
 
   return (
     <>
@@ -106,19 +146,20 @@ const Dashboard = () => {
             </Col>
             <Col xl={8} lg={8}>
               <Select 
-                defaultValue="Bhakti Rahayu Denpasar"
+                value={instansi}
                 className="w-100"
                 placeholder="Pilih Instansi"
+                onChange={onChangeInstansiHandler}
               >
-                <Select.Option value="Bhakti Rahayu Denpasar">Bhakti Rahayu Denpasar</Select.Option>
-                <Select.Option value="Bhakti Rahayu Tabanan">Bhakti Rahayu Tabanan</Select.Option>
-                <Select.Option value="Bhaksena Bypass Ngurah Rai">Bhaksena Bypass Ngurah Rai</Select.Option>
-                <Select.Option value="Bhaksena Pelabuhan Gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
+                <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
+                <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
+                <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
+                <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
               </Select>
             </Col>
           </Row>
 
-          <Chart options={chart.options} series={chart.series} type="bar" height={350} />
+          <Chart options={chart.options} series={series} type="bar" height={350} />
 
         </Card.Body>
       </Card>
