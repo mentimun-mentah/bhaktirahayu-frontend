@@ -10,7 +10,7 @@ import _ from "lodash"
 import moment from 'moment'
 import 'moment/locale/id'
 
-import pdfGenerator from 'lib/pdfGenerator'
+import pdfGenerator from 'lib/antigenGenerator'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import DrawerPatient from 'components/DrawerPatient'
@@ -58,8 +58,8 @@ const AntigenContainer = () => {
       ...patient, 
       name: { ...patient.name, value: value.name },
       gender: { ...patient.gender, value: value.gender },
-      pob: { ...patient.pob, value: value.pob },
-      dob: { ...patient.dob, value: value.dob },
+      birth_place: { ...patient.birth_place, value: value.birth_place },
+      birth_date: { ...patient.birth_date, value: value.birth_date },
       address: { ...patient.address, value: value.address },
       result: { ...patient.result, value: value.result },
     }
@@ -73,22 +73,20 @@ const AntigenContainer = () => {
 
   return (
     <>
-      <h1>Rapid Antigen</h1>
-
       <Card className="border-0 shadow-1">
         <Card.Body>
           
-          <Card.Title>Daftar Pasien</Card.Title>
+          <Card.Title>Daftar Pasien Rapid Antigen</Card.Title>
 
-          <Form layout="vertical">
+          <Form layout="vertical" className="mb-3">
             <Row gutter={[10, 10]}>
-              <Col xl={14}>
-                <Form.Item>
+              <Col xl={14} lg={14} md={14} sm={13} xs={24}>
+                <Form.Item className="mb-0">
                   <Input placeholder="Cari nama pasien" />
                 </Form.Item>
               </Col>
-              <Col xl={10}>
-                <Form.Item>
+              <Col xl={10} lg={10} md={10} sm={11} xs={24}>
+                <Form.Item className="mb-0">
                   <Select defaultValue="semua" className="w-100" placeholder="Filter hasil" allowClear>
                     <Select.Option value="semua">Semua</Select.Option>
                     <Select.Option value="negatif">Negatif</Select.Option>
@@ -105,7 +103,7 @@ const AntigenContainer = () => {
             pagination={false} 
             columns={columnsPatient}
             dataSource={dataSourceReports} 
-            scroll={{ y: 500, x: 1180 }} 
+            scroll={{ y: 485, x: 1180 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -134,6 +132,7 @@ const AntigenContainer = () => {
         visible={showDrawer} 
         onClose={onClosePatientDrawerHandler}
       />
+
     </>
   )
 }

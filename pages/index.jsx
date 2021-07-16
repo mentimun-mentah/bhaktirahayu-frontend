@@ -2,13 +2,15 @@ import { Container, Media } from 'react-bootstrap'
 import { useState, useCallback, useRef } from 'react'
 import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
-import { DatePicker, Spin, message, Select, Radio, Input, Popover } from 'antd'
+import { DatePicker, Spin, message, Select, Radio, Input, Popover, Modal } from 'antd'
 
 import { useWindowSize } from 'lib/useWindowSize'
 import { imagePreview, uploadButton } from 'lib/imageUploader'
 
 import moment from 'moment'
 import Cropper from 'react-perspective-cropper'
+
+import LoginContainer from 'components/Auth/Login'
 
 message.config({ duration: 3, maxCount: 1 });
 
@@ -63,6 +65,7 @@ const Home = () => {
 
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [isLogin, setIsLogin] = useState(false)
   const [selected, setSelected] = useState("ktp")
   const [isShowTips, setIsShowTips] = useState(false)
   const [showCropper, setShowCropper] = useState(false)
@@ -237,6 +240,9 @@ const Home = () => {
                           <Col span={24}>
                             <Button size="large" type="primary" onClick={() => onNextStep(1)} block>Berikutnya</Button>
                           </Col>
+                          <Col span={24}>
+                            <Button size="large" onClick={() => setIsLogin(true)} block>Masuk</Button>
+                          </Col>
                         </Row>
                       </>
                     )}
@@ -394,38 +400,21 @@ const Home = () => {
         </section>
       </Container>
 
-      {/*
-      <Drawer
-        height="100vh"
-        placement="bottom"
-        closable={false}
-        getContainer={false}
-        visible={file.value[0]?.originFileObj && showCropper}
+
+      <Modal
+        centered
+        title=" "
+        zIndex="1030"
+        footer={null}
+        visible={isLogin}
+        maskClosable={false}
+        className="modal-login"
+        onOk={() => setIsLogin(false)}
+        onCancel={() => setIsLogin(false)}
+        closeIcon={<i className="fas fa-times" />}
       >
-        <div className="cropper-container p-3">
-          {!cropState?.loading && file.value[0]?.originFileObj && ( <h3 className="mt-3">Rapikan Foto</h3> )}
-          {cropState?.loading && ( <Spin />)}
-          <Cropper
-            image={file.value[0]?.originFileObj}
-            ref={cropperRef}
-            onChange={onCropperChange}
-            onDragStop={onCropperDragStop}
-            maxWidth={size.width - 200}
-            maxHeight={size.height - 200}
-            lineColor="#00ff6f"
-            pointBorder="5px solid #00ff6f"
-            lineWidth={5}
-          />
-
-          {!cropState?.loading && file.value[0]?.originFileObj && (
-            <Button type="primary" onClick={doSomething} icon={<CheckOutlined />} className="mt-3">
-              Selesai
-            </Button>
-          )}
-        </div>
-      </Drawer>
-      */}
-
+        <LoginContainer />
+      </Modal>
 
       <style jsx>{`
       :global(.check-item-step .ant-steps-item-icon .ant-steps-finish-icon) {
@@ -453,6 +442,14 @@ const Home = () => {
 
       :global(.select-py-2 .ant-select-selector) {
         height: 40px!important;
+      }
+
+      /* LOGIN & REGISTER */
+      :global(.modal-login > .ant-modal-content, .modal-login
+          > .ant-modal-content
+          > .ant-modal-header) {
+        border-radius: 10px;
+        border: unset;
       }
 
       `}</style>

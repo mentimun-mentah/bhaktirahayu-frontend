@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Affix, Button, Space } from 'antd'
+import { Affix, Button, Space, Row, Col } from 'antd'
 import { exportComponentAsJPEG } from 'react-component-export-image'
 
 import PDFViewer from 'mgr-pdf-viewer-react'
@@ -20,19 +20,6 @@ const ResultViewer = ({ pdf, filename }) => {
     downloadFile(pdf, `Test result for ${filename}`)
   }
 
-  const capture = () => {
-    const element = document.getElementById("some-element")
-    // element.style = "width: 629.295px;height: 892.92px;"
-        
-    window && window.scrollTo(0, 0)
-    import('html2canvas').then(html2canvas => {
-      html2canvas.default(element).then(canvas => {
-        downloadFile(canvas.toDataURL(), `Test result for ${filename}`)
-      })
-    })
-
-  }
-
   const exportToJpegHandler = () => {
     window && window.scrollTo(0, 0)
     exportComponentAsJPEG(pdfRef, { fileName: `Test result for ${filename}` })
@@ -48,21 +35,21 @@ const ResultViewer = ({ pdf, filename }) => {
         />
       </div>
 
-      <Affix offsetBottom={10}>
-        <Space>
-          <Button onClick={capture}>
-            Capture html2canvas
-          </Button>
+      <Row justify="center">
+        <Col>
+          <Affix offsetBottom={20}>
+            <Space>
+              <Button type="primary" size="large" className="shadow-lg" onClick={exportToJpegHandler}>
+                Download JPEG
+              </Button>
 
-          <Button onClick={exportToJpegHandler}>
-            Export As JPEG
-          </Button>
-
-          <Button onClick={onDownload}>
-            Download As PDF
-          </Button>
-        </Space>
-      </Affix>
+              <Button onClick={onDownload} size="large" className="shadow-lg">
+                Download PDF
+              </Button>
+            </Space>
+          </Affix>
+        </Col>
+      </Row>
 
       <style global jsx>{`
       body {

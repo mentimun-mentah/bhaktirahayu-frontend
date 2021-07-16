@@ -7,7 +7,7 @@ import Image from 'next/image'
 import Style from './Style'
 
 const useBreakpoint = Grid.useBreakpoint
-const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD"
+const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS"
 
 const DashboardLayout = ({ children }) => {
   const router = useRouter()
@@ -37,6 +37,7 @@ const DashboardLayout = ({ children }) => {
         <Layout.Sider 
           collapsible 
           theme="light"
+          breakpoint="md"
           collapsed={collapsed} 
           data-testid="sidebar"
           className="ant-layout-sider-custom"
@@ -86,6 +87,13 @@ const DashboardLayout = ({ children }) => {
                 onClick={() => router.push('/dashboard/genose')}
               >
                 Genose
+              </Menu.Item>
+              <Menu.Item 
+                key={DOCTORS}
+                icon={<i className="far fa-user-md" />}
+                onClick={() => router.push('/dashboard/doctors')}
+              >
+                Doctors
               </Menu.Item>
               <Menu.Item 
                 key={LOGOUT} 

@@ -10,7 +10,7 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
   const screens = useBreakpoint();
 
   const [patient, setPatient] = useState(formPatient)
-  const { name, pob, gender, address, result } = patient
+  const { name, birth_place, address } = patient
 
   const onSaveHandler = () => {
     onSave(patient)
@@ -72,10 +72,10 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Tempat Lahir">
                 <Input
-                  name="pob"
-                  value={pob.value}
+                  name="birth_place"
+                  value={birth_place.value}
                   placeholder="Tempat Lahir"
-                  onChange={(e) => onChangePatientHandler(e, "pob")}
+                  onChange={(e) => onChangePatientHandler(e, "birth_place")}
                 />
               </Form.Item>
             </Col>
@@ -89,12 +89,12 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
                 />
               </Form.Item>
             </Col>
-            <Col xl={24} lg={24} md={12} sm={24} xs={24}>
+            <Col xl={24} lg={24} md={24} sm={24} xs={24}>
               <Form.Item label="Alamat">
                 <Input.TextArea
                   name="address"
-                  value={address.value}
                   placeholder="Alamat"
+                  value={address.value}
                   onChange={onChangePatientHandler}
                 />
               </Form.Item>
@@ -120,28 +120,41 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
             </Col>
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Penanggung Jawab">
-                <Select defaultValue={[]} className="w-100" placeholder="Dokter Penanggung Jawab">
-                  <Select.Option value="negatif">dr. Oky Suardana</Select.Option>
-                  <Select.Option value="positif">dr. Sandra Wijaya</Select.Option>
+                <Select 
+                  showSearch 
+                  defaultValue={[]} 
+                  className="w-100" 
+                  placeholder="Dokter Penanggung Jawab"
+                >
+                  <Select.Option value="dr. Oky Suardana">dr. Oky Suardana</Select.Option>
+                  <Select.Option value="dr. Sandra Wijaya">dr. Sandra Wijaya</Select.Option>
                 </Select>
-              </Form.Item>
-            </Col>
-            <Col xl={12} lg={12} md={12} sm={24} xs={24}>
-              <Form.Item label="No RM">
-                <Input
-                  name="no_rm"
-                  placeholder="No RM"
-                />
               </Form.Item>
             </Col>
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Instansi">
-                <Select defaultValue={[]} className="w-100" placeholder="Asal Instansi">
-                  <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
-                  <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
-                  <Select.Option value="ngurah_rai">Bhaksena Bypass Ngurah Rai</Select.Option>
-                  <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
+                <Select 
+                  showSearch 
+                  defaultValue={[]}
+                  className="w-100"
+                  placeholder="Asal Instansi"
+                >
+                  <Select.Option value="Bhakti Rahayu Denpasar">Bhakti Rahayu Denpasar</Select.Option>
+                  <Select.Option value="Bhakti Rahayu Tabanan">Bhakti Rahayu Tabanan</Select.Option>
+                  <Select.Option value="Bhaksena Bypass Ngurah Rai">Bhaksena Bypass Ngurah Rai</Select.Option>
+                  <Select.Option value="Bhaksena Pelabuhan Gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
                 </Select>
+              </Form.Item>
+            </Col>
+            {/* <Col xl={12} lg={12} md={12} sm={24} xs={24}> */}
+            <Col xl={24} lg={24} md={24} sm={24} xs={24}>
+              <Form.Item label="Penjamin">
+                <Input
+                  name="incharge"
+                  // value={name.value}
+                  placeholder="Penjamin"
+                  // onChange={onChangePatientHandler}
+                />
               </Form.Item>
             </Col>
           </Row>
