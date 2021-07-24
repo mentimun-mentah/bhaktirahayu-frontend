@@ -4,61 +4,16 @@ import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
 import { DatePicker, Spin, message, Select, Radio, Input, Popover, Modal } from 'antd'
 
+import { formImage } from 'formdata/image'
 import { useWindowSize } from 'lib/useWindowSize'
 import { imagePreview, uploadButton } from 'lib/imageUploader'
+import { step_list, preparation_list, cardOptions, howToCrop } from 'data/home'
 
 import moment from 'moment'
 import Cropper from 'react-perspective-cropper'
-
 import LoginContainer from 'components/Auth/Login'
 
 message.config({ duration: 3, maxCount: 1 });
-
-const step_list = [
-  { title: 'Persiapan', },
-  { title: 'Foto KTP / KIS', },
-  { title: 'Registrasi', }
-]
-
-const preparation_list = [
-  { 
-    image: '/static/images/ktp_4.png',
-    title: 'Pastikan posisi ponsel tegak lurus / vertikal',
-  },
-  { 
-    image: '/static/images/ktp_1.png',
-    title: 'Pastikan KTP / KIS terbaca dengan jelas',
-  },
-  { 
-    image: '/static/images/ktp_2.png',
-    title: 'Pastikan KTP / KIS tidak buram, silau, dan gelap'
-  },
-  { 
-    image: '/static/images/ktp_3.png',
-    title: 'Pastikan KTP / KIS tidak terpotong'
-  }
-]
-
-export const formImage = {
-  file: { value: [], isValid: true, message: null },
-};
-
-const cardOptions = [
-  { label: 'KTP', value: 'ktp' },
-  { label: 'KIS', value: 'kis' },
-]
-
-const howToCrop = (
-  <>
-    <AntImage
-      src="/static/images/how_to_crop.png"
-      alt="how to crop"
-    />
-    <p className="mb-0">
-      Pastikan kamu memberikan jarak antara garis dengan pinggiran kartu
-    </p>
-  </>
-)
 
 const Home = () => {
   const size = useWindowSize()
@@ -81,7 +36,7 @@ const Home = () => {
 
   const { file } = imageList
 
-  const doSomething = async () => {
+  const onCropSaveHandler = async () => {
     try {
       const res = await cropperRef.current.done({ preview: true })
       setShowCropper(false)
@@ -100,7 +55,7 @@ const Home = () => {
       }
       setImageList(data)
     } catch (e) {
-      console.log('error', e)
+      message.error('Terjadi kesalahan saat mengunggah foto!')
     }
   }
 
@@ -108,13 +63,17 @@ const Home = () => {
   const onNextStep = val => setStep(val)
 
   /* IMAGE CHANGE FUNCTION */
-  const imageChangeHandler = ({ fileList: newFileList }) => {
+  const imageChangeHandler = ({ fileList: newFileList, file }) => {
+    if(file.status === "done") {
+      setTimeout(() => {
+        setShowCropper(true)
+      }, 200)
+    }
     const data = {
       ...imageList,
       file: { value: newFileList, isValid: true, message: null }
     }
     setImageList(data)
-    setShowCropper(true)
   };
   /* IMAGE CHANGE FUNCTION */
 
@@ -166,9 +125,10 @@ const Home = () => {
                     </h6> 
                   )}
                   <Cropper
-                    image={file.value[0]?.originFileObj}
                     ref={cropperRef}
+                    openCvPath="/static/opencv/opencv.js"
                     onChange={onCropperChange}
+                    image={file.value[0]?.originFileObj}
                     onDragStop={onCropperDragStop}
                     maxWidth={size.width - 200}
                     maxHeight={size.height - 200}
@@ -181,7 +141,7 @@ const Home = () => {
                     <Button 
                       type="primary"
                       className="mt-3"
-                      onClick={isShowTips ? () => {} : doSomething}
+                      onClick={isShowTips ? () => {} : onCropSaveHandler}
                       disabled={isShowTips}
                       icon={<CheckOutlined />}
                     >
@@ -351,6 +311,27 @@ const Home = () => {
                                 </Select.Option>
                               </Select>
                             </Form.Item>
+                            <Form.Item label="Pilih Instansi">
+                              <Select 
+                                showSearch 
+                                defaultValue={[]}
+                                className="w-100 select-py-2 with-input"
+                                placeholder="Pilih Instansi"
+                              >
+                                <Select.Option value="Bhakti Rahayu Denpasar">
+                                  <span className="va-sub">Bhakti Rahayu Denpasar</span>
+                                </Select.Option>
+                                <Select.Option value="Bhakti Rahayu Tabanan">
+                                  <span className="va-sub">Bhakti Rahayu Tabanan</span>
+                                </Select.Option>
+                                <Select.Option value="Bhaksena Bypass Ngurah Rai">
+                                  <span className="va-sub">Bhaksena Bypass Ngurah Rai</span>
+                                </Select.Option>
+                                <Select.Option value="Bhaksena Pelabuhan Gilimanuk">
+                                  <span className="va-sub">Bhaksena Pelabuhan Gilimanuk</span>
+                                </Select.Option>
+                              </Select>
+                            </Form.Item>
                           </Form>
                         </div>
 
@@ -440,8 +421,12 @@ const Home = () => {
         justify-content: center;
       }
 
-      :global(.select-py-2 .ant-select-selector) {
+      :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
         height: 40px!important;
+      }
+
+      :global(.select-py-2.with-input .ant-select-selector .ant-select-selection-placeholder) {
+        line-height: 38px;
       }
 
       /* LOGIN & REGISTER */

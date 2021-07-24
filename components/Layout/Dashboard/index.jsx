@@ -1,25 +1,34 @@
 import { useRouter } from 'next/router'
-import { Layout, Menu, Grid } from 'antd'
 import { useState, useEffect } from 'react'
+import { parseCookies, setCookie } from 'nookies'
+import { Layout, Menu, Grid, Button, Drawer } from 'antd'
+import { MenuUnfoldOutlined } from '@ant-design/icons'
+
+import { dashboard_routes } from './routes'
 
 import Image from 'next/image'
 
 import Style from './Style'
 
 const useBreakpoint = Grid.useBreakpoint
-const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS"
 
 const DashboardLayout = ({ children }) => {
   const router = useRouter()
   const screens = useBreakpoint()
 
+  const [role, setRole] = useState("admin")
+  const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(DASHBOARD)
+  const [showDrawer, setShowDrawer] = useState(false)
 
   useEffect(() => {
     let mounted = true
     if(mounted && ((screens.sm && !screens.lg) || screens.xs)) setCollapsed(true)
     else setCollapsed(false)
+
+    if(mounted && (screens.xs && !screens.sm)) setIsMobile(true)
+    else setIsMobile(false)
   }, [screens])
 
   useEffect(() => {
@@ -31,87 +40,95 @@ const DashboardLayout = ({ children }) => {
     setSelected(data)
   }, [router])
 
+  useEffect(() => {
+    const cookies = parseCookies();
+    setRole(cookies.role || "")
+  }, [])
+
+  const renderSidemenu = () => {
+    return dashboard_routes.map(route => (
+      <Menu.Item 
+        key={route.key} 
+        icon={<i className={route.icon} />}
+        onClick={() => router.push(route.route)}
+      >
+        {route.label}
+      </Menu.Item>
+    ))
+  }
+
   return (
     <>
       <Layout style={{ minHeight: '100vh' }}>
-        <Layout.Sider 
-          collapsible 
-          theme="light"
-          breakpoint="md"
-          collapsed={collapsed} 
-          data-testid="sidebar"
-          className="ant-layout-sider-custom"
-          onCollapse={val => setCollapsed(val)}
-          trigger={
-            <i 
-              title={collapsed ? 'icon-right' : 'icon-left'}
-              className={`far fa-chevron-${collapsed ? 'right' : 'left'}`} 
-            />
-          }
-        >
-          <div className="sidebar-inner">
-            <div className="logo text-center bold">
-              <Image width="90" height="90" src="/static/images/bhaktirahayu_logo_transparent.png" alt="bhaktirahayu_logo" />
+        {!isMobile && (
+          <Layout.Sider 
+            collapsible 
+            theme="light"
+            breakpoint="md"
+            collapsed={collapsed} 
+            data-testid="sidebar"
+            className="ant-layout-sider-custom"
+            onCollapse={val => setCollapsed(val)}
+            trigger={
+              <i 
+                title={collapsed ? 'icon-right' : 'icon-left'}
+                className={`far fa-chevron-${collapsed ? 'right' : 'left'}`} 
+              />
+            }
+          >
+            <div className="sidebar-inner">
+              <div className="logo text-center bold">
+                <Image width="90" height="90" src="/static/images/bhaktirahayu_logo_transparent.png" alt="bhaktirahayu_logo" />
+              </div>
+              <Menu 
+                mode="inline" 
+                theme="light" 
+                inlineIndent={15} 
+                className="ant-menu-scroll"
+                selectedKeys={[selected]}
+              >
+                {renderSidemenu()}
+              </Menu>
+
             </div>
-            <Menu 
-              mode="inline" 
-              theme="light" 
-              inlineIndent={15} 
-              className="ant-menu-scroll"
-              selectedKeys={[selected]}
-            >
-              <Menu.Item 
-                key={HOME} 
-                icon={<i className="far fa-door-open" />}
-                onClick={() => router.push('/')}
-              >
-                Home
-              </Menu.Item>
-              <Menu.Item 
-                key={DASHBOARD} 
-                icon={<i className="far fa-house-flood" />}
-                onClick={() => router.push('/dashboard')}
-              >
-                Dashboard
-              </Menu.Item>
-              <Menu.Item 
-                key={ANTIGEN} 
-                icon={<i className="far fa-sword-laser" />}
-                onClick={() => router.push('/dashboard/antigen')}
-              >
-                Antigen
-              </Menu.Item>
-              <Menu.Item 
-                key={GENOSE} 
-                icon={<i className="far fa-wind" />}
-                onClick={() => router.push('/dashboard/genose')}
-              >
-                Genose
-              </Menu.Item>
-              <Menu.Item 
-                key={DOCTORS}
-                icon={<i className="far fa-user-md" />}
-                onClick={() => router.push('/dashboard/doctors')}
-              >
-                Doctors
-              </Menu.Item>
-              <Menu.Item 
-                key={LOGOUT} 
-                icon={<i className="far fa-sign-out" />}
-                onClick={() => router.push('/')}
-              >
-                Log Out
-              </Menu.Item>
-            </Menu>
+          </Layout.Sider>
+        )}
 
-          </div>
-        </Layout.Sider>
-
-        <Layout className="main-layout">
+        <Layout className={!isMobile && "main-layout"}>
           {children}
         </Layout>
 
       </Layout>
+
+      {isMobile && (
+        <Button type="primary" size="large" shape="circle" className="float" onClick={() => setShowDrawer(true)}>
+          <MenuUnfoldOutlined style={{ fontSize: '18px' }} />
+        </Button>
+      )}
+
+      <Drawer
+        placement="left"
+        closable={false}
+        visible={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        bodyStyle={{ overflow: 'hidden' }}
+        title={false}
+      >
+        <div className="sidebar-inner">
+          <div className="logo text-center bold">
+            <Image width="66" height="65" src="/static/images/bhaktirahayu_logo_transparent.png" alt="bhaktirahayu_logo" />
+          </div>
+          <Menu 
+            mode="inline" 
+            theme="light" 
+            inlineIndent={15} 
+            className="ant-menu-scroll"
+            selectedKeys={[selected]}
+          >
+            {renderSidemenu()}
+          </Menu>
+        </div>
+      </Drawer>
 
       <style jsx>{Style}</style>
       <style jsx>{`
@@ -137,6 +154,14 @@ const DashboardLayout = ({ children }) => {
         }
         :global(.ant-menu-submenu-arrow) {
           color: var(--grey);
+        }
+        :global(.float) {
+          position: fixed;
+          bottom: 15px;
+          left: 15px;
+          box-shadow: rgb(0 0 0) 0px 5px 14px -5px!important;
+          height: 50px;
+          width: 50px;
         }
       `}</style>
     </>

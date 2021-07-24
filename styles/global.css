@@ -70,3 +70,10 @@
 .va-sub {
   vertical-align: sub!important;
 }
+
+.bor-rad-4px {
+  border-radius: 4px!important;
+}
+.bor-rad-5px {
+  border-radius: 5px!important;
+}

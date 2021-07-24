@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { Form, Input, Row, Col, Button } from 'antd'
+import { Form, Input, Row, Col, Button, Select } from 'antd'
 
 const LoginContainer = () => {
   const router = useRouter()
@@ -8,13 +8,6 @@ const LoginContainer = () => {
     <div>
       <h4 className="fs-20-s">
         Masuk
-        <a
-          href="#"
-          className="fs-12 float-right text-secondary pt-2"
-          // onClick={handler}
-        >
-          Daftar
-        </a>
       </h4>
 
       <Form name="login" layout="vertical">
@@ -25,6 +18,7 @@ const LoginContainer = () => {
         >
           <Input 
             name="email"
+            type="email"
             className="py-2"
             placeholder="Email" 
             // value={email.value}
@@ -46,21 +40,30 @@ const LoginContainer = () => {
           />
           {/* <ErrorMessage item={password} /> */}
         </Form.Item>
-  
-        {/*
-        <Form.Item className="m-b-10">
-          <Row justify="space-between">
-            <Col md={12}>
-              <a onClick={() => changeView(FORGOT_PASSWORD)}>Forgot password ?</a>
-            </Col>
-            <Col md={12}>
-              <a className="float-right" onClick={() => changeView(RESEND_VERIFICATION)}>
-                Resend verification
-              </a>
-            </Col>
-          </Row>
+
+        <Form.Item label="Pilih Instansi">
+          <Select 
+            showSearch 
+            defaultValue={[]}
+            className="w-100 select-py-2 with-input"
+            placeholder="Pilih Instansi"
+          >
+            <Select.Option value="Bhakti Rahayu Denpasar">
+              <span className="va-sub">Bhakti Rahayu Denpasar</span>
+            </Select.Option>
+            <Select.Option value="Bhakti Rahayu Tabanan">
+              <span className="va-sub">Bhakti Rahayu Tabanan</span>
+            </Select.Option>
+            <Select.Option value="Bhaksena Bypass Ngurah Rai">
+              <span className="va-sub">Bhaksena Bypass Ngurah Rai</span>
+            </Select.Option>
+            <Select.Option value="Bhaksena Pelabuhan Gilimanuk">
+              <span className="va-sub">Bhaksena Pelabuhan Gilimanuk</span>
+            </Select.Option>
+          </Select>
         </Form.Item>
-        */}
+  
+
 
         <Form.Item className="m-b-10 d-none">
           <Row justify="space-between">

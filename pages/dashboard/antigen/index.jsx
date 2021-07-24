@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
-import { Form, Input, Row, Col, Select, Space } from 'antd'
+import { Form, Input, Row, Col, Space, DatePicker, AutoComplete, Grid } from 'antd'
 
 import { formPatient } from 'formdata/patient'
 import { ExportToExcel } from 'lib/exportToExcel'
@@ -10,12 +10,13 @@ import _ from "lodash"
 import moment from 'moment'
 import 'moment/locale/id'
 
-import pdfGenerator from 'lib/antigenGenerator'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
+import pdfGenerator from 'lib/antigenGenerator'
 import DrawerPatient from 'components/DrawerPatient'
 
 moment.locale('id')
+const useBreakpoint = Grid.useBreakpoint
 
 const ProductCellEditable = ({ index, record, editable, type, children, onShowDrawer, ...restProps }) => {
   let childNode = children
@@ -35,6 +36,7 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
 }
 
 const AntigenContainer = () => {
+  const screens = useBreakpoint()
   const [page, setPage] = useState(1)
   const [showDrawer, setShowDrawer] = useState(false)
   const [patient, setPatient] = useState(formPatient)
@@ -71,6 +73,32 @@ const AntigenContainer = () => {
     setPatient(formPatient)
   }
 
+  const instansi_list = [
+    { value: "Bhakti Rahayu Denpasar" },
+    { value: "Bhakti Rahayu Tabanan" },
+    { value: "Bhaksena Bypass Ngurah Rai" },
+    { value: "Bhaksena Pelabuhan Gilimanuk" },
+  ]
+
+  const pic_list = [
+    { value: "James" },
+    { value: "Robert" },
+    { value: "Mary" },
+    { value: "Patricia" },
+    { value: "Michael" },
+    { value: "Linda" },
+    { value: "Susan" },
+    { value: "Charles" },
+    { value: "Nancy" },
+    { value: "Ashley" },
+  ]
+
+  const location_list = [
+    { value: "Hotel" },
+    { value: "Lapangan" },
+    { value: "Rumah Sakit" },
+  ]
+
   return (
     <>
       <Card className="border-0 shadow-1">
@@ -79,19 +107,56 @@ const AntigenContainer = () => {
           <Card.Title>Daftar Pasien Rapid Antigen</Card.Title>
 
           <Form layout="vertical" className="mb-3">
-            <Row gutter={[10, 10]}>
-              <Col xl={14} lg={14} md={14} sm={13} xs={24}>
+            <Row gutter={[10, 10]} justify="space-between">
+              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
                 <Form.Item className="mb-0">
-                  <Input placeholder="Cari nama pasien" />
+                  <Input placeholder="Cari NIK pasien" />
                 </Form.Item>
               </Col>
-              <Col xl={10} lg={10} md={10} sm={11} xs={24}>
+              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
                 <Form.Item className="mb-0">
-                  <Select defaultValue="semua" className="w-100" placeholder="Filter hasil" allowClear>
-                    <Select.Option value="semua">Semua</Select.Option>
-                    <Select.Option value="negatif">Negatif</Select.Option>
-                    <Select.Option value="positif">Positif</Select.Option>
-                  </Select>
+                  <AutoComplete 
+                    className="w-100"
+                    options={instansi_list}
+                    placeholder="Cari instansi"
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
+                <Form.Item className="mb-0">
+                  <AutoComplete 
+                    className="w-100"
+                    options={pic_list}
+                    placeholder="Cari penjamin"
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col xl={5} lg={5} md={12} sm={12} xs={24}>
+                <Form.Item className="mb-0">
+                  <AutoComplete 
+                    className="w-100"
+                    options={location_list}
+                    placeholder="Lokasi pelayanan"
+                    filterOption={(inputValue, option) =>
+                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col xl={4} lg={4} md={12} sm={24} xs={24}>
+                <Form.Item className="mb-0">
+                  <DatePicker
+                    className="w-100"
+                    placeholder="Pilih tanggal & waktu"
+                    showTime={{ format: 'HH:mm' }}
+                    format="DD MMM YYYY HH:mm"
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -108,18 +173,20 @@ const AntigenContainer = () => {
           />
 
           <Card.Body className="pb-2 px-0">
-            <Row gutter={[10,10]} justify="space-between">
-              <Col>
+            <Row gutter={[10,10]} justify="space-between" align="middle">
+              <Col xs={24} sm={24} md={12} lg={12} xl={12} className={!screens.md && "text-center"}>
                 <ExportToExcel jsonData={reformatData(dataSourceReports)} fileName={new Date()} />
               </Col>
-              <Col>
-                <Pagination 
-                  current={page} 
-                  hideOnSinglePage 
-                  pageSize={10}
-                  total={304} 
-                  goTo={val => setPage(val)} 
-                />
+              <Col xs={24} sm={24} md={12} lg={12} xl={12} className={!screens.md && "text-center"}>
+                <div className={screens.md && "float-right"}>
+                  <Pagination 
+                    current={page} 
+                    hideOnSinglePage 
+                    pageSize={10}
+                    total={304} 
+                    goTo={val => setPage(val)} 
+                  />
+                </div>
               </Col>
             </Row>
           </Card.Body>
