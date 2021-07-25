@@ -1,0 +1,79 @@
+@import './fontawesome/css/all.min.css';
+
+:root {
+  --white: #ffffff;
+  --white-smoke: #fafafa;
+  --grey: #93999E;
+  --grey-0: #B6B9C7;
+  --grey-1: #434343;
+  --grey-2: #262626;
+  --black: #07091A;
+  --salmon: #ffc19e;
+  --salmon-1: #ffbe76;
+  --orange: #f0932b;
+  --danger: #dc3545;
+  --light: #f8f9fa;
+  --primary-1: #38ab6b;
+}
+
+/* antd image */
+.ant-image-mask {
+  border-radius: 5px;
+}
+.ant-image-mask-info .anticon {
+  vertical-align: 0;
+}
+/* antd image */
+
+/* antd icon */
+.anticon {
+  vertical-align: text-top!important;
+}
+/* antd icon */
+
+/* antd upload */
+.ant-upload-list-picture-card .ant-upload-list-item-info::before {
+  left: 0;
+}
+.hide-upload-list .ant-upload-list {
+  display: none!important;
+}
+.ant-upload-picture-card-wrapper .ant-upload-list-item-card-actions-btn {
+  vertical-align: text-bottom;
+}
+.ant-upload-list-picture-card .ant-upload-list-item-info::before {
+  border-radius: 4px;
+}
+/* antd upload */
+
+/* antd drawer */
+.ant-drawer-mask {
+  backdrop-filter: blur(4px);
+}
+/* antd drawer */
+.ant-modal-mask {
+  backdrop-filter: blur(4px);
+}
+
+/* bootstrap */
+.card {
+  border-radius: .5rem!important;
+}
+/* bootstrap */
+
+/* shadow */
+.shadow-1 {
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
+}
+/* shadow */
+
+.va-sub {
+  vertical-align: sub!important;
+}
+
+.bor-rad-4px {
+  border-radius: 4px!important;
+}
+.bor-rad-5px {
+  border-radius: 5px!important;
+}
