@@ -25,11 +25,6 @@ export const preparation_list = [
   }
 ]
 
-export const cardOptions = [
-  { label: 'KTP', value: 'ktp' },
-  { label: 'KIS', value: 'kis' },
-]
-
 export const howToCrop = (
   <>
     <AntImage

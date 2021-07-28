@@ -1,4 +1,4 @@
-const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS", 
+export const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS", 
   GUARDIAN = "GUARDIAN", LOCATION = "LOCATION-SERVICE", PROFILE = "PROFILE"
 
 export const dashboard_routes = [
@@ -44,12 +44,12 @@ export const dashboard_routes = [
     route: '/dashboard/location-service',
     label: 'Lokasi Pelayanan'
   },
-  {
-    key: PROFILE,
-    icon: 'far fa-user-circle',
-    route: '/dashboard/profile',
-    label: 'Profile'
-  },
+  // {
+  //   key: PROFILE,
+  //   icon: 'far fa-user-circle',
+  //   route: '/dashboard/profile',
+  //   label: 'Profile'
+  // },
   {
     key: LOGOUT,
     icon: 'far fa-sign-out',

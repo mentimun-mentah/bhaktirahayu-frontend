@@ -2,7 +2,11 @@ import { memo, useState, useEffect } from 'react'
 import { Drawer, Form, Row, Col, Input, Select, Grid, DatePicker, Button } from 'antd'
 
 import { formPatient } from 'formdata/patient'
+import 'moment/locale/id'
 import moment from 'moment'
+import id_ID from "antd/lib/date-picker/locale/id_ID"
+
+moment.locale('id')
 
 const useBreakpoint = Grid.useBreakpoint;
 
@@ -82,10 +86,12 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Tanggal Lahir">
                 <DatePicker 
+                  inputReadOnly
+                  locale={id_ID}
                   className="w-100"
+                  format="DD MMMM YYYY"
                   placeholder="Tanggal Lahir"
                   defaultValue={moment().subtract((999*9), 'days')}
-                  format="DD-MM-YYYY"
                 />
               </Form.Item>
             </Col>
@@ -102,11 +108,12 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Tanggal & Waktu Periksa">
                 <DatePicker 
-                  showTime={{ format: "HH:mm" }}
+                  locale={id_ID}
                   className="w-100"
-                  placeholder="Tanggal & Waktu Periksa"
+                  format="DD MMMM YYYY HH:mm"
+                  showTime={{ format: "HH:mm" }}
                   defaultValue={moment(new Date())}
-                  format="DD-MM-YYYY HH:mm"
+                  placeholder="Tanggal & Waktu Periksa"
                 />
               </Form.Item>
             </Col>

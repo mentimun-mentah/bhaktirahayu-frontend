@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
 import { SearchOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Button, Modal, Space, Grid } from 'antd'
+import { Form, Input, Row, Col, Button, Modal, Space } from 'antd'
 
 import { columns_guardian, data_guardian } from 'data/tableGuardian'
 
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
-
-const useBreakpoint = Grid.useBreakpoint
 
 const ProductCellEditable = ({ index, record, editable, type, children, ...restProps }) => {
   let childNode = children
@@ -28,7 +26,6 @@ const ProductCellEditable = ({ index, record, editable, type, children, ...restP
 }
 
 const GuardiansContainer = () => {
-  const screens = useBreakpoint()
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
 

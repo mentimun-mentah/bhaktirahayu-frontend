@@ -46,14 +46,20 @@
 }
 /* antd upload */
 
+/* antd modal */
+.ant-modal-mask {
+  backdrop-filter: blur(4px);
+}
+.modal-close-disabled .ant-modal-close {
+  cursor: default!important;
+}
+/* antd modal */
+
 /* antd drawer */
 .ant-drawer-mask {
   backdrop-filter: blur(4px);
 }
 /* antd drawer */
-.ant-modal-mask {
-  backdrop-filter: blur(4px);
-}
 
 /* bootstrap */
 .card {

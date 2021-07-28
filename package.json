@@ -9,14 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "antd": "^4.16.6",
-    "apexcharts": "^3.27.2",
+    "antd": "^4.16.9",
+    "antd-img-crop": "^3.14.3",
+    "apexcharts": "^3.27.3",
     "axios": "^0.21.1",
     "babel-plugin-import": "^1.13.3",
     "babel-runtime": "^6.26.0",
     "bootstrap": "^4.6.0",
     "file-saver": "^2.0.5",
-    "html2canvas": "^1.1.0",
+    "framer-motion": "^4.1.17",
+    "html2canvas": "^1.1.4",
     "jspdf": "^2.3.1",
     "jspdf-autotable": "^3.5.15",
     "mgr-pdf-viewer-react": "^1.0.3",
@@ -30,11 +32,12 @@
     "react-component-export-image": "^1.0.6",
     "react-dom": "17.0.2",
     "react-perspective-cropper": "git+https://github.com/paulussimanjuntak/react-perspective-cropper.git",
+    "react-signature-canvas": "^1.0.3",
     "validator": "^13.6.0",
     "xlsx": "^0.17.0"
   },
   "devDependencies": {
-    "eslint": "7.30.0",
+    "eslint": "^7.31.0",
     "eslint-config-next": "11.0.1"
   }
 }

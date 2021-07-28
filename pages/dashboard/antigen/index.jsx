@@ -6,9 +6,9 @@ import { formPatient } from 'formdata/patient'
 import { ExportToExcel } from 'lib/exportToExcel'
 import { dataSourceReports, columnsReports, reformatData } from 'data/table'
 
-import _ from "lodash"
-import moment from 'moment'
 import 'moment/locale/id'
+import moment from 'moment'
+import id_ID from "antd/lib/date-picker/locale/id_ID"
 
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
@@ -152,10 +152,12 @@ const AntigenContainer = () => {
               <Col xl={4} lg={4} md={12} sm={24} xs={24}>
                 <Form.Item className="mb-0">
                   <DatePicker
+                    inputReadOnly
+                    locale={id_ID}
                     className="w-100"
-                    placeholder="Pilih tanggal & waktu"
-                    showTime={{ format: 'HH:mm' }}
                     format="DD MMM YYYY HH:mm"
+                    showTime={{ format: 'HH:mm' }}
+                    placeholder="Pilih tanggal & waktu"
                   />
                 </Form.Item>
               </Col>
