@@ -6697,10 +6697,9 @@ export const reformatData = listData => {
     data['Tanggal Lahir'] = moment(data.birth_date).format('DD MMMM YYYY').toUpperCase()
     data['Alamat'] = data.address?.toUpperCase()
     data['Tanggal Periksa'] = moment(data.checkup_date).format('DD MMMM YYYY').toUpperCase()
-    data['Waktu Periksa'] = moment(data.checkup_time).format('HH:mm').toUpperCase()
+    data['Waktu Periksa'] = moment(data.checkup_time, 'HH:mm').format('HH:mm')
     data['Hasil'] = data.result?.toUpperCase()
-    delete data.key; delete data.nik; delete data.name; delete data.gender; delete data.birth_date; delete data.birth_place; delete data.address; delete data.checkup_date; delete data.result;
-    delete data.time
+    delete data.key; delete data.nik; delete data.name; delete data.gender; delete data.birth_date; delete data.birth_place; delete data.address; delete data.checkup_date; delete data.result; delete data.time; delete data.checkup_time;
   })
 
   return copyData

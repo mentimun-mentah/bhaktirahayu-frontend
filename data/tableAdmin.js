@@ -1,8 +1,13 @@
-export const columns_guardian = [
+export const columns_admin = [
   {
     title: 'Nama',
     dataIndex: 'name',
     key: 'name',
+  },
+  {
+    title: 'Email',
+    dataIndex: 'email',
+    key: 'email',
   },
   {
     title: 'AKSI',
@@ -16,7 +21,7 @@ export const columns_guardian = [
   },
 ];
 
-export const data_guardian = [
+export const data_admin = [
   {
     key: '1',
     name: 'Mike James Mary',

@@ -41,19 +41,31 @@
 .ant-upload-picture-card-wrapper .ant-upload-list-item-card-actions-btn {
   vertical-align: text-bottom;
 }
-.ant-upload-list-picture-card .ant-upload-list-item-info::before {
+.ant-upload-list-picture-card .ant-upload-list-item-info::before, .ant-upload-list-item-info {
   border-radius: 4px;
 }
 /* antd upload */
+
+/* antd modal */
+.ant-modal-mask {
+  backdrop-filter: blur(4px);
+}
+.modal-close-disabled .ant-modal-close {
+  cursor: default!important;
+}
+/* antd modal */
 
 /* antd drawer */
 .ant-drawer-mask {
   backdrop-filter: blur(4px);
 }
 /* antd drawer */
-.ant-modal-mask {
-  backdrop-filter: blur(4px);
+
+/* antd select */
+.ant-select-selection-placeholder {
+  align-self: center;
 }
+/* antd select */
 
 /* bootstrap */
 .card {

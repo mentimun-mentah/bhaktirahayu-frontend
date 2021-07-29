@@ -4,18 +4,20 @@ import { SearchOutlined } from '@ant-design/icons'
 import { Form, Input, Row, Col, Button, Modal, Space } from 'antd'
 
 import { columns_location, data_location } from 'data/tableLocation'
+import { formLocation, formLocationIsValid } from 'formdata/locationService'
+import ErrorMessage from 'components/ErrorMessage'
 
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 
-const ProductCellEditable = ({ index, record, editable, type, children, ...restProps }) => {
+const ProductCellEditable = ({ index, record, editable, type, showModal, children, ...restProps }) => {
   let childNode = children
 
   if(editable){
     childNode = (
       type === "action" && (
         <Space>
-          <a onClick={() => {}}><i className="fal fa-edit text-center" /></a>
+          <a onClick={showModal}><i className="fal fa-edit text-center" /></a>
           <a onClick={() => {}}><i className="fal fa-trash-alt text-center" /></a>
         </Space>
       )
@@ -25,9 +27,32 @@ const ProductCellEditable = ({ index, record, editable, type, children, ...restP
   return <td {...restProps}>{childNode}</td>
 }
 
+const addTitle = "Tambah Lokasi"
+const editTitle = "Edit Lokasi"
+
 const LocationServiceContainer = () => {
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [modalTitle, setModalTitle] = useState(addTitle)
+  const [locationService, setLocationService] = useState(formLocation)
+
+  const { location } = locationService
+
+  /* INPUT CHANGE FUNCTION */
+  const onChangeHandler = e => {
+    const name = e.target.name
+    const value = e.target.value
+
+    const data = {
+      ...locationService,
+      [name]: { ...location[name], value: value, isValid: true, message: null }
+    }
+
+    setLocationService(data)
+  }
+  /* INPUT CHANGE FUNCTION */
 
   const columnsLocations = columns_location.map(col => {
     if (!col.editable) return col;
@@ -37,9 +62,26 @@ const LocationServiceContainer = () => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
+        showModal: () => {
+          setIsUpdate(true)
+          setShowModal(true)
+          setModalTitle(editTitle)
+        }
       })
     }
   })
+
+  const onSubmitHandler = e => {
+    e.preventDefault()
+    if(formLocationIsValid(locationService, setLocationService, isUpdate)) {
+      setLoading(true)
+      const data = {
+        location: location.value,
+      }
+
+      console.log(data)
+    }
+  }
 
   return (
     <>
@@ -99,9 +141,9 @@ const LocationServiceContainer = () => {
 
       <Modal 
         centered
-        title="Tambah Lokasi"
+        title={modalTitle}
         visible={showModal}
-        onOk={() => setShowModal(false)}
+        onOk={onSubmitHandler}
         onCancel={() => setShowModal(false)}
         okText="Simpan"
         cancelText="Batal"
@@ -109,8 +151,18 @@ const LocationServiceContainer = () => {
       >
         <Form layout="vertical">
 
-          <Form.Item label="Lokasi" className="mb-0">
-            <Input placeholder="Lokasi pelayanan" />
+          <Form.Item 
+            label="Lokasi"
+            className="mb-0"
+            validateStatus={!location.isValid && location.message && "error"}
+          >
+            <Input
+              name="location"
+              value={location.value}
+              onChange={onChangeHandler}
+              placeholder="Lokasi pelayanan" 
+            />
+            <ErrorMessage item={location} />
           </Form.Item>
 
         </Form>

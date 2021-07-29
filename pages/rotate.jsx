@@ -10,6 +10,7 @@ import { imagePreview, uploadButton } from 'lib/imageUploader'
 import { step_list, preparation_list, cardOptions, howToCrop } from 'data/home'
 
 import moment from 'moment'
+import ImgCrop from 'antd-img-crop'
 import Cropper from 'react-perspective-cropper'
 import LoginContainer from 'components/Auth/Login'
 
@@ -211,17 +212,18 @@ const Home = () => {
                       <>
                         <div className="d-flex flex-column justify-content-center">
                           <div className="text-center">
-
-                            <Upload
-                              accept="image/*"
-                              listType="picture-card"
-                              className="ktp-kis-uploader text-center"
-                              onPreview={imagePreview}
-                              onChange={imageChangeHandler}
-                              fileList={imageList.file.value}
-                            >
-                              {imageList.file.value.length >= 1 ? null : uploadButton(false)}
-                            </Upload>
+                            <ImgCrop rotate zoom={false}>
+                              <Upload
+                                accept="image/*"
+                                listType="picture-card"
+                                className="ktp-kis-uploader text-center"
+                                onPreview={imagePreview}
+                                onChange={imageChangeHandler}
+                                fileList={imageList.file.value}
+                              >
+                                {imageList.file.value.length >= 1 ? null : uploadButton(false)}
+                              </Upload>
+                            </ImgCrop>
 
                             <br />
 

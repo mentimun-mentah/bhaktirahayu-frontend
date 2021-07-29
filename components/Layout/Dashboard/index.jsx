@@ -4,7 +4,7 @@ import { parseCookies, setCookie } from 'nookies'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
 
-import { dashboard_routes } from './routes'
+import { dashboard_routes, DASHBOARD } from './routes'
 
 import Image from 'next/image'
 
