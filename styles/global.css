@@ -41,7 +41,7 @@
 .ant-upload-picture-card-wrapper .ant-upload-list-item-card-actions-btn {
   vertical-align: text-bottom;
 }
-.ant-upload-list-picture-card .ant-upload-list-item-info::before {
+.ant-upload-list-picture-card .ant-upload-list-item-info::before, .ant-upload-list-item-info {
   border-radius: 4px;
 }
 /* antd upload */
@@ -60,6 +60,12 @@
   backdrop-filter: blur(4px);
 }
 /* antd drawer */
+
+/* antd select */
+.ant-select-selection-placeholder {
+  align-self: center;
+}
+/* antd select */
 
 /* bootstrap */
 .card {

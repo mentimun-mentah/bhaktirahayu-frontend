@@ -5,18 +5,18 @@ import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
 import { DatePicker, Spin, message, Select, Radio, Input, Popover, Modal } from 'antd'
 
-import { deepCopy } from 'lib/utility'
 import { formImage } from 'formdata/image'
 import { formRegister } from 'formdata/register'
 import { useWindowSize } from 'lib/useWindowSize'
 import { formIdentityCard } from 'formdata/identityCard'
-import { imagePreview, uploadButton } from 'lib/imageUploader'
 import { step_list, preparation_list, howToCrop } from 'data/home'
+import { imagePreview, uploadButton, imageValidationNoHeader } from 'lib/imageUploader'
 
 import _ from 'lodash'
 import 'moment/locale/id'
 import moment from 'moment'
 import Image from 'next/image'
+import isIn from 'validator/lib/isIn'
 import id_ID from "antd/lib/date-picker/locale/id_ID"
 
 import axios from 'lib/axios'
@@ -47,6 +47,7 @@ const Home = () => {
   const [imageList, setImageList] = useState(formImage)
   const [showCropper, setShowCropper] = useState(false)
   const [register, setRegister] = useState(formRegister)
+  const [loadingImage, setLoadingImage] = useState(false)
   const [identityCard, setIdentityCard] = useState(formIdentityCard)
 
 
@@ -70,6 +71,7 @@ const Home = () => {
         lastModified: new Date().getTime(),
         originFileObj: file
       }
+      console.log(dataImage)
       const data = {
         ...imageList,
         file: { value: [dataImage], isValid: true, message: null }
@@ -88,7 +90,7 @@ const Home = () => {
     if(file.status === "done") {
       setTimeout(() => {
         setShowCropper(true)
-      }, 200)
+      }, 500)
     }
     const data = {
       ...imageList,
@@ -130,14 +132,14 @@ const Home = () => {
   }
   /* REGISTER CHANGE FUNCTION */
 
-
-
   const onSubmitHandler = e => {
     e.preventDefault()
     setLoading(true)
 
     setTimeout(() => {
       setLoading(false)
+      setImageList(formImage)
+      setRegister(formRegister)
       message.success('Sukses mendaftar!')
     }, 2000)
 
@@ -150,20 +152,19 @@ const Home = () => {
     e.preventDefault()
     setLoading(true)
 
-
     const formData = new FormData()
     formData.append("kind", kind.value)
-    _.forEach(imageList.file.value, file => {
-      if(!file.hasOwnProperty('url')){
-        formData.append('image', file.originFileObj)
+    _.forEach(file.value, f => {
+      if(!f.hasOwnProperty('url')){
+        formData.append('image', f.originFileObj)
       }
     })
-
 
     axios.post('/users/identity-card-ocr', formData)
       .then(res => {
         setLoading(false)
-        const state = deepCopy(register)
+        console.log(JSON.stringify(res.data, null, 2))
+        const state = _.cloneDeep(register)
         for (const [key, value] of Object.entries(res.data)) {
           if(state[key]) {
             state[key].value = value
@@ -172,31 +173,37 @@ const Home = () => {
           }
         }
         setRegister(state)
-        // const resData = {
-        //   ...register,
-        //   no_card: { value: res.data?.no_card, isValid: true, message: null },
-        //   nik: { value: nik, isValid: true, message: null },
-        //   name: { value: name, isValid: true, message: null },
-        //   birth_place: { value: birth_place, isValid: true, message: null },
-        //   birth_date: { value: birth_date, isValid: true, message: null },
-        //   gender: { value: gender, isValid: true, message: null },
-        //   address: { value: address, isValid: true, message: null },
-        // }
-        // setRegister(resData)
         setStep(2)
       })
       .catch(err => {
-        console.log(err.response)
+        setLoading(false)
+        const state = _.cloneDeep(identityCard)
+        const stateImage = _.cloneDeep(imageList)
+        const errDetail = err.response?.data.detail
+
+        if(typeof errDetail === "string" && isIn("image", errDetail.split(" "))) {
+          stateImage.file.isValid = false
+          stateImage.file.message = errDetail
+        }
+        else {
+          errDetail.map((data) => {
+            const key = data.loc[data.loc.length - 1];
+            if(state[key]){
+              state[key].value = state[key].value
+              state[key].isValid = false
+              state[key].message = data.msg
+            }
+            if(key === "image"){
+              stateImage.file.value = stateImage.file.value
+              stateImage.file.isValid = false
+              stateImage.file.message = data.msg
+            }
+          })
+        }
+
+        setIdentityCard(state)
+        setImageList(stateImage)
       })
-      setStep(2)
-
-    // setTimeout(() => {
-    //   setLoading(false)
-    // }, 2000)
-
-    // setTimeout(() => {
-    //   setStep(2)
-    // }, 3000)
   }
 
   return (
@@ -338,12 +345,14 @@ const Home = () => {
                                 className="ktp-kis-uploader text-center user-select-none"
                                 onPreview={imagePreview}
                                 onChange={imageChangeHandler}
-                                fileList={imageList.file.value}
+                                fileList={file.value}
+                                beforeUpload={f => imageValidationNoHeader(f, "image", "/users/identity-card-ocr", "post", setLoadingImage)}
                               >
-                                {imageList.file.value.length >= 1 ? null : uploadButton(false)}
+                                {file.value.length >= 1 ? null : uploadButton(loadingImage)}
                               </Upload>
+                              <ErrorMessage item={file} className="text-center" />
 
-                              <br />
+                              {!kind.isValid && <br />}
 
                               <Form layout="vertical">
                                 <Form.Item 
@@ -452,7 +461,7 @@ const Home = () => {
                                 format="DD MMMM YYYY"
                                 className="w-100 fs-14 py-2"
                                 placeholder="Tanggal Lahir"
-                                value={moment(birth_date.value ? birth_date.value : new Date(), 'DD-MM-YYYY')}
+                                value={birth_date.value ? moment(birth_date.value) : ""}
                               />
                               <ErrorMessage item={birth_date} />
                             </Form.Item>
@@ -463,6 +472,7 @@ const Home = () => {
                             >
                               <Select 
                                 value={gender.value}
+                                placeholder="Jenis Kelamin"
                                 className="w-100 select-py-2"
                                 onChange={e => onChangeHandler(e, "gender")}
                               >
@@ -491,7 +501,11 @@ const Home = () => {
                             </Form.Item>
 
                             <Form.Item label="Jenis Pemeriksaan">
-                              <Select defaultValue="antigen" className="w-100 select-py-2">
+                              <Select 
+                                defaultValue="antigen" 
+                                className="w-100 select-py-2"
+                                placeholder="Jenis Pemeriksaan"
+                              >
                                 <Select.Option value="antigen">
                                   <span className="va-sub">Antigen</span>
                                 </Select.Option>

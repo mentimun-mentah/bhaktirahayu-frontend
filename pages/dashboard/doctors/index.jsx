@@ -1,11 +1,11 @@
 import { Card } from 'react-bootstrap'
+import { motion } from 'framer-motion'
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { SearchOutlined, EditOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Upload, Button, Modal, Space, Drawer, message } from 'antd'
+import { Form, Input, Row, Col, Upload, Button, Modal, Space, message } from 'antd'
 
-import { formImage } from 'formdata/image'
-import { formDoctor } from 'formdata/doctor'
+import { formImage, formImageIsValid } from 'formdata/image'
+import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
 import { imagePreview, uploadButton } from 'lib/imageUploader'
 import { columns_doctor, data_doctor } from 'data/tableDoctor'
 
@@ -14,6 +14,7 @@ import SignatureCanvas from 'react-signature-canvas'
 
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
+import ErrorMessage from 'components/ErrorMessage'
 
 const ProductCellEditable = ({ index, record, editable, type, children, showModal, ...restProps }) => {
   let childNode = children
@@ -40,21 +41,23 @@ const urltoFile = (url, filename, mimeType) => {
 }
 
 
-const addDoctor = "Tambah Dokter"
-const editDoctor = "Edit Dokter"
+const addTitle = "Tambah Dokter"
+const editTitle = "Edit Dokter"
 
 const DoctorsContainer = () => {
   const sigCanvas = useRef()
 
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [isUpdate, setIsUpdate] = useState(false)
   const [doctor, setDoctor] = useState(formDoctor)
   const [showModal, setShowModal] = useState(false)
   const [imageList, setImageList] = useState(formImage)
-  const [modalTitle, setModalTitle] = useState(addDoctor)
+  const [modalTitle, setModalTitle] = useState(addTitle)
   const [showModalSignature, setShowModalSignature] = useState(false)
 
-  const { name, email, password } = doctor
+  const { file } = imageList
+  const { username, email, password, old_password, confirm_password } = doctor
 
   /* IMAGE CHANGE FUNCTION */
   const imageChangeHandler = ({ fileList: newFileList }) => {
@@ -82,19 +85,27 @@ const DoctorsContainer = () => {
 
   const onSubmitHandler = e => {
     e.preventDefault()
-    
-    const formData = new FormData()
-    formData.append("name", name.value)
-    formData.append("email", email.value)
-    formData.append("password", password.value)
+    if(
+      formDoctorIsValid(doctor, setDoctor, isUpdate) && 
+      formImageIsValid(imageList, setImageList, "Pastikan value tidak kosong")
+    ) {
+      setLoading(true)
+      const formData = new FormData()
+      formData.append("username", "dr. " + username.value)
+      formData.append("email", email.value)
+      formData.append("password", password.value)
+      formData.append("confirm_password", confirm_password.value)
 
-    _.forEach(imageList.file.value, file => {
-      if(!file.hasOwnProperty('url')){
-        formData.append('image', file.originFileObj)
-      }
-    })
+      if(isUpdate) formData.append("old_password", old_password.value)
 
-    console.log(...formData)
+      _.forEach(file.value, f => {
+        if(!f.hasOwnProperty('url')){
+          formData.append('image', f.originFileObj)
+        }
+      })
+
+      console.log(...formData)
+    }
   }
 
   const columnsDoctors = columns_doctor.map(col => {
@@ -106,8 +117,9 @@ const DoctorsContainer = () => {
         type: col.type, 
         editable: col.editable,
         showModal: () => {
+          setIsUpdate(true)
           setShowModal(true)
-          setModalTitle(editDoctor)
+          setModalTitle(editTitle)
         }
       })
     }
@@ -120,6 +132,7 @@ const DoctorsContainer = () => {
       size: file.size,
       type: file.type,
       name: file.name,
+      status: 'done',
       uid: -Math.abs(Math.random()),
       lastModified: new Date().getTime(),
       lastModifiedDate: new Date(),
@@ -141,8 +154,15 @@ const DoctorsContainer = () => {
   }
 
   const onRemoveImageHandler = () => {
+    sigCanvas.current?.clear()
+  }
+
+  const onCloseModalHandler = e => {
+    e.preventDefault()
+    setShowModal(false)
+    setDoctor(formDoctor)
     setImageList(formImage)
-    sigCanvas.current.clear()
+    sigCanvas.current?.clear()
   }
 
   return (
@@ -158,8 +178,9 @@ const DoctorsContainer = () => {
                 type="primary" 
                 className="float-right"
                 onClick={() => {
+                  setIsUpdate(false)
                   setShowModal(true)
-                  setModalTitle(addDoctor)
+                  setModalTitle(addTitle)
                 }}
               >
                 <i className="far fa-plus mr-1" />Dokter
@@ -170,7 +191,7 @@ const DoctorsContainer = () => {
 
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
-              <Input placeholder="Cari nama dokter" prefix={<SearchOutlined />} />
+              <Input placeholder="Cari dokter" prefix={<SearchOutlined />} />
             </Form.Item>
           </Form>
 
@@ -209,7 +230,7 @@ const DoctorsContainer = () => {
         title={modalTitle}
         visible={showModal}
         onOk={onSubmitHandler}
-        onCancel={() => setShowModal(false)}
+        onCancel={onCloseModalHandler}
         okText="Simpan"
         cancelText="Batal"
         closeIcon={<i className="far fa-times" />}
@@ -221,18 +242,22 @@ const DoctorsContainer = () => {
           <Form.Item 
             label="Nama" 
             className="mb-3"
+            validateStatus={!username.isValid && username.message && "error"}
           >
             <Input 
-              name="name"
-              value={name.value}
+              name="username"
+              addonBefore="dr."
+              value={username.value}
               onChange={onChangeHandler}
               placeholder="Nama dokter" 
             />
+            <ErrorMessage item={username} />
           </Form.Item>
 
           <Form.Item 
             label="Email"
             className="mb-3"
+            validateStatus={!email.isValid && email.message && "error"}
           >
             <Input 
               name="email"
@@ -241,11 +266,29 @@ const DoctorsContainer = () => {
               onChange={onChangeHandler}
               placeholder="Email dokter" 
             />
+            <ErrorMessage item={email} />
           </Form.Item>
+
+          {isUpdate && (
+            <Form.Item 
+              label="Password Lama" 
+              className="mb-3"
+              validateStatus={!old_password.isValid && old_password.message && "error"}
+            >
+              <Input.Password 
+                name="old_password"
+                value={old_password.value}
+                onChange={onChangeHandler}
+                placeholder="Password lama" 
+              />
+              <ErrorMessage item={old_password} />
+            </Form.Item>
+          )}
 
           <Form.Item 
             label="Password" 
             className="mb-3"
+            validateStatus={!password.isValid && password.message && "error"}
           >
             <Input.Password 
               name="password"
@@ -253,13 +296,29 @@ const DoctorsContainer = () => {
               onChange={onChangeHandler}
               placeholder="Password dokter" 
             />
+            <ErrorMessage item={password} />
+          </Form.Item>
+
+          <Form.Item 
+            label="Konfirmasi Password" 
+            className="mb-3"
+            validateStatus={!confirm_password.isValid && confirm_password.message && "error"}
+          >
+            <Input.Password 
+              name="confirm_password"
+              value={confirm_password.value}
+              onChange={onChangeHandler}
+              placeholder="Konfirmasi password" 
+            />
+            <ErrorMessage item={confirm_password} />
           </Form.Item>
 
           <Form.Item 
             label="Tanda tangan" 
             className="mb-0"
+            validateStatus={!password.isValid && password.message && "error"}
           >
-            {imageList.file.value.length >= 1 ? (
+            {file.value.length >= 1 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -274,13 +333,19 @@ const DoctorsContainer = () => {
                   onPreview={imagePreview}
                   onChange={imageChangeHandler}
                   onRemove={onRemoveImageHandler}
-                  fileList={imageList.file.value}
+                  fileList={file.value}
                   showUploadList={{
                     showDownloadIcon: true,
+                    showRemoveIcon: true,
+                    downloadIcon: <EditOutlined 
+                                    title="Edit file"
+                                    className="text-white wh-inherit" 
+                                    onClick={() => setShowModalSignature(true)} 
+                                  />
                   }}
                   // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
                 >
-                  {imageList.file.value.length >= 1 ? null : uploadButton(loading)}
+                  {file.value.length >= 1 ? null : uploadButton(loading)}
                 </Upload>
               </motion.div>
             ) : (
@@ -290,10 +355,20 @@ const DoctorsContainer = () => {
                 exit={{ opacity: 0 }}
                 transition={{ duration: ".2" }}
               >
-                <Button onClick={() => setShowModalSignature(true)}>Buat Tanda Tangan</Button>
+                <Button 
+                  type="dashed"
+                  className="h-auto"
+                  onClick={() => setShowModalSignature(true)}
+                  danger={!file.isValid && file.message && true}
+                >
+                  <div>
+                    <i className="far fa-signature" />
+                    <p className="mb-0">Buat tanda tangan</p>
+                  </div>
+                </Button>
+                <ErrorMessage item={file} />
               </motion.div>
             )}
-
           </Form.Item>
 
         </Form>
@@ -350,6 +425,11 @@ const DoctorsContainer = () => {
         position: absolute;
         width: 100%;
         height: 100%;
+      }
+
+      :global(.wh-inherit) {
+        width: inherit;
+        height: inherit;
       }
 
       :global(.signature-uploader .ant-upload.ant-upload-select-picture-card, .ant-upload-list-picture-card-container, .signature-uploader) {
