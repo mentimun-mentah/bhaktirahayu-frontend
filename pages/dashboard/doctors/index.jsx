@@ -2,7 +2,7 @@ import { Card } from 'react-bootstrap'
 import { motion } from 'framer-motion'
 import { useState, useRef } from 'react'
 import { SearchOutlined, EditOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Upload, Button, Modal, Space, message } from 'antd'
+import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs } from 'antd'
 
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
@@ -43,6 +43,150 @@ const urltoFile = (url, filename, mimeType) => {
 
 const addTitle = "Tambah Dokter"
 const editTitle = "Edit Dokter"
+
+
+const NameEmailComponent = ({ username, email, onChangeHandler }) => (
+  <>
+    <Form.Item 
+      label="Nama" 
+      className="mb-3"
+      validateStatus={!username.isValid && username.message && "error"}
+    >
+      <Input 
+        name="username"
+        addonBefore="dr."
+        value={username.value}
+        onChange={onChangeHandler}
+        placeholder="Nama dokter" 
+      />
+      <ErrorMessage item={username} />
+    </Form.Item>
+
+    <Form.Item 
+      label="Email"
+      className="mb-3"
+      validateStatus={!email.isValid && email.message && "error"}
+    >
+      <Input 
+        name="email"
+        type="email"
+        value={email.value}
+        onChange={onChangeHandler}
+        placeholder="Email dokter" 
+      />
+      <ErrorMessage item={email} />
+    </Form.Item>
+  </>
+)
+
+const PasswordComponent = ({ isUpdate, old_password, password, confirm_password, onChangeHandler }) => (
+  <>
+    {isUpdate && (
+      <Form.Item 
+        label="Password Lama" 
+        className="mb-3"
+        validateStatus={!old_password.isValid && old_password.message && "error"}
+      >
+        <Input.Password 
+          name="old_password"
+          value={old_password.value}
+          onChange={onChangeHandler}
+          placeholder="Password lama" 
+        />
+        <ErrorMessage item={old_password} />
+      </Form.Item>
+    )}
+
+    <Form.Item 
+      label="Password" 
+      className="mb-3"
+      validateStatus={!password.isValid && password.message && "error"}
+    >
+      <Input.Password 
+        name="password"
+        value={password.value}
+        onChange={onChangeHandler}
+        placeholder="Password dokter" 
+      />
+      <ErrorMessage item={password} />
+    </Form.Item>
+
+    <Form.Item 
+      label="Konfirmasi Password" 
+      className="mb-3"
+      validateStatus={!confirm_password.isValid && confirm_password.message && "error"}
+    >
+      <Input.Password 
+        name="confirm_password"
+        value={confirm_password.value}
+        onChange={onChangeHandler}
+        placeholder="Konfirmasi password" 
+      />
+      <ErrorMessage item={confirm_password} />
+    </Form.Item>
+  </>
+)
+
+const SignatureComponent = ({ file, loading, imagePreview, imageChangeHandler, onRemoveImageHandler, setShowModalSignature }) => (
+  <>
+    <Form.Item 
+      label="Tanda tangan" 
+      className="mb-0"
+    >
+      {file.value.length >= 1 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: ".2" }}
+        >
+          <Upload
+            accept="image/jpeg,image/png"
+            listType="picture-card"
+            className="avatar-uploader"
+            disabled={loading}
+            onPreview={imagePreview}
+            onChange={imageChangeHandler}
+            onRemove={onRemoveImageHandler}
+            fileList={file.value}
+            showUploadList={{
+              showDownloadIcon: true,
+              showRemoveIcon: true,
+              downloadIcon: <EditOutlined 
+                              title="Edit file"
+                              className="text-white wh-inherit" 
+                              onClick={() => setShowModalSignature(true)} 
+                            />
+            }}
+            // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
+          >
+            {file.value.length >= 1 ? null : uploadButton(loading)}
+          </Upload>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: ".2" }}
+        >
+          <Button 
+            type="dashed"
+            className="h-auto"
+            onClick={() => setShowModalSignature(true)}
+            danger={!file.isValid && file.message && true}
+          >
+            <div>
+              <i className="far fa-signature" />
+              <p className="mb-0">Buat tanda tangan</p>
+            </div>
+          </Button>
+          <ErrorMessage item={file} />
+        </motion.div>
+      )}
+    </Form.Item>
+  </>
+)
 
 const DoctorsContainer = () => {
   const sigCanvas = useRef()
@@ -235,143 +379,114 @@ const DoctorsContainer = () => {
         cancelText="Batal"
         closeIcon={<i className="far fa-times" />}
       >
-        <Form 
-          layout="vertical"
-          id="w-modal-body"
-        >
-          <Form.Item 
-            label="Nama" 
-            className="mb-3"
-            validateStatus={!username.isValid && username.message && "error"}
-          >
-            <Input 
-              name="username"
-              addonBefore="dr."
-              value={username.value}
-              onChange={onChangeHandler}
-              placeholder="Nama dokter" 
-            />
-            <ErrorMessage item={username} />
-          </Form.Item>
+        {isUpdate ? (
+          <Tabs defaultActiveKey="1" type="card">
+            <Tabs.TabPane tab="Profile" key="profile">
+              <Form layout="vertical">
+                <NameEmailComponent
+                  email={email}
+                  username={username}
+                  onChangeHandler={onChangeHandler}
+                />
 
-          <Form.Item 
-            label="Email"
-            className="mb-3"
-            validateStatus={!email.isValid && email.message && "error"}
-          >
-            <Input 
-              name="email"
-              type="email"
-              value={email.value}
-              onChange={onChangeHandler}
-              placeholder="Email dokter" 
-            />
-            <ErrorMessage item={email} />
-          </Form.Item>
+                <SignatureComponent 
+                  file={file}
+                  loading={loading}
+                  imagePreview={imagePreview}
+                  imageChangeHandler={imageChangeHandler}
+                  onRemoveImageHandler={onRemoveImageHandler}
+                  setShowModalSignature={setShowModalSignature}
+                />
 
-          {isUpdate && (
-            <Form.Item 
-              label="Password Lama" 
-              className="mb-3"
-              validateStatus={!old_password.isValid && old_password.message && "error"}
-            >
-              <Input.Password 
-                name="old_password"
-                value={old_password.value}
-                onChange={onChangeHandler}
-                placeholder="Password lama" 
-              />
-              <ErrorMessage item={old_password} />
-            </Form.Item>
-          )}
-
-          <Form.Item 
-            label="Password" 
-            className="mb-3"
-            validateStatus={!password.isValid && password.message && "error"}
-          >
-            <Input.Password 
-              name="password"
-              value={password.value}
-              onChange={onChangeHandler}
-              placeholder="Password dokter" 
-            />
-            <ErrorMessage item={password} />
-          </Form.Item>
-
-          <Form.Item 
-            label="Konfirmasi Password" 
-            className="mb-3"
-            validateStatus={!confirm_password.isValid && confirm_password.message && "error"}
-          >
-            <Input.Password 
-              name="confirm_password"
-              value={confirm_password.value}
-              onChange={onChangeHandler}
-              placeholder="Konfirmasi password" 
-            />
-            <ErrorMessage item={confirm_password} />
-          </Form.Item>
-
-          <Form.Item 
-            label="Tanda tangan" 
-            className="mb-0"
-            validateStatus={!password.isValid && password.message && "error"}
-          >
-            {file.value.length >= 1 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: ".2" }}
-              >
-                <Upload
-                  accept="image/jpeg,image/png"
-                  listType="picture-card"
-                  className="avatar-uploader"
-                  disabled={loading}
-                  onPreview={imagePreview}
-                  onChange={imageChangeHandler}
-                  onRemove={onRemoveImageHandler}
-                  fileList={file.value}
-                  showUploadList={{
-                    showDownloadIcon: true,
-                    showRemoveIcon: true,
-                    downloadIcon: <EditOutlined 
-                                    title="Edit file"
-                                    className="text-white wh-inherit" 
-                                    onClick={() => setShowModalSignature(true)} 
-                                  />
-                  }}
-                  // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
+                <Form.Item 
+                  label="Tanda tangan" 
+                  className="mb-0"
+                  validateStatus={!password.isValid && password.message && "error"}
                 >
-                  {file.value.length >= 1 ? null : uploadButton(loading)}
-                </Upload>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: ".2" }}
-              >
-                <Button 
-                  type="dashed"
-                  className="h-auto"
-                  onClick={() => setShowModalSignature(true)}
-                  danger={!file.isValid && file.message && true}
-                >
-                  <div>
-                    <i className="far fa-signature" />
-                    <p className="mb-0">Buat tanda tangan</p>
-                  </div>
-                </Button>
-                <ErrorMessage item={file} />
-              </motion.div>
-            )}
-          </Form.Item>
+                  {file.value.length >= 1 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: ".2" }}
+                    >
+                      <Upload
+                        accept="image/jpeg,image/png"
+                        listType="picture-card"
+                        className="avatar-uploader"
+                        disabled={loading}
+                        onPreview={imagePreview}
+                        onChange={imageChangeHandler}
+                        onRemove={onRemoveImageHandler}
+                        fileList={file.value}
+                        showUploadList={{
+                          showDownloadIcon: true,
+                          showRemoveIcon: true,
+                          downloadIcon: <EditOutlined 
+                                          title="Edit file"
+                                          className="text-white wh-inherit" 
+                                          onClick={() => setShowModalSignature(true)} 
+                                        />
+                        }}
+                        // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
+                      >
+                        {file.value.length >= 1 ? null : uploadButton(loading)}
+                      </Upload>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: ".2" }}
+                    >
+                      <Button 
+                        type="dashed"
+                        className="h-auto"
+                        onClick={() => setShowModalSignature(true)}
+                        danger={!file.isValid && file.message && true}
+                      >
+                        <div>
+                          <i className="far fa-signature" />
+                          <p className="mb-0">Buat tanda tangan</p>
+                        </div>
+                      </Button>
+                      <ErrorMessage item={file} />
+                    </motion.div>
+                  )}
+                </Form.Item>
+              </Form>
+            </Tabs.TabPane>
 
-        </Form>
+            <Tabs.TabPane tab="Password" key="password">
+              <Form layout="vertical">
+                <PasswordComponent 
+                  isUpdate={isUpdate}
+                  password={password}
+                  old_password={old_password}
+                  confirm_password={confirm_password}
+                />
+              </Form>
+            </Tabs.TabPane>
+          </Tabs>
+        ) : (
+          <Form layout="vertical">
+            <NameEmailComponent
+              email={email}
+              username={username}
+              onChangeHandler={onChangeHandler}
+            />
+            <PasswordComponent 
+              isUpdate={isUpdate}
+              password={password}
+              old_password={old_password}
+              confirm_password={confirm_password}
+            />
+
+
+          </Form>
+        )}
+
       </Modal>
 
       <Modal 
