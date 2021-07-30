@@ -32,7 +32,11 @@
     "react-component-export-image": "^1.0.6",
     "react-dom": "17.0.2",
     "react-perspective-cropper": "git+https://github.com/paulussimanjuntak/react-perspective-cropper.git",
+    "react-redux": "^7.2.4",
     "react-signature-canvas": "^1.0.3",
+    "redux": "^4.1.0",
+    "redux-devtools-extension": "^2.13.9",
+    "redux-thunk": "^2.3.0",
     "validator": "^13.6.0",
     "xlsx": "^0.17.0"
   },
