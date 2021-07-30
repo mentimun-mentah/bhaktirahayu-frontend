@@ -1,4 +1,8 @@
+import { Provider } from 'react-redux'
+
 import Head from 'next/head'
+import withReduxStore from 'lib/with-redux-store'
+
 
 import '/styles/global.css'
 import '/styles/utility.css'
@@ -6,7 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 
 import Layout from 'components/Layout'
 
-const App = ({ Component, pageProps }) => {
+const App = ({ Component, pageProps, store }) => {
   return (
     <>
       <Head>
@@ -18,11 +22,18 @@ const App = ({ Component, pageProps }) => {
         <link rel="canonical" href={process.env.NEXT_PUBLIC_DOMAIN} />
         <link rel="icon" href="/static/images/bhaktirahayu_logo.png" />
       </Head>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <Provider store={store}>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </Provider>
     </>
   )
 }
 
-export default App
+App.getInitialProps = async ({ Component, ctx }) => {
+  const pageProps = Component.getInitialProps ? await Component.getInitialProps(ctx) : {};
+  return { pageProps };
+}
+
+export default withReduxStore(App)
