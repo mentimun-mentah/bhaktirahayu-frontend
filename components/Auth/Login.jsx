@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { Form, Input, Row, Col, Button, Select } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Select } from 'antd'
 
 import { formLogin, formLoginIsValid } from 'formdata/login'
 
 import _ from 'lodash'
 import ErrorMessage from 'components/ErrorMessage'
 
-const LoginContainer = () => {
+const LoginContainer = ({ isShow }) => {
   const router = useRouter()
 
   const [loading, setLoading] = useState(false)
@@ -28,10 +29,30 @@ const LoginContainer = () => {
   }
   /* INPUT CHANGE FUNCTION */
 
-   /* SUBMIT FORM FUNCTION */
+  /* SUBMIT FORM FUNCTION */
   const onSubmitHandler = e => {
     e.preventDefault()
+
+    if(formLoginIsValid(login, setLogin)) {
+      setLoading(true)
+      const data = {
+        email: email.value,
+        password: password.value,
+      }
+      console.log(data)
+
+      setTimeout(() => {
+        setLoading(false)
+        setLogin(formLogin)
+        router.replace("/dashboard")
+      }, 2000)
+    }
   }
+  /* SUBMIT FORM FUNCTION */
+
+  useEffect(() => {
+    if(!isShow) setLogin(formLogin)
+  }, [isShow])
 
   return (
     <div>
@@ -94,8 +115,8 @@ const LoginContainer = () => {
   
 
         <Form.Item className="mb-0 mt-4">
-          <Button block type="primary" size="large" onClick={onSubmitHandler}>
-            <b>Masuk</b>
+          <Button block type="primary" size="large" className="fs-16" onClick={onSubmitHandler} disabled={loading}>
+            {loading ? <LoadingOutlined /> : "Masuk"}
           </Button>
         </Form.Item>
       </Form>

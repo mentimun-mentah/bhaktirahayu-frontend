@@ -138,31 +138,63 @@ const Dashboard = () => {
 
   return (
     <>
-      <Card className="border-0 shadow-1">
-        <Card.Body>
-          <Row gutter={[10,10]} justify="space-between">
-            <Col xl={12} lg={12}>
-              <Card.Title>Hasil Tes Rapid Antigen</Card.Title>
-            </Col>
-            <Col xl={8} lg={8}>
-              <Select 
-                value={instansi}
-                className="w-100"
-                placeholder="Pilih Instansi"
-                onChange={onChangeInstansiHandler}
-              >
-                <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
-                <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
-                <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
-                <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
-              </Select>
-            </Col>
-          </Row>
+      <Row gutter={[20,20]}>
+        <Col span={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title>Hasil Tes Rapid Antigen</Card.Title>
+                </Col>
+                <Col xl={8} lg={8}>
+                  <Select 
+                    value={instansi}
+                    className="w-100"
+                    placeholder="Pilih Instansi"
+                    onChange={onChangeInstansiHandler}
+                  >
+                    <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
+                    <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
+                    <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
+                    <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
+                  </Select>
+                </Col>
+              </Row>
 
-          <Chart options={chart.options} series={series} type="bar" height={350} />
+              <Chart options={chart.options} series={series} type="bar" height={350} />
 
-        </Card.Body>
-      </Card>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col span={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title>Hasil Tes GeNose</Card.Title>
+                </Col>
+                <Col xl={8} lg={8}>
+                  <Select 
+                    // value={instansi}
+                    className="w-100"
+                    placeholder="Pilih Instansi"
+                    // onChange={onChangeInstansiHandler}
+                  >
+                    <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
+                    <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
+                    <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
+                    <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
+                  </Select>
+                </Col>
+              </Row>
+
+              <Chart options={chart.options} series={series} type="bar" height={350} />
+
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
     </>
   )
 }

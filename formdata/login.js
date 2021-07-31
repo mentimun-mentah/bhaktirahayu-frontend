@@ -2,8 +2,8 @@ import isEmail from 'validator/lib/isEmail'
 import isLength from 'validator/lib/isLength'
 
 export const formLogin = {
-  email: { value: "", isValid: true, message: "" },
-  password: { value: "", isValid: true, message: "" },
+  email: { value: "", isValid: true, message: null },
+  password: { value: "", isValid: true, message: null },
 }
 
 export const formLoginIsValid = (state, setState) => {

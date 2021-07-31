@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { parseCookies, setCookie } from 'nookies'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
@@ -168,4 +168,4 @@ const DashboardLayout = ({ children }) => {
   )
 }
 
-export default DashboardLayout
+export default memo(DashboardLayout)

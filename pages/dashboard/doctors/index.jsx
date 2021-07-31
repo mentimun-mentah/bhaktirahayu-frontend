@@ -2,8 +2,9 @@ import { Card } from 'react-bootstrap'
 import { motion } from 'framer-motion'
 import { useState, useRef } from 'react'
 import { SearchOutlined, EditOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs } from 'antd'
+import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs, Typography } from 'antd'
 
+import { urltoFile } from 'lib/utility'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
 import { imagePreview, uploadButton } from 'lib/imageUploader'
@@ -33,17 +34,8 @@ const ProductCellEditable = ({ index, record, editable, type, children, showModa
   return <td {...restProps}>{childNode}</td>
 }
 
-const urltoFile = (url, filename, mimeType) => {
-  return (fetch(url)
-    .then(function(res){return res.arrayBuffer();})
-    .then(function(buf){return new File([buf], filename,{type:mimeType});})
-  );
-}
-
-
 const addTitle = "Tambah Dokter"
 const editTitle = "Edit Dokter"
-
 
 const NameEmailComponent = ({ username, email, onChangeHandler }) => (
   <>
@@ -196,6 +188,7 @@ const DoctorsContainer = () => {
   const [isUpdate, setIsUpdate] = useState(false)
   const [doctor, setDoctor] = useState(formDoctor)
   const [showModal, setShowModal] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile")
   const [imageList, setImageList] = useState(formImage)
   const [modalTitle, setModalTitle] = useState(addTitle)
   const [showModalSignature, setShowModalSignature] = useState(false)
@@ -373,14 +366,17 @@ const DoctorsContainer = () => {
         centered
         title={modalTitle}
         visible={showModal}
-        onOk={onSubmitHandler}
         onCancel={onCloseModalHandler}
-        okText="Simpan"
-        cancelText="Batal"
+        footer={activeTab === "password" ? null : (
+          <Space>
+            <Button onClick={onCloseModalHandler}>Batal</Button>
+            <Button onClick={onSubmitHandler} type="primary">Simpan</Button>
+          </Space>
+        )}
         closeIcon={<i className="far fa-times" />}
       >
         {isUpdate ? (
-          <Tabs defaultActiveKey="1" type="card">
+          <Tabs activeKey={activeTab} type="card" onChange={e => setActiveTab(e)}>
             <Tabs.TabPane tab="Profile" key="profile">
               <Form layout="vertical">
                 <NameEmailComponent
@@ -397,75 +393,20 @@ const DoctorsContainer = () => {
                   onRemoveImageHandler={onRemoveImageHandler}
                   setShowModalSignature={setShowModalSignature}
                 />
-
-                <Form.Item 
-                  label="Tanda tangan" 
-                  className="mb-0"
-                  validateStatus={!password.isValid && password.message && "error"}
-                >
-                  {file.value.length >= 1 ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: ".2" }}
-                    >
-                      <Upload
-                        accept="image/jpeg,image/png"
-                        listType="picture-card"
-                        className="avatar-uploader"
-                        disabled={loading}
-                        onPreview={imagePreview}
-                        onChange={imageChangeHandler}
-                        onRemove={onRemoveImageHandler}
-                        fileList={file.value}
-                        showUploadList={{
-                          showDownloadIcon: true,
-                          showRemoveIcon: true,
-                          downloadIcon: <EditOutlined 
-                                          title="Edit file"
-                                          className="text-white wh-inherit" 
-                                          onClick={() => setShowModalSignature(true)} 
-                                        />
-                        }}
-                        // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
-                      >
-                        {file.value.length >= 1 ? null : uploadButton(loading)}
-                      </Upload>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: ".2" }}
-                    >
-                      <Button 
-                        type="dashed"
-                        className="h-auto"
-                        onClick={() => setShowModalSignature(true)}
-                        danger={!file.isValid && file.message && true}
-                      >
-                        <div>
-                          <i className="far fa-signature" />
-                          <p className="mb-0">Buat tanda tangan</p>
-                        </div>
-                      </Button>
-                      <ErrorMessage item={file} />
-                    </motion.div>
-                  )}
-                </Form.Item>
               </Form>
             </Tabs.TabPane>
 
             <Tabs.TabPane tab="Password" key="password">
               <Form layout="vertical">
-                <PasswordComponent 
-                  isUpdate={isUpdate}
-                  password={password}
-                  old_password={old_password}
-                  confirm_password={confirm_password}
-                />
+                <div className="text-center">
+                  <Card className="card-token mb-3">
+                    <Typography.Paragraph className="m-b-0 text-danger force-select overflow-wrap-anywhere user-select-all">
+                      fd62fad84bbb75d2ba6a9d40ecc9568f571670371eab8efc9412ce40ce5c014awlemjlk5zgb27qel5v4jqc81bueel7ghxf6rb5gpy1hebs5iuvsq6l6kgskv6gy4ndtjjfu6d26dy0minbfnh6uvrssjdlt23uey1xgwii9z7iki05bf93igv26iz1ygz5fctns4l7yzgbpynq59ibcwxt7i026ii4yteceu47yq542
+                    </Typography.Paragraph>
+                  </Card>
+
+                  <Button>Generate Password</Button>
+                </div>
               </Form>
             </Tabs.TabPane>
           </Tabs>
@@ -482,8 +423,14 @@ const DoctorsContainer = () => {
               old_password={old_password}
               confirm_password={confirm_password}
             />
-
-
+            <SignatureComponent 
+              file={file}
+              loading={loading}
+              imagePreview={imagePreview}
+              imageChangeHandler={imageChangeHandler}
+              onRemoveImageHandler={onRemoveImageHandler}
+              setShowModalSignature={setShowModalSignature}
+            />
           </Form>
         )}
 
@@ -524,7 +471,6 @@ const DoctorsContainer = () => {
       </Modal>
 
       <style jsx>{`
-
       .square {
         position: relative;
         width: 100%;
@@ -560,6 +506,19 @@ const DoctorsContainer = () => {
           width: 150px;
           height: 150px;
         }
+      }
+
+      :global(.card-token) {
+        margin: 0 auto;
+        width: fit-content;
+        border-radius: .5rem;
+        background-color: var(--light);
+      }
+      :global(.card-token .ant-card-body) {
+        padding: 5px 10px;
+      }
+      :global(.overflow-wrap-anywhere) {
+        overflow-wrap: anywhere;
       }
 
       `}</style>

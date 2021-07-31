@@ -592,7 +592,7 @@ const Home = () => {
         onCancel={() => setIsLogin(false)}
         closeIcon={<i className="fas fa-times" />}
       >
-        <LoginContainer />
+        <LoginContainer isShow={isLogin} />
       </Modal>
 
       <style jsx>{`

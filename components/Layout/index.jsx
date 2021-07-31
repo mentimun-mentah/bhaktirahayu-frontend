@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useRouter } from 'next/router'
 
 import dynamic from 'next/dynamic'
@@ -15,4 +16,4 @@ const Layout = ({ children }) => {
   return layout
 }
 
-export default Layout
+export default memo(Layout)
