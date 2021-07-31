@@ -1,6 +1,6 @@
 const withAntdLess = require('next-plugin-antd-less')
 const { theme } = require('./styles/theme')
-const imageDomains = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME.split(" ")
+const imageDomains = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME.split(" ") || ""
 
 module.exports = withAntdLess({
   modifyVars: theme,
