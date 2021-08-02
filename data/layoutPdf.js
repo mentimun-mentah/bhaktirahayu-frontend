@@ -129,7 +129,7 @@ export const headerGilimanukGenose = doc => {
   doc.setDrawColor(60, 175, 239)
   doc.setLineWidth(1)
   // doc.line(30, 84, 390, 84)
-  doc.line(40, 221, 384.5, 221)
+  doc.line(40, 236, 384.5, 236)
 
   doc.addImage(img_logo_genose, 'png', 335, 120, 40, 28)
   return doc
@@ -138,7 +138,7 @@ export const headerGilimanukGenose = doc => {
 export const saran = (doc, h) => {
   const width = doc.internal.pageSize.getWidth()
 
-  let hi = 250
+  let hi = 265
   if(h) hi = h
 
   doc.setFontSize(8)
@@ -153,7 +153,7 @@ export const saran = (doc, h) => {
 }
 
 export const footerPdf = (doc, h) => {
-  let hi = 350
+  let hi = 365
   if(h) hi = h
 
   /* FOOTER SIGNATURE */
