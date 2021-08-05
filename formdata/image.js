@@ -2,7 +2,7 @@ export const formImage = {
   file: { value: [], isValid: true, message: null },
 }
 
-export const formImageIsValidMsg = (state, setState, msg = "Gambar tidak boleh kosong") => {
+export const formImageIsValidMsg = (state, setState, msg = "Image can't be empty") => {
   const file = { ...state.file };
   let isGood = true;
 
@@ -21,7 +21,7 @@ export const formImageIsValidMsg = (state, setState, msg = "Gambar tidak boleh k
   return isGood;
 }
 
-export const formImageIsValid = (state, setState, msg = "Gambar tidak boleh kosong") => {
+export const formImageIsValid = (state, setState, msg = "Image can't be empty") => {
   const file = { ...state.file };
   let isGood = true;
 

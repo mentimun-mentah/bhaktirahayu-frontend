@@ -153,8 +153,20 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
                 </Select>
               </Form.Item>
             </Col>
-            {/* <Col xl={12} lg={12} md={12} sm={24} xs={24}> */}
-            <Col xl={24} lg={24} md={24} sm={24} xs={24}>
+            <Col xl={12} lg={12} md={12} sm={24} xs={24}>
+              <Form.Item label="Lokasi Pelayanan">
+                <Select 
+                  showSearch 
+                  defaultValue={[]}
+                  className="w-100"
+                  placeholder="Lokasi pelayanan"
+                >
+                  <Select.Option value="hotel">Hotel</Select.Option>
+                  <Select.Option value="lapangan">Lapangan</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Penjamin">
                 <Input
                   name="incharge"

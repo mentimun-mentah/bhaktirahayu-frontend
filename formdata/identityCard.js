@@ -11,7 +11,7 @@ export const formIdentityCardIsValid = (state, setState) => {
   if(!isIn(kind.value, ['ktp', 'kis'])) {
     isGood = false
     kind.isValid = false
-    kind.message = "Tipe tidak valid!"
+    kind.message = "Invalid card type"
   }
 
   if(!isGood) setState({ ...state, kind })

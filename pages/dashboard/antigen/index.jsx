@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
-import { Form, Input, Row, Col, Space, DatePicker, AutoComplete, Grid } from 'antd'
+import { withAuth } from 'lib/withAuth'
+import { Form, Input, Row, Col, Space, DatePicker, AutoComplete, Grid, Tooltip, Divider, Popconfirm, message } from 'antd'
 
 import { formPatient } from 'formdata/patient'
 import { ExportToExcel } from 'lib/exportToExcel'
@@ -14,19 +15,27 @@ import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import pdfGenerator from 'lib/antigenGenerator'
 import DrawerPatient from 'components/DrawerPatient'
+import DrawerDetailPatient from 'components/DrawerDetailPatient'
 
 moment.locale('id')
 const useBreakpoint = Grid.useBreakpoint
 
-const ProductCellEditable = ({ index, record, editable, type, children, onShowDrawer, ...restProps }) => {
+const ProductCellEditable = ({ index, record, editable, type, children, onShowDrawer, onShowDetailPatient, ...restProps }) => {
   let childNode = children
 
   if(editable){
     childNode = (
       type === "action" && (
         <Space>
-          <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
-          <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
+          <Tooltip placement="top" title="Ubah">
+            <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
+          </Tooltip>
+          <Tooltip placement="top" title="Hasil">
+            <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
+          </Tooltip>
+          <Tooltip placement="top" title="Riwayat">
+            <a onClick={onShowDetailPatient}><i className="fal fa-clipboard-list text-center" /></a>
+          </Tooltip>
         </Space>
       )
     )
@@ -38,8 +47,9 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
 const AntigenContainer = () => {
   const screens = useBreakpoint()
   const [page, setPage] = useState(1)
-  const [showDrawer, setShowDrawer] = useState(false)
   const [patient, setPatient] = useState(formPatient)
+  const [showDrawer, setShowDrawer] = useState(false)
+  const [showDetailPatient, setShowDetailPatient] = useState(false)
 
   const columnsPatient = columnsReports.map(col => {
     if (!col.editable) return col;
@@ -49,7 +59,8 @@ const AntigenContainer = () => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
-        onShowDrawer: onEditPatientHandler
+        onShowDrawer: onEditPatientHandler,
+        onShowDetailPatient: () => setShowDetailPatient(true)
       })
     }
   })
@@ -202,8 +213,13 @@ const AntigenContainer = () => {
         onClose={onClosePatientDrawerHandler}
       />
 
+      <DrawerDetailPatient
+        visible={showDetailPatient} 
+        onClose={() => setShowDetailPatient(false)}
+      />
+
     </>
   )
 }
 
-export default AntigenContainer
+export default withAuth(AntigenContainer)

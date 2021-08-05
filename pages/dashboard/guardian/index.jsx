@@ -1,24 +1,41 @@
-import { useState } from 'react'
 import { Card } from 'react-bootstrap'
+import { withAuth } from 'lib/withAuth'
+import { useState, useEffect } from 'react'
 import { SearchOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Button, Modal, Space } from 'antd'
+import { useSelector, useDispatch } from 'react-redux'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message } from 'antd'
 
-import { formGuardian, formGuardianIsValid } from 'formdata/guardian'
-import { columns_guardian, data_guardian } from 'data/tableGuardian'
+import { formGuardian } from 'formdata/guardian'
+import { columns_guardian } from 'data/tableGuardian'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
+import axios from 'lib/axios'
+import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
-import ErrorMessage from 'components/ErrorMessage'
+import ModalGuardian from 'components/Guardian/ModalGuardian'
 
-const ProductCellEditable = ({ index, record, editable, type, showModal, children, ...restProps }) => {
+const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, onEditHandler, children, ...restProps }) => {
   let childNode = children
 
   if(editable){
     childNode = (
       type === "action" && (
         <Space>
-          <a onClick={showModal}><i className="fal fa-edit text-center" /></a>
-          <a onClick={() => {}}><i className="fal fa-trash-alt text-center" /></a>
+          <Tooltip placement="top" title="Ubah">
+            <a onClick={() => onEditHandler(record)}><i className="fal fa-edit text-center" /></a>
+          </Tooltip>
+          <Tooltip placement="top" title="Hapus">
+            <Popconfirm
+              placement="bottomRight"
+              title="Hapus data ini?"
+              onConfirm={() => onDeleteHandler(record.guardians_id)}
+              okText="Ya"
+              cancelText="Batal"
+            >
+              <a><i className="fal fa-trash-alt text-danger text-center" /></a>
+            </Popconfirm>
+          </Tooltip>
         </Space>
       )
     )
@@ -27,32 +44,29 @@ const ProductCellEditable = ({ index, record, editable, type, showModal, childre
   return <td {...restProps}>{childNode}</td>
 }
 
+const per_page = 10
 const addTitle = "Tambah Penjamin"
 const editTitle = "Edit Penjamin"
+message.config({ maxCount: 1 })
 
 const GuardiansContainer = () => {
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch()
+
+  const guardians = useSelector(state => state.guardian.guardian)
+
+  const [q, setQ] = useState("")
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [page, setPage] = useState(guardians?.page)
   const [guardian, setGuardian] = useState(formGuardian)
   const [modalTitle, setModalTitle] = useState(addTitle)
 
-  const { username } = guardian
-
-  /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
-    const name = e.target.name
-    const value = e.target.value
-
-    const data = {
-      ...guardian,
-      [name]: { ...guardian[name], value: value, isValid: true, message: null }
-    }
-
-    setGuardian(data)
+  const onCloseModalHandler = () => {
+    setShowModal(false)
+    setGuardian(formGuardian)
+    setModalTitle(addTitle)
+    if(isUpdate) setIsUpdate(false)
   }
-  /* INPUT CHANGE FUNCTION */
 
   const columnsGuardians = columns_guardian.map(col => {
     if (!col.editable) return col;
@@ -62,26 +76,79 @@ const GuardiansContainer = () => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
-        showModal: () => {
-          setIsUpdate(true)
-          setShowModal(true)
-          setModalTitle(editTitle)
-        }
+        onDeleteHandler: id => onDeleteHandler(id),
+        onEditHandler: record => onEditHandler(record),
       })
     }
   })
 
-  const onSubmitHandler = e => {
-    e.preventDefault()
-    if(formGuardianIsValid(guardian, setGuardian, isUpdate)) {
-      setLoading(true)
-      const data = {
-        username: username.value,
-      }
-
-      console.log(data)
+  const onEditHandler = (record) => {
+    const data = {
+      id: { value: record.guardians_id, isValid: true, message: null },
+      name: { value: record.guardians_name, isValid: true, message: null },
     }
+    setGuardian(data)
+    setIsUpdate(true)
+    setShowModal(true)
+    setModalTitle(editTitle)
   }
+
+  const onDeleteHandler = (id) => {
+    let queryString = {}
+    queryString["page"] = page
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    axios.delete(`/guardians/delete/${id}`, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getGuardian({ ...queryString }))
+        formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail == signature_exp){
+          dispatch(actions.getGuardian({ ...queryString }))
+          formErrorMessage('success', "Successfully delete the guardian.")
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  useEffect(() => {
+    let queryString = {}
+    queryString["page"] = page
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    dispatch(actions.getGuardian({...queryString}))
+  }, [page])
+
+  useEffect(() => {
+    setPage(1)
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    dispatch(actions.getGuardian({...queryString}))
+  }, [q])
+
+  useEffect(() => {
+    if(guardians && guardians.data && guardians.data.length < 1 && guardians.page > 1 && guardians.total > 1){
+      setPage(guardians.page - 1)
+    }
+  }, [guardians])
+
+
 
   return (
     <>
@@ -109,7 +176,11 @@ const GuardiansContainer = () => {
 
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
-              <Input placeholder="Cari penjamin" prefix={<SearchOutlined />} />
+              <Input 
+                placeholder="Cari penjamin"
+                prefix={<SearchOutlined />} 
+                onChange={e => setQ(e.target.value)}
+              />
             </Form.Item>
           </Form>
 
@@ -118,61 +189,42 @@ const GuardiansContainer = () => {
             size="middle"
             pagination={false} 
             columns={columnsGuardians}
-            dataSource={data_guardian} 
+            dataSource={guardians?.data} 
+            rowKey={record => record.guardians_id}
             scroll={{ y: 485, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
-          <Card.Body className="pb-2 px-0">
-            <Row gutter={[10,10]} justify="space-between">
-              <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-                <div className="text-center">
-                  <Pagination 
-                    current={page} 
-                    hideOnSinglePage 
-                    pageSize={10}
-                    total={304} 
-                    goTo={val => setPage(val)} 
-                  />
-                </div>
-              </Col>
-            </Row>
-          </Card.Body>
+          <Row gutter={[10,10]} justify="space-between">
+            <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+              <div className="text-center">
+                <Pagination 
+                  className="mt-3"
+                  current={page} 
+                  hideOnSinglePage 
+                  pageSize={per_page}
+                  total={guardians?.total}
+                  goTo={val => setPage(val)} 
+                />
+              </div>
+            </Col>
+          </Row>
 
         </Card.Body>
       </Card>
 
 
-      <Modal 
-        centered
+      <ModalGuardian 
         title={modalTitle}
         visible={showModal}
-        onOk={onSubmitHandler}
-        onCancel={() => setShowModal(false)}
-        okText="Simpan"
-        cancelText="Batal"
-        closeIcon={<i className="far fa-times" />}
-      >
-        <Form layout="vertical">
-
-          <Form.Item 
-            className="mb-0"
-            label="Nama Penjamin"
-            validateStatus={!username.isValid && username.message && "error"}
-          >
-            <Input 
-              name="username"
-              value={username.value}
-              onChange={onChangeHandler}
-              placeholder="Nama penjamin" 
-            />
-            <ErrorMessage item={username} />
-          </Form.Item>
-
-        </Form>
-      </Modal>
+        isUpdate={isUpdate}
+        dataGuardian={guardian}
+        setIsUpdate={setIsUpdate}
+        getGuardian={() => dispatch(actions.getGuardian({ page: 1, per_page: per_page, q: '' }))}
+        onCloseHandler={onCloseModalHandler}
+      />
     </>
   )
 }
 
-export default GuardiansContainer
+export default withAuth(GuardiansContainer)

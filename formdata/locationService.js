@@ -1,20 +1,21 @@
 import isEmpty from 'validator/lib/isEmpty'
 
 export const formLocation = {
-  location: { value: "", isValid: true, message: null },
+  id: { value: "", isValid: true, message: null },
+  name: { value: "", isValid: true, message: null },
 }
 
 export const formLocationIsValid = (state, setState) => {
-  const location = { ...state.location }
+  const name = { ...state.name }
   let isGood = true
 
-  if(isEmpty(location?.value)) {
+  if(isEmpty(name?.value)) {
     isGood = false
-    location.isValid = false
-    location.message = "Value can't be empty"
+    name.isValid = false
+    name.message = "Value can't be empty"
   }
 
-  if(!isGood) setState({ ...state, location })
+  if(!isGood) setState({ ...state, name })
 
   return isGood
 }

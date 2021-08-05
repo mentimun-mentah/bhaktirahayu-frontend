@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { Form, Input, Row, Col, Button, Select } from 'antd'
+import { useDispatch } from 'react-redux'
+import { LoadingOutlined } from '@ant-design/icons'
+import { Form, Input, Button, Select } from 'antd'
 
+import { resNotification } from 'lib/axios'
 import { formLogin, formLoginIsValid } from 'formdata/login'
 
 import _ from 'lodash'
+import axios from 'lib/axios'
+import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
 
-const LoginContainer = () => {
+const LoginContainer = ({ isShow, onClose }) => {
   const router = useRouter()
+  const dispatch = useDispatch()
 
   const [loading, setLoading] = useState(false)
   const [login, setLogin] = useState(formLogin)
@@ -28,10 +34,53 @@ const LoginContainer = () => {
   }
   /* INPUT CHANGE FUNCTION */
 
-   /* SUBMIT FORM FUNCTION */
+  /* SUBMIT FORM FUNCTION */
   const onSubmitHandler = e => {
     e.preventDefault()
+
+    if(formLoginIsValid(login, setLogin)) {
+      setLoading(true)
+      const data = {
+        email: email.value,
+        password: password.value,
+      }
+
+      axios.post("/users/login", data)
+        .then(res => {
+          resNotification('success', 'Success', res.data.detail, 'topRight')
+          onClose()
+          setLoading(false)
+          dispatch(actions.getUser())
+          router.replace("/dashboard")
+        })
+        .catch((err) => {
+          console.log(err.response)
+          setLoading(false)
+          const state = _.cloneDeep(login)
+          const errDetail = err.response?.data.detail;
+          if (typeof errDetail === "string") {
+            state.password.value = state.password.value;
+            state.password.isValid = false;
+            state.password.message = errDetail;
+          } else {
+            errDetail?.map((data) => {
+              const key = data.loc[data.loc.length - 1];
+              if (state[key]) {
+                state[key].value = state[key].value;
+                state[key].isValid = false;
+                state[key].message = data.msg;
+              }
+            });
+          }
+          setLogin(state)
+        })
+    }
   }
+  /* SUBMIT FORM FUNCTION */
+
+  useEffect(() => {
+    if(!isShow) setLogin(formLogin)
+  }, [isShow])
 
   return (
     <div>
@@ -70,7 +119,10 @@ const LoginContainer = () => {
           <ErrorMessage item={password} />
         </Form.Item>
 
-        <Form.Item label="Pilih Instansi">
+        <Form.Item 
+          label="Pilih Instansi"
+          className="mb-3"
+        >
           <Select 
             showSearch 
             defaultValue={[]}
@@ -91,11 +143,28 @@ const LoginContainer = () => {
             </Select.Option>
           </Select>
         </Form.Item>
-  
+
+        <Form.Item 
+          label="Pilih Lokasi"
+        >
+          <Select 
+            showSearch 
+            defaultValue={[]}
+            className="w-100 select-py-2 with-input"
+            placeholder="Pilih Instansi"
+          >
+            <Select.Option value="Hotel">
+              <span className="va-sub">Hotel</span>
+            </Select.Option>
+            <Select.Option value="Lapangan">
+              <span className="va-sub">Lapangan</span>
+            </Select.Option>
+          </Select>
+        </Form.Item>
 
         <Form.Item className="mb-0 mt-4">
-          <Button block type="primary" size="large" onClick={onSubmitHandler}>
-            <b>Masuk</b>
+          <Button block type="primary" size="large" className="fs-16" onClick={onSubmitHandler} disabled={loading}>
+            {loading ? <LoadingOutlined /> : "Masuk"}
           </Button>
         </Form.Item>
       </Form>

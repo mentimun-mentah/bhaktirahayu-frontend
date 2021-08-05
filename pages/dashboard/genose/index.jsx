@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
+import { withAuth } from 'lib/withAuth'
 import { Form, Input, Row, Col, Select, Space } from 'antd'
 
 import { formPatient } from 'formdata/patient'
@@ -137,4 +138,4 @@ const GenoseContainer = () => {
   )
 }
 
-export default GenoseContainer
+export default withAuth(GenoseContainer)
