@@ -7,7 +7,7 @@ import { urltoFile } from 'lib/utility'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
 import { imagePreview, uploadButton, imageValidation } from 'lib/imageUploader'
-import { jsonHeaderHandler, formErrorMessage, errEmail, signature_exp } from 'lib/axios'
+import { jsonHeaderHandler, formHeaderHandler, formErrorMessage, errEmail, signature_exp } from 'lib/axios'
 
 import _ from 'lodash'
 import isIn from 'validator/lib/isIn'
@@ -248,7 +248,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
         }
       })
 
-      axios[config.method](config.url, formData, jsonHeaderHandler())
+      axios[config.method](config.url, formData, formHeaderHandler())
         .then(res => {
           getDoctor()
           formErrorMessage('success', res.data?.detail)

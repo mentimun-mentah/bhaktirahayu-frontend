@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect, memo } from 'react'
-import { parseCookies, setCookie } from 'nookies'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
 
@@ -16,7 +15,6 @@ const DashboardLayout = ({ children }) => {
   const router = useRouter()
   const screens = useBreakpoint()
 
-  const [role, setRole] = useState("admin")
   const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(DASHBOARD)
@@ -39,11 +37,6 @@ const DashboardLayout = ({ children }) => {
     }
     setSelected(data)
   }, [router])
-
-  useEffect(() => {
-    const cookies = parseCookies();
-    setRole(cookies.role || "")
-  }, [])
 
   const renderSidemenu = () => {
     return dashboard_routes.map(route => (

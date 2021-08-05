@@ -1,33 +1,42 @@
 import { Card } from 'react-bootstrap'
-import { motion } from 'framer-motion'
 import { withAuth } from 'lib/withAuth'
-import { useState, useRef } from 'react'
-import { SearchOutlined, EditOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs } from 'antd'
+import { useState, useEffect, useRef } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Form, Input, Row, Col, Button, Modal, Space, message } from 'antd'
 
 import { urltoFile } from 'lib/utility'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
-import { imagePreview, uploadButton } from 'lib/imageUploader'
+import { imagePreview } from 'lib/imageUploader'
+import { formConfigPassword, formConfigPasswordIsValid } from 'formdata/password'
+import { jsonHeaderHandler, formHeaderHandler, formErrorMessage, errEmail, signature_exp } from 'lib/axios'
 
 import _ from 'lodash'
+import isIn from 'validator/lib/isIn'
 import SignatureCanvas from 'react-signature-canvas'
 
+import axios from 'lib/axios'
+import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
+import ModalPassword from 'components/Profile/ModalPassword'
+import SignatureComponent from 'components/Profile/Signature'
 
 const ProfileContainer = () => {
+  const dispatch = useDispatch()
   const sigCanvas = useRef()
+  const user = useSelector(state => state.auth.user)
+  const isAdmin = user?.role === "admin"
 
-  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [isUpdate, setIsUpdate] = useState(false)
   const [doctor, setDoctor] = useState(formDoctor)
-  const [showModal, setShowModal] = useState(false)
   const [imageList, setImageList] = useState(formImage)
   const [showModalSignature, setShowModalSignature] = useState(false)
+  const [formPassword, setFormPassword] = useState(formConfigPassword)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const { file } = imageList
-  const { username, email, password, old_password, confirm_password } = doctor
+  const { username, email } = doctor
+  const { password, old_password, confirm_password } = formPassword
 
   /* IMAGE CHANGE FUNCTION */
   const imageChangeHandler = ({ fileList: newFileList }) => {
@@ -40,18 +49,23 @@ const ProfileContainer = () => {
   /* IMAGE CHANGE FUNCTION */
 
   /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
+  const onChangeHandler = (e, state, setState) => {
     const name = e.target.name
     const value = e.target.value
 
     const data = {
-      ...doctor,
-      [name]: { ...doctor[name], value: value, isValid: true, message: null }
+      ...state,
+      [name]: { ...state[name], value: value, isValid: true, message: null }
     }
 
-    setDoctor(data)
+    setState(data)
   }
   /* INPUT CHANGE FUNCTION */
+
+  const onCloseModalSignatureHandler = () => {
+    onRemoveImageHandler()
+    setShowModalSignature(false)
+  }
 
   const onSaveSignatureHandler = async () => {
     const dataUrl = sigCanvas.current.getSignaturePad().toDataURL('image/png')
@@ -65,7 +79,8 @@ const ProfileContainer = () => {
       lastModified: new Date().getTime(),
       lastModifiedDate: new Date(),
       originFileObj: file,
-      thumbUrl: dataUrl
+      thumbUrl: dataUrl,
+      sigCanvas: true
     }
     const data = {
       ...imageList,
@@ -85,22 +100,159 @@ const ProfileContainer = () => {
     sigCanvas.current?.clear()
   }
 
-  const onCloseModalHandler = e => {
-    e.preventDefault()
-    setShowModal(false)
-    setDoctor(formDoctor)
-    setImageList(formImage)
-    sigCanvas.current?.clear()
+  const onCloseModalHandler = () => {
+    setShowConfirmPassword(false)
   }
 
-  const onSubmitHandler = e => {
-    e.preventDefault()
+  const onSubmitHandler = () => {
+    setLoading(true)
+
+    let name = "dr. " + username.value
+    if(isAdmin) name = username.value
+
+    const formData = new FormData()
+    formData.append("username", name)
+    formData.append("email", email.value)
+
+    if(!isAdmin) {
+      _.forEach(file.value, f => {
+        if(!f.hasOwnProperty('url')){
+          formData.append('image', f.originFileObj)
+        }
+      })
+    }
+
+    axios.put('users/update-account', formData, formHeaderHandler())
+      .then(res => {
+        setLoading(false)
+        dispatch(actions.getUser())
+        formErrorMessage('success', res.data?.detail)
+      })
+      .catch(err => {
+        setLoading(false)
+
+        const state = _.cloneDeep(doctor)
+        const stateImage = _.cloneDeep(imageList)
+        const errDetail = err.response?.data.detail
+
+        if(errDetail == signature_exp) {
+          dispatch(actions.getUser())
+          formErrorMessage("success", "Success updated your account.")
+        }
+        else if(typeof errDetail === "string" && isIn(errDetail, errEmail)) {
+          state.email.value = state.email.value
+          state.email.isValid = false
+          state.email.message = errDetail
+        }
+        else if(typeof(errDetail) === "string" && !isIn(errDetail, errEmail)) {
+          formErrorMessage("error", errDetail)
+        }
+        else {
+          errDetail.map((data) => {
+            const key = data.loc[data.loc.length - 1];
+            if(state[key]) {
+              state[key].isValid = false
+              state[key].message = data.msg
+            }
+            else if(key === "image") {
+              stateImage.file.isValid = false
+              stateImage.file.message = data.msg
+            }
+          });
+        }
+        setDoctor(state)
+        setImageList(stateImage)
+      })
   }
+
+  const onSubmitProfileHandler = e => {
+    e?.preventDefault()
+    if(isAdmin) {
+      if(formDoctorIsValid(doctor, setDoctor)) {
+        onSubmitHandler()
+      }
+    } 
+    else {
+      if(formDoctorIsValid(doctor, setDoctor) && formImageIsValid(imageList, setImageList, "Pastikan value tidak kosong")) {
+        onSubmitHandler()
+      }
+    }
+  }
+
+  const onSubmitPasswordHandler = e => {
+    e?.preventDefault()
+    if(formConfigPasswordIsValid(formPassword, setFormPassword)) {
+      const data = {
+        old_password: old_password.value,
+        password: password.value,
+        confirm_password: confirm_password.value
+      }
+
+      setLoading(true)
+      axios.put('/users/update-password', data, jsonHeaderHandler())
+        .then(res => {
+          setLoading(false)
+          setFormPassword(formConfigPassword)
+          formErrorMessage('success', res.data?.detail)
+        })
+        .catch(err => {
+          setLoading(false)
+          const state = _.cloneDeep(formPassword)
+          const errDetail = err.response?.data.detail
+
+          const freshRequired = "Fresh token required"
+          if (typeof errDetail === "string" && errDetail === freshRequired) {
+            setShowConfirmPassword(true)
+          }
+          else if (typeof errDetail === "string" && errDetail) {
+            state.old_password.value = state.old_password.value
+            state.old_password.isValid = false
+            state.old_password.message = errDetail
+          }
+          else {
+            errDetail.map((data) => {
+              const key = data.loc[data.loc.length - 1]
+              if (state[key]) {
+                state[key].value = state[key].value
+                state[key].isValid = false
+                state[key].message = data.msg
+              }
+            });
+          }
+          setFormPassword(state)
+        })
+    }
+  }
+
+  useEffect(() => {
+    if(user){
+      const realName = user.username.split(" ")
+      realName.shift()
+
+      const dataDoctor = {
+        ...doctor,
+        username: { value: isAdmin ? user.username : realName.join(" "), isValid: true, message: null },
+        email: { value: user.email, isValid: true, message: null },
+      };
+      setDoctor(dataDoctor)
+
+      const imageData = {
+        file: { 
+          value: [{
+            uid: -Math.abs(Math.random()),
+            url: `${process.env.NEXT_PUBLIC_API_URL}/static/signature/${user.signature}`
+          }], 
+          isValid: true, message: null 
+        },
+      }
+      setImageList(imageData)
+    }
+  }, [user])
 
   return (
     <>
       <Row gutter={[20,20]}>
-        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
+        <Col span={24}>
           <Card className="border-0 shadow-1 h-100">
             <Card.Header className="bg-transparent border-bottom">
               <Card.Title className="mb-0">Akun Saya</Card.Title>
@@ -110,7 +262,6 @@ const ProfileContainer = () => {
             </Card.Header>
 
             <Card.Body>
-
               <Form layout="vertical">
 
                 <Form.Item 
@@ -120,10 +271,10 @@ const ProfileContainer = () => {
                 >
                   <Input 
                     name="username"
-                    addonBefore="dr."
+                    addonBefore={isAdmin ? false : 'dr.'}
                     value={username.value}
-                    onChange={onChangeHandler}
-                    placeholder="Nama dokter" 
+                    onChange={e => onChangeHandler(e, doctor, setDoctor)}
+                    placeholder="Nama" 
                   />
                   <ErrorMessage item={username} />
                 </Form.Item>
@@ -137,76 +288,31 @@ const ProfileContainer = () => {
                     name="email"
                     type="email"
                     value={email.value}
-                    onChange={onChangeHandler}
-                    placeholder="Email dokter" 
+                    onChange={e => onChangeHandler(e, doctor, setDoctor)}
+                    placeholder="Email" 
                   />
                   <ErrorMessage item={email} />
                 </Form.Item>
-
-                <Form.Item 
-                  label="Tanda tangan" 
-                  className="mb-3"
-                >
-                  {file.value.length >= 1 ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: ".2" }}
-                    >
-                      <Upload
-                        accept="image/jpeg,image/png"
-                        listType="picture-card"
-                        className="avatar-uploader"
-                        disabled={loading}
-                        onPreview={imagePreview}
-                        onChange={imageChangeHandler}
-                        onRemove={onRemoveImageHandler}
-                        fileList={file.value}
-                        showUploadList={{
-                          showDownloadIcon: true,
-                          showRemoveIcon: true,
-                          downloadIcon: <EditOutlined 
-                                          title="Edit file"
-                                          className="text-white wh-inherit" 
-                                          onClick={() => setShowModalSignature(true)} 
-                                        />
-                        }}
-                        // beforeUpload={(f) => imageValidation(f, "image", "/plants/create", "post", setLoading, () => {}, "")}
-                      >
-                        {file.value.length >= 1 ? null : uploadButton(loading)}
-                      </Upload>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: ".2" }}
-                    >
-                      <Button 
-                        type="dashed"
-                        className="h-auto"
-                        onClick={() => setShowModalSignature(true)}
-                        danger={!file.isValid && file.message && true}
-                      >
-                        <div>
-                          <i className="far fa-signature" />
-                          <p className="mb-0">Buat tanda tangan</p>
-                        </div>
-                      </Button>
-                      <ErrorMessage item={file} />
-                    </motion.div>
-                  )}
-                </Form.Item>
+                
+                {!isAdmin && (
+                  <SignatureComponent 
+                    file={file}
+                    loading={loading}
+                    setLoading={setLoading}
+                    imagePreview={imagePreview}
+                    imageChangeHandler={imageChangeHandler}
+                    onRemoveImageHandler={onRemoveImageHandler}
+                    setShowModalSignature={setShowModalSignature}
+                  />
+                )}
 
                 <Form.Item className="m-b-0">
                   <Button 
-                    // size="large"
                     type="primary" 
+                    loading={loading}
+                    disabled={loading}
                     className="p-l-30 p-r-30" 
-                    // disabled={loading}
-                    // onClick={onSubmitHandler}
+                    onClick={onSubmitProfileHandler}
                   >
                     Simpan
                   </Button>
@@ -217,7 +323,8 @@ const ProfileContainer = () => {
           </Card>
         </Col>
 
-        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
+
+        <Col span={24}>
           <Card className="border-0 shadow-1 h-100">
             <Card.Header className="bg-transparent border-bottom">
               <Card.Title className="mb-0">Atur Kata Sandi</Card.Title>
@@ -229,25 +336,55 @@ const ProfileContainer = () => {
             <Card.Body>
               <Form layout="vertical">
 
-                <Form.Item label="Password Lama" className="mb-3">
-                  <Input.Password placeholder="Password Lama" />
+                <Form.Item 
+                  className="mb-3"
+                  label="Password Lama" 
+                  validateStatus={!old_password.isValid && old_password.message && "error"}
+                >
+                  <Input.Password 
+                    name="old_password"
+                    value={old_password.value}
+                    placeholder="Password Lama" 
+                    onChange={e => onChangeHandler(e, formPassword, setFormPassword)}
+                  />
+                  <ErrorMessage item={old_password} />
                 </Form.Item>
 
-                <Form.Item label="Password Baru" className="mb-3">
-                  <Input.Password placeholder="Password Baru" />
+                <Form.Item 
+                  className="mb-3"
+                  label="Password Baru" 
+                  validateStatus={!password.isValid && password.message && "error"}
+                >
+                  <Input.Password 
+                    name="password"
+                    value={password.value}
+                    placeholder="Password Baru" 
+                    onChange={e => onChangeHandler(e, formPassword, setFormPassword)}
+                  />
+                  <ErrorMessage item={password} />
                 </Form.Item>
 
-                <Form.Item label="Konfirmasi Password" className="mb-3">
-                  <Input.Password placeholder="Konfirmasi Password" />
+                <Form.Item 
+                  className="mb-3"
+                  label="Konfirmasi Password" 
+                  validateStatus={!confirm_password.isValid && confirm_password.message && "error"}
+                >
+                  <Input.Password 
+                    name="confirm_password"
+                    value={confirm_password.value}
+                    placeholder="Konfirmasi Password" 
+                    onChange={e => onChangeHandler(e, formPassword, setFormPassword)}
+                  />
+                  <ErrorMessage item={confirm_password} />
                 </Form.Item>
 
                 <Form.Item className="m-b-0">
                   <Button 
-                    // size="large"
                     type="primary" 
+                    loading={loading}
+                    disabled={loading}
                     className="p-l-30 p-r-30" 
-                    // disabled={loading}
-                    // onClick={onSubmitHandler}
+                    onClick={onSubmitPasswordHandler}
                   >
                     Simpan
                   </Button>
@@ -261,13 +398,11 @@ const ProfileContainer = () => {
 
       <Modal 
         centered
-        className="modal-close-disabled"
         title={<span className="user-select-none">Tanda Tangan</span>}
         visible={showModalSignature}
-        onOk={onSubmitHandler}
-        onCancel={() => {}}
+        onCancel={onCloseModalSignatureHandler}
         footer={false}
-        closeIcon={<i className="far fa-times text-white hover-normal" />}
+        closeIcon={<i className="far fa-times" />}
       >
         <div className="square border">
           <SignatureCanvas 
@@ -278,20 +413,21 @@ const ProfileContainer = () => {
         </div>
         <div className="text-center mt-4">
           <Space>
-            <Button 
-              onClick={() => sigCanvas.current.clear()}
-            >
+            <Button onClick={() => sigCanvas.current.clear()}>
               Hapus
             </Button>
-            <Button 
-              type="primary"
-              onClick={onSaveSignatureHandler}
-            >
+            <Button type="primary" onClick={onSaveSignatureHandler}>
               Simpan
             </Button>
           </Space>
         </div>
       </Modal>
+
+      <ModalPassword 
+        visible={showConfirmPassword}
+        onCloseHandler={onCloseModalHandler}
+        onSubmitPasswordHandler={onSubmitPasswordHandler}
+      />
 
       <style jsx>{`
       .square {
@@ -315,22 +451,6 @@ const ProfileContainer = () => {
         width: inherit;
         height: inherit;
       }
-
-      :global(.signature-uploader .ant-upload.ant-upload-select-picture-card, .ant-upload-list-picture-card-container, .signature-uploader) {
-        width: 200px;
-        height: 200px;
-      }
-      :global(.signature-uploader .ant-upload-list-picture-card .ant-upload-list-item-thumbnail, .ant-upload-list-picture-card .ant-upload-list-item-thumbnail img) {
-        object-fit: cover;
-      }
-
-      @media only screen and (max-width: 320px) { 
-        :global(.signature-uploader .ant-upload.ant-upload-select-picture-card, .ant-upload-list-picture-card-container, .signature-uploader) {
-          width: 150px;
-          height: 150px;
-        }
-      }
-
       `}</style>
     </>
   )

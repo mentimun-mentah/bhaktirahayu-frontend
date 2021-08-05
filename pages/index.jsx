@@ -389,9 +389,9 @@ const Home = () => {
                               </Form>
 
                               <h5 className="mb-1 mt-2">Sekarang foto {kind.value.toUpperCase()} kamu 👤 </h5>
-                              <p className="text-muted text-left">
+                              <p className="text-muted text-center">
                                 Kamu perlu mengupload foto {kind.value.toUpperCase()} terlebih dahulu, 
-                                agar kami dapat memverifikasi identitasmu ✌
+                                agar kami bisa mendapatkan identitasmu ✌
                               </p>
                             </div>
                           )}
