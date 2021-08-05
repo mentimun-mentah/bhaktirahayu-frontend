@@ -3,21 +3,19 @@ import { withAuth } from 'lib/withAuth'
 import { useState, useEffect } from 'react'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Modal, Space, Tooltip, Popconfirm, message } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message } from 'antd'
 
-import { enterPressHandler } from 'lib/utility'
+import { formGuardian } from 'formdata/guardian'
 import { columns_guardian } from 'data/tableGuardian'
-import { formGuardian, formGuardianIsValid } from 'formdata/guardian'
-import { jsonHeaderHandler, formErrorMessage, errName, signature_exp } from 'lib/axios'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
 import _ from 'lodash'
-import isIn from 'validator/lib/isIn'
 
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
-import ErrorMessage from 'components/ErrorMessage'
+import ModalGuardian from 'components/Guardian/ModalGuardian'
 
 const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, onEditHandler, children, ...restProps }) => {
   let childNode = children
@@ -59,32 +57,17 @@ const GuardiansContainer = () => {
   const guardians = useSelector(state => state.guardian.guardian)
 
   const [q, setQ] = useState("")
-  const [loading, setLoading] = useState(false)
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [page, setPage] = useState(guardians?.page)
   const [guardian, setGuardian] = useState(formGuardian)
   const [modalTitle, setModalTitle] = useState(addTitle)
 
-  const { name } = guardian
-
-  /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
-    const name = e.target.name
-    const value = e.target.value
-
-    const data = {
-      ...guardian,
-      [name]: { ...guardian[name], value: value, isValid: true, message: null }
-    }
-
-    setGuardian(data)
-  }
-  /* INPUT CHANGE FUNCTION */
-
   const onCloseModalHandler = () => {
     setShowModal(false)
     setGuardian(formGuardian)
+    setModalTitle(addTitle)
+    if(isUpdate) setIsUpdate(false)
   }
 
   const columnsGuardians = columns_guardian.map(col => {
@@ -100,67 +83,6 @@ const GuardiansContainer = () => {
       })
     }
   })
-
-  const onSubmitHandler = e => {
-    e.preventDefault()
-    if(formGuardianIsValid(guardian, setGuardian)) {
-      let config = {
-        url: 'guardians/create',
-        method: 'post'
-      }
-      if(isUpdate) {
-        const { id } = guardian
-        config = {
-          url: `guardians/update/${id.value}`,
-          method: 'put'
-        }
-      }
-
-      setLoading(true)
-      const data = {
-        name: name.value,
-      }
-
-      axios[config.method](config.url, data, jsonHeaderHandler())
-        .then(res => {
-          formErrorMessage('success', res.data?.detail)
-          setLoading(false)
-          setShowModal(false)
-          setGuardian(formGuardian)
-          dispatch(actions.getGuardian({ page: 1, per_page: per_page, q: '' }))
-        })
-        .catch(err => {
-          setLoading(false)
-          const state = _.cloneDeep(guardian)
-          const errDetail = err.response?.data.detail
-
-          if(errDetail == signature_exp) {
-            onCloseModalHandler()
-            formErrorMessage("success", "Successfully add a new guardian.")
-            dispatch(actions.getGuardian({ page: 1, per_page: per_page, q: '' }))
-            if(isUpdate) setIsUpdate(false)
-          }
-          else if(typeof errDetail === "string" && isIn(errDetail, errName)) {
-            state.name.value = state.name.value
-            state.name.isValid = false
-            state.name.message = errDetail
-          }
-          else if(typeof(errDetail) === "string" && !isIn(errDetail, errName)) {
-            formErrorMessage("error", errDetail)
-          }
-          else {
-            errDetail.map((data) => {
-              const key = data.loc[data.loc.length - 1];
-              if(state[key]){
-                state[key].isValid = false
-                state[key].message = data.msg
-              }
-            });
-          }
-          setGuardian(state)
-        })
-    }
-  }
 
   const onEditHandler = (record) => {
     const data = {
@@ -294,33 +216,15 @@ const GuardiansContainer = () => {
       </Card>
 
 
-      <Modal 
-        centered
+      <ModalGuardian 
         title={modalTitle}
         visible={showModal}
-        onOk={onSubmitHandler}
-        onCancel={onCloseModalHandler}
-        okButtonProps={{ disabled: loading, loading: loading }}
-        okText="Simpan"
-        cancelText="Batal"
-        closeIcon={<i className="far fa-times" />}
-      >
-        <Form layout="vertical" onKeyUp={e => enterPressHandler(e, onSubmitHandler)}>
-          <Form.Item 
-            className="mb-0"
-            label="Nama Penjamin"
-            validateStatus={!name.isValid && name.message && "error"}
-          >
-            <Input 
-              name="name"
-              value={name.value}
-              onChange={onChangeHandler}
-              placeholder="Nama penjamin" 
-            />
-            <ErrorMessage item={name} />
-          </Form.Item>
-        </Form>
-      </Modal>
+        isUpdate={isUpdate}
+        dataGuardian={guardian}
+        setIsUpdate={setIsUpdate}
+        getGuardian={() => dispatch(actions.getGuardian({ page: 1, per_page: per_page, q: '' }))}
+        onCloseHandler={onCloseModalHandler}
+      />
     </>
   )
 }
