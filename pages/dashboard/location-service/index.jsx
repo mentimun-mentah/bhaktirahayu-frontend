@@ -3,21 +3,17 @@ import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Modal, Space, Tooltip, Popconfirm, message } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message } from 'antd'
 
-import { enterPressHandler } from 'lib/utility'
 import { columns_location } from 'data/tableLocation'
-import { formLocation, formLocationIsValid } from 'formdata/locationService'
-import { jsonHeaderHandler, formErrorMessage, errName, signature_exp } from 'lib/axios'
-
-import _ from 'lodash'
-import isIn from 'validator/lib/isIn'
+import { formLocation } from 'formdata/locationService'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
-import ErrorMessage from 'components/ErrorMessage'
+import ModalLocation from 'components/LocationService/ModalLocation'
 
 const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, onEditHandler, children, ...restProps }) => {
   let childNode = children
@@ -60,31 +56,16 @@ const LocationServiceContainer = () => {
 
   const [q, setQ] = useState("")
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(false)
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState(addTitle)
   const [locationService, setLocationService] = useState(formLocation)
 
-  const { name } = locationService
-
-  /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
-    const name = e.target.name
-    const value = e.target.value
-
-    const data = {
-      ...locationService,
-      [name]: { ...locationService[name], value: value, isValid: true, message: null }
-    }
-
-    setLocationService(data)
-  }
-  /* INPUT CHANGE FUNCTION */
-
   const onCloseModalHandler = () => {
     setShowModal(false)
+    setModalTitle(addTitle)
     setLocationService(formLocation)
+    if(isUpdate) setIsUpdate(false)
   }
 
   const columnsLocations = columns_location.map(col => {
@@ -100,67 +81,6 @@ const LocationServiceContainer = () => {
       })
     }
   })
-
-  const onSubmitHandler = e => {
-    e.preventDefault()
-    if(formLocationIsValid(locationService, setLocationService, isUpdate)) {
-      let config = {
-        url: 'location-services/create',
-        method: 'post'
-      }
-      if(isUpdate) {
-        const { id } = locationService
-        config = {
-          url: `location-services/update/${id.value}`,
-          method: 'put'
-        }
-      }
-
-      setLoading(true)
-      const data = {
-        name: name.value,
-      }
-
-      axios[config.method](config.url, data, jsonHeaderHandler())
-        .then(res => {
-          formErrorMessage('success', res.data?.detail)
-          setLoading(false)
-          setShowModal(false)
-          setLocationService(formLocation)
-          dispatch(actions.getLocationService({ page: 1, per_page: per_page, q: '' }))
-        })
-        .catch(err => {
-          setLoading(false)
-          const state = _.cloneDeep(locationService)
-          const errDetail = err.response?.data.detail
-
-          if(errDetail == signature_exp) {
-            onCloseModalHandler()
-            formErrorMessage("success", "Successfully add a new location-service.")
-            dispatch(actions.getLocationService({ page: 1, per_page: per_page, q: '' }))
-            if(isUpdate) setIsUpdate(false)
-          }
-          else if(typeof errDetail === "string" && isIn(errDetail, errName)) {
-            state.name.value = state.name.value
-            state.name.isValid = false
-            state.name.message = errDetail
-          }
-          else if(typeof(errDetail) === "string" && !isIn(errDetail, errName)) {
-            formErrorMessage("error", errDetail)
-          }
-          else {
-            errDetail.map((data) => {
-              const key = data.loc[data.loc.length - 1];
-              if(state[key]){
-                state[key].isValid = false
-                state[key].message = data.msg
-              }
-            });
-          }
-          setLocationService(state)
-        })
-    }
-  }
 
   const onEditHandler = (record) => {
     const data = {
@@ -294,33 +214,15 @@ const LocationServiceContainer = () => {
       </Card>
 
 
-      <Modal 
-        centered
+      <ModalLocation 
         title={modalTitle}
         visible={showModal}
-        onOk={onSubmitHandler}
-        onCancel={onCloseModalHandler}
-        okButtonProps={{ disabled: loading, loading: loading }}
-        okText="Simpan"
-        cancelText="Batal"
-        closeIcon={<i className="far fa-times" />}
-      >
-        <Form layout="vertical" onKeyUp={e => enterPressHandler(e, onSubmitHandler)}>
-          <Form.Item 
-            label="Lokasi"
-            className="mb-0"
-            validateStatus={!name.isValid && name.message && "error"}
-          >
-            <Input
-              name="name"
-              value={name.value}
-              onChange={onChangeHandler}
-              placeholder="Lokasi pelayanan" 
-            />
-            <ErrorMessage item={name} />
-          </Form.Item>
-        </Form>
-      </Modal>
+        isUpdate={isUpdate}
+        dataLocation={locationService}
+        setIsUpdate={setIsUpdate}
+        getLocationService={() => dispatch(actions.getLocationService({ page: 1, per_page: per_page, q: '' }))}
+        onCloseHandler={onCloseModalHandler}
+      />
     </>
   )
 }
