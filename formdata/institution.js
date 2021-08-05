@@ -1,11 +1,11 @@
 import isEmpty from 'validator/lib/isEmpty'
 
-export const formLocation = {
+export const formInstitution = {
   id: { value: "", isValid: true, message: null },
   name: { value: "", isValid: true, message: null },
 }
 
-export const formLocationIsValid = (state, setState) => {
+export const formInstitutionIsValid = (state, setState) => {
   const name = { ...state.name }
   let isGood = true
 

@@ -1,20 +1,21 @@
 import isEmpty from 'validator/lib/isEmpty'
 
 export const formGuardian = {
-  username: { value: "", isValid: true, message: null },
+  id: { value: "", isValid: true, message: null },
+  name: { value: "", isValid: true, message: null },
 }
 
 export const formGuardianIsValid = (state, setState) => {
-  const username = { ...state.username }
+  const name = { ...state.name }
   let isGood = true
 
-  if(isEmpty(username?.value)) {
+  if(isEmpty(name?.value)) {
     isGood = false
-    username.isValid = false
-    username.message = "Value can't be empty"
+    name.isValid = false
+    name.message = "Value can't be empty"
   }
 
-  if(!isGood) setState({ ...state, username })
+  if(!isGood) setState({ ...state, name })
 
   return isGood
 }

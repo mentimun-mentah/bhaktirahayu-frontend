@@ -1,5 +1,6 @@
 import { Card } from 'react-bootstrap'
 import { motion } from 'framer-motion'
+import { withAuth } from 'lib/withAuth'
 import { useState, useRef } from 'react'
 import { SearchOutlined, EditOutlined } from '@ant-design/icons'
 import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs } from 'antd'
@@ -335,4 +336,4 @@ const ProfileContainer = () => {
   )
 }
 
-export default ProfileContainer
+export default withAuth(ProfileContainer)

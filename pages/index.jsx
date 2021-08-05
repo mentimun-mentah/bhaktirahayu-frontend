@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/router'
+import { useSelector } from 'react-redux'
 import { Container, Media } from 'react-bootstrap'
 import { useState, useCallback, useRef } from 'react'
 import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
@@ -36,8 +38,11 @@ const ButtonAction = ({ onClick, title, type, disabled }) => (
 )
 
 const Home = () => {
+  const router = useRouter()
   const cropperRef = useRef()
   const size = useWindowSize()
+
+  const user = useSelector(state => state.auth.user)
 
   const [step, setStep] = useState(0)
   const [cropState, setCropState] = useState()
@@ -150,6 +155,10 @@ const Home = () => {
 
   const onUploadPhotoHandler = e => {
     e.preventDefault()
+    if(file.value.length <= 0) {
+      setStep(2)
+      return
+    }
     setLoading(true)
 
     const formData = new FormData()
@@ -319,10 +328,17 @@ const Home = () => {
                             />
                           </Col>
                           <Col span={24}>
-                            <ButtonAction 
-                              title="Masuk"
-                              onClick={() => setIsLogin(true)}
-                            />
+                            {user && user.username && user.email && isIn(user.role, ['doctor', 'admin']) ? (
+                              <ButtonAction 
+                                title="Dashboard"
+                                onClick={() => router.push("/dashboard")}
+                              />
+                            ) : (
+                              <ButtonAction 
+                                title="Masuk"
+                                onClick={() => setIsLogin(true)}
+                              />
+                            )}
                           </Col>
                         </Row>
                       </>
@@ -592,7 +608,7 @@ const Home = () => {
         onCancel={() => setIsLogin(false)}
         closeIcon={<i className="fas fa-times" />}
       >
-        <LoginContainer isShow={isLogin} />
+        <LoginContainer isShow={isLogin} onClose={() => setIsLogin(false)} />
       </Modal>
 
       <style jsx>{`

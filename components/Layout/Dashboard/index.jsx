@@ -122,8 +122,8 @@ const DashboardLayout = ({ children }) => {
             mode="inline" 
             theme="light" 
             inlineIndent={15} 
-            className="ant-menu-scroll"
             selectedKeys={[selected]}
+            className="ant-menu-scroll"
           >
             {renderSidemenu()}
           </Menu>
@@ -162,6 +162,17 @@ const DashboardLayout = ({ children }) => {
           box-shadow: rgb(0 0 0) 0px 5px 14px -5px!important;
           height: 50px;
           width: 50px;
+          z-index; 1;
+        }
+
+        :global(.count-check-tag) {
+          font-size: ${isMobile ? '10px' : '12px'};
+        }
+        :global(.ant-table table) {
+          font-size: ${isMobile ? '12px' : '14px'};
+        }
+        :global(.ant-table.ant-table-middle .ant-table-title, .ant-table.ant-table-middle .ant-table-footer, .ant-table.ant-table-middle .ant-table-thead > tr > th, .ant-table.ant-table-middle .ant-table-tbody > tr > td, .ant-table.ant-table-middle tfoot > tr > th, .ant-table.ant-table-middle tfoot > tr > td) {
+          padding: ${isMobile ? '10px 8px' : '12px 8px'};
         }
       `}</style>
     </>

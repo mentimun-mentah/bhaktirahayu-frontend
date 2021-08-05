@@ -18,11 +18,12 @@ const itemRender = (_, type, originalElement) => {
   return originalElement;
 };
 
-const PaginationContainer = ({ total = 1, pageSize = 10, goTo = () => {}, current, hideOnSinglePage = false }) => {
+const PaginationContainer = ({ total = 1, pageSize = 10, goTo = () => {}, current, hideOnSinglePage = false, className }) => {
   return (
     <>
       <Pagination
         responsive
+        className={className}
         current={current} //current page
         itemRender={itemRender}
         showSizeChanger={false}

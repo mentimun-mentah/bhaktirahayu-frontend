@@ -3,7 +3,6 @@ import { Provider } from 'react-redux'
 import Head from 'next/head'
 import withReduxStore from 'lib/with-redux-store'
 
-
 import '/styles/global.css'
 import '/styles/utility.css'
 import 'bootstrap/dist/css/bootstrap.min.css'

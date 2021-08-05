@@ -21,7 +21,11 @@
   border-radius: 5px;
 }
 .ant-image-mask-info .anticon {
-  vertical-align: 0;
+  vertical-align: 0!important;
+}
+.ant-image-error .ant-upload.ant-upload-select-picture-card {
+  border-color: #f5222d!important;
+  border-style: dashed!important;
 }
 /* antd image */
 
@@ -67,6 +71,11 @@
 }
 /* antd select */
 
+/* antd button */
+.ant-btn > .ant-btn-loading-icon .anticon {
+  vertical-align: unset!important;
+}
+
 /* bootstrap */
 .card {
   border-radius: .5rem!important;
@@ -82,10 +91,17 @@
 .va-sub {
   vertical-align: sub!important;
 }
+.va-middle {
+  vertical-align: middle!important;
+}
 
 .bor-rad-4px {
   border-radius: 4px!important;
 }
 .bor-rad-5px {
   border-radius: 5px!important;
+}
+
+.text-grey-0 {
+  color: var(--grey-0)!important;
 }
