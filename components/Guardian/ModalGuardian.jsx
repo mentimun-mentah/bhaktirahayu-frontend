@@ -69,7 +69,7 @@ const ModalGuardian = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
           const errDetail = err.response?.data.detail
 
           if(errDetail == signature_exp) {
-          getGuardian()
+            getGuardian()
             onCloseModalHandler()
             formErrorMessage("success", "Successfully add a new guardian.")
             if(isUpdate) setIsUpdate(false)

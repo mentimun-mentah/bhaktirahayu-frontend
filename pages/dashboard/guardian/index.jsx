@@ -9,8 +9,6 @@ import { formGuardian } from 'formdata/guardian'
 import { columns_guardian } from 'data/tableGuardian'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
-import _ from 'lodash'
-
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
