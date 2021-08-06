@@ -52,6 +52,7 @@
 
 /* antd modal */
 .ant-modal-mask {
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 .modal-close-disabled .ant-modal-close {
@@ -61,6 +62,7 @@
 
 /* antd drawer */
 .ant-drawer-mask {
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 /* antd drawer */

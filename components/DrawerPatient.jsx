@@ -105,6 +105,7 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
                 />
               </Form.Item>
             </Col>
+            {/*
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Tanggal & Waktu Periksa">
                 <DatePicker 
@@ -176,6 +177,7 @@ const DrawerPatient = ({ visible, data, onClose, onSave }) => {
                 />
               </Form.Item>
             </Col>
+            */}
           </Row>
         </Form>
 

@@ -52,30 +52,6 @@ const dataSource = [
 
 export const columnsReports = [
   {
-    key: 'checkup_date',
-    title: 'TANGGAL PERIKSA',
-    align: 'center',
-    dataIndex: 'checkup_date',
-    width: 60,
-    render: (item) => <span className="text-uppercase">{moment(item).format('DD MMMM YYYY')}</span>
-  },
-  {
-    key: 'checkup_time',
-    title: 'WAKTU PERIKSA',
-    align: 'center',
-    dataIndex: 'checkup_time',
-    width: 50,
-    render: (item) => <span className="text-uppercase">{moment(item, 'HH:mm').format('HH:mm')}</span>
-  },
-  {
-    key: 'result',
-    title: 'HASIL',
-    align: 'center',
-    dataIndex: 'result',
-    width: 30,
-    render: (item) => <span className={`${item.toUpperCase() === 'POSITIF' && 'text-danger font-weight-bold'}`}>{item.toUpperCase()}</span>
-  },
-  {
     key: 'institution',
     title: 'INSTANSI',
     align: 'center',
@@ -108,13 +84,37 @@ export const columnsReports = [
     render: () => <span className="text-uppercase">-</span>
   },
   {
+    key: 'checkup_date',
+    title: 'TANGGAL PERIKSA',
+    align: 'center',
+    dataIndex: 'checkup_date',
+    width: 60,
+    render: (item) => <span className="text-uppercase">{moment(item).format('DD MMMM YYYY')}</span>
+  },
+  {
+    key: 'checkup_time',
+    title: 'WAKTU PERIKSA',
+    align: 'center',
+    dataIndex: 'checkup_time',
+    width: 50,
+    render: (item) => <span className="text-uppercase">{moment(item, 'HH:mm').format('HH:mm')}</span>
+  },
+  {
+    key: 'result',
+    title: 'HASIL',
+    align: 'center',
+    dataIndex: 'result',
+    width: 30,
+    render: (item) => <span className={`${item.toUpperCase() === 'POSITIF' && 'text-danger font-weight-bold'}`}>{item.toUpperCase()}</span>
+  },
+  {
     key: 'action',
     title: 'AKSI',
     type: 'action',
     align: 'center',
     fixed: 'right',
     dataIndex: 'action',
-    width: 30,
+    width: 40,
     editable: true
   },
 ]
@@ -126,6 +126,9 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
     childNode = (
       type === "action" && (
         <Space>
+          <Tooltip placement="top" title="Ubah">
+            <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
+          </Tooltip>
           <Tooltip placement="top" title="Hasil">
             <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
           </Tooltip>

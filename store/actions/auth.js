@@ -119,6 +119,6 @@ export const logout = () => {
       dispatch(authLogout())
     }
 
-    window.location.href = '/'
+    if(typeof window !== 'undefined') window.location.href = '/'
   };
 };

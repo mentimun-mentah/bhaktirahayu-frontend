@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
-import { Form, Input, Row, Col, Space, DatePicker, AutoComplete, Grid, Tooltip, Divider, Popconfirm, message } from 'antd'
+import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, message } from 'antd'
 
 import { formPatient } from 'formdata/patient'
 import { ExportToExcel } from 'lib/exportToExcel'
@@ -9,11 +9,11 @@ import { dataSourceReports, columnsReports, reformatData } from 'data/table'
 
 import 'moment/locale/id'
 import moment from 'moment'
-import id_ID from "antd/lib/date-picker/locale/id_ID"
 
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import pdfGenerator from 'lib/antigenGenerator'
+import DrawerFilter from 'components/DrawerFilter'
 import DrawerPatient from 'components/DrawerPatient'
 import DrawerDetailPatient from 'components/DrawerDetailPatient'
 
@@ -30,11 +30,22 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
           <Tooltip placement="top" title="Ubah">
             <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
           </Tooltip>
-          <Tooltip placement="top" title="Hasil">
-            <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
-          </Tooltip>
+          {/* <Tooltip placement="top" title="Hasil"> */}
+          {/*   <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a> */}
+          {/* </Tooltip> */}
           <Tooltip placement="top" title="Riwayat">
             <a onClick={onShowDetailPatient}><i className="fal fa-clipboard-list text-center" /></a>
+          </Tooltip>
+          <Tooltip placement="top" title="Hapus">
+            <Popconfirm
+              placement="bottomRight"
+              title="Hapus data ini?"
+              onConfirm={() => message.info('Data berhasil dihapus!')}
+              okText="Ya"
+              cancelText="Batal"
+            >
+              <a><i className="fal fa-trash-alt text-danger text-center" /></a>
+            </Popconfirm>
           </Tooltip>
         </Space>
       )
@@ -49,6 +60,7 @@ const AntigenContainer = () => {
   const [page, setPage] = useState(1)
   const [patient, setPatient] = useState(formPatient)
   const [showDrawer, setShowDrawer] = useState(false)
+  const [showFilter, setShowFilter] = useState(false)
   const [showDetailPatient, setShowDetailPatient] = useState(false)
 
   const columnsPatient = columnsReports.map(col => {
@@ -84,96 +96,29 @@ const AntigenContainer = () => {
     setPatient(formPatient)
   }
 
-  const instansi_list = [
-    { value: "Bhakti Rahayu Denpasar" },
-    { value: "Bhakti Rahayu Tabanan" },
-    { value: "Bhaksena Bypass Ngurah Rai" },
-    { value: "Bhaksena Pelabuhan Gilimanuk" },
-  ]
-
-  const pic_list = [
-    { value: "James" },
-    { value: "Robert" },
-    { value: "Mary" },
-    { value: "Patricia" },
-    { value: "Michael" },
-    { value: "Linda" },
-    { value: "Susan" },
-    { value: "Charles" },
-    { value: "Nancy" },
-    { value: "Ashley" },
-  ]
-
-  const location_list = [
-    { value: "Hotel" },
-    { value: "Lapangan" },
-    { value: "Rumah Sakit" },
-  ]
-
   return (
     <>
       <Card className="border-0 shadow-1">
         <Card.Body>
           
-          <Card.Title>Daftar Pasien Rapid Antigen</Card.Title>
-
-          <Form layout="vertical" className="mb-3">
-            <Row gutter={[10, 10]} justify="space-between">
-              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
-                <Form.Item className="mb-0">
-                  <Input placeholder="Cari NIK pasien" />
-                </Form.Item>
-              </Col>
-              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
-                <Form.Item className="mb-0">
-                  <AutoComplete 
-                    className="w-100"
-                    options={instansi_list}
-                    placeholder="Cari instansi"
-                    filterOption={(inputValue, option) =>
-                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xl={5} lg={5} md={8} sm={12} xs={24}>
-                <Form.Item className="mb-0">
-                  <AutoComplete 
-                    className="w-100"
-                    options={pic_list}
-                    placeholder="Cari penjamin"
-                    filterOption={(inputValue, option) =>
-                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xl={5} lg={5} md={12} sm={12} xs={24}>
-                <Form.Item className="mb-0">
-                  <AutoComplete 
-                    className="w-100"
-                    options={location_list}
-                    placeholder="Lokasi pelayanan"
-                    filterOption={(inputValue, option) =>
-                      option.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xl={4} lg={4} md={12} sm={24} xs={24}>
-                <Form.Item className="mb-0">
-                  <DatePicker
-                    inputReadOnly
-                    locale={id_ID}
-                    className="w-100"
-                    format="DD MMM YYYY HH:mm"
-                    showTime={{ format: 'HH:mm' }}
-                    placeholder="Pilih tanggal & waktu"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-          </Form>
+          <Row gutter={[10, 10]} justify="space-between" className="mb-3">
+            <Col xl={18} lg={16} md={16} sm={12} xs={12}>
+              <Card.Title>Rapid Antigen</Card.Title>
+            </Col>
+            <Col xl={6} lg={8} md={8} sm={12} xs={12}>
+              <Space className="float-right">
+                <ExportToExcel jsonData={reformatData(dataSourceReports)} fileName={new Date()} />
+                <Button 
+                  type="text" 
+                  className="border" 
+                  onClick={() => setShowFilter(true)}
+                  icon={<i className="far fa-filter mr-2" />}
+                >
+                  Filter
+                </Button>
+              </Space>
+            </Col>
+          </Row>
 
           <TableMemo
             bordered
@@ -181,30 +126,28 @@ const AntigenContainer = () => {
             pagination={false} 
             columns={columnsPatient}
             dataSource={dataSourceReports} 
-            scroll={{ y: 485, x: 1180 }} 
+            scroll={{ y: `${screens.xs ? 'calc(100vh - 226px)' : (screens.sm && !screens.md) ? 'calc(100vh - 242px)' : 'calc(100vh - 242px)'}`, x: 1180 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
           <Card.Body className="pb-2 px-0">
-            <Row gutter={[10,10]} justify="space-between" align="middle">
-              <Col xs={24} sm={24} md={12} lg={12} xl={12} className={!screens.md && "text-center"}>
-                <ExportToExcel jsonData={reformatData(dataSourceReports)} fileName={new Date()} />
-              </Col>
-              <Col xs={24} sm={24} md={12} lg={12} xl={12} className={!screens.md && "text-center"}>
-                <div className={screens.md && "float-right"}>
-                  <Pagination 
-                    current={page} 
-                    hideOnSinglePage 
-                    pageSize={10}
-                    total={304} 
-                    goTo={val => setPage(val)} 
-                  />
-                </div>
-              </Col>
-            </Row>
+            <div className={screens.md ? "float-right" : "text-center"}>
+              <Pagination 
+                current={page} 
+                hideOnSinglePage 
+                pageSize={10}
+                total={304} 
+                goTo={val => setPage(val)} 
+              />
+            </div>
           </Card.Body>
         </Card.Body>
       </Card>
+
+      <DrawerFilter
+        visible={showFilter}
+        onClose={() => setShowFilter(false)}
+      />
 
       <DrawerPatient 
         data={patient} 

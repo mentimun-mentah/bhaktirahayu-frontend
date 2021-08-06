@@ -1,11 +1,9 @@
 import { motion } from 'framer-motion'
-import { useRouter } from 'next/router'
-import { useSelector } from 'react-redux'
 import { Container, Media } from 'react-bootstrap'
 import { useState, useCallback, useRef } from 'react'
 import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
-import { DatePicker, Spin, message, Select, Radio, Input, Popover, Modal } from 'antd'
+import { DatePicker, Spin, message, Select, Radio, Input, Popover } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { formRegister } from 'formdata/register'
@@ -24,7 +22,6 @@ import id_ID from "antd/lib/date-picker/locale/id_ID"
 import axios from 'lib/axios'
 import Cropper from 'react-perspective-cropper'
 import ErrorMessage from 'components/ErrorMessage'
-import LoginContainer from 'components/Auth/Login'
 
 moment.locale('id')
 message.config({ duration: 3, maxCount: 1 });
@@ -38,16 +35,12 @@ const ButtonAction = ({ onClick, title, type, disabled }) => (
 )
 
 const Home = () => {
-  const router = useRouter()
   const cropperRef = useRef()
   const size = useWindowSize()
-
-  const user = useSelector(state => state.auth.user)
 
   const [step, setStep] = useState(0)
   const [cropState, setCropState] = useState()
   const [loading, setLoading] = useState(false)
-  const [isLogin, setIsLogin] = useState(false)
   const [isShowTips, setIsShowTips] = useState(false)
   const [imageList, setImageList] = useState(formImage)
   const [showCropper, setShowCropper] = useState(false)
@@ -76,7 +69,6 @@ const Home = () => {
         lastModified: new Date().getTime(),
         originFileObj: file
       }
-      console.log(dataImage)
       const data = {
         ...imageList,
         file: { value: [dataImage], isValid: true, message: null }
@@ -172,7 +164,6 @@ const Home = () => {
     axios.post('/users/identity-card-ocr', formData)
       .then(res => {
         setLoading(false)
-        console.log(JSON.stringify(res.data, null, 2))
         const state = _.cloneDeep(register)
         for (const [key, value] of Object.entries(res.data)) {
           if(state[key]) {
@@ -327,19 +318,6 @@ const Home = () => {
                               onClick={() => onNextStep(1)}
                             />
                           </Col>
-                          <Col span={24}>
-                            {user && user.username && user.email && isIn(user.role, ['doctor', 'admin']) ? (
-                              <ButtonAction 
-                                title="Dashboard"
-                                onClick={() => router.push("/dashboard")}
-                              />
-                            ) : (
-                              <ButtonAction 
-                                title="Masuk"
-                                onClick={() => setIsLogin(true)}
-                              />
-                            )}
-                          </Col>
                         </Row>
                       </>
                     )}
@@ -390,8 +368,8 @@ const Home = () => {
 
                               <h5 className="mb-1 mt-2">Sekarang foto {kind.value.toUpperCase()} kamu 👤 </h5>
                               <p className="text-muted text-center">
-                                Kamu perlu mengupload foto {kind.value.toUpperCase()} terlebih dahulu, 
-                                agar kami bisa mendapatkan identitasmu ✌
+                                Upload foto {kind.value.toUpperCase()} kamu agar mempercepat registrasi, 
+                                kamu juga bisa melewati proses ini dan mengisi identitasmu secara manual pada proses selanjutnya ✌
                               </p>
                             </div>
                           )}
@@ -594,22 +572,6 @@ const Home = () => {
           </Row>
         </section>
       </Container>
-
-
-      <Modal
-        centered
-        title=" "
-        zIndex="1030"
-        footer={null}
-        visible={isLogin}
-        maskClosable={false}
-        className="modal-login"
-        onOk={() => setIsLogin(false)}
-        onCancel={() => setIsLogin(false)}
-        closeIcon={<i className="fas fa-times" />}
-      >
-        <LoginContainer isShow={isLogin} onClose={() => setIsLogin(false)} />
-      </Modal>
 
       <style jsx>{`
       :global(.check-item-step .ant-steps-item-icon .ant-steps-finish-icon) {
