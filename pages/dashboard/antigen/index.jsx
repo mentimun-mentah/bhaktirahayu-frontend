@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
-import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, message } from 'antd'
+import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, Form, Input, message } from 'antd'
 
 import { formPatient } from 'formdata/patient'
 import { ExportToExcel } from 'lib/exportToExcel'
@@ -27,15 +27,15 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
     childNode = (
       type === "action" && (
         <Space>
+          <Tooltip placement="top" title="Riwayat">
+            <a onClick={onShowDetailPatient}><i className="fal fa-clipboard-list text-center" /></a>
+          </Tooltip>
           <Tooltip placement="top" title="Ubah">
             <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
           </Tooltip>
           {/* <Tooltip placement="top" title="Hasil"> */}
           {/*   <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a> */}
           {/* </Tooltip> */}
-          <Tooltip placement="top" title="Riwayat">
-            <a onClick={onShowDetailPatient}><i className="fal fa-clipboard-list text-center" /></a>
-          </Tooltip>
           <Tooltip placement="top" title="Hapus">
             <Popconfirm
               placement="bottomRight"
@@ -102,10 +102,15 @@ const AntigenContainer = () => {
         <Card.Body>
           
           <Row gutter={[10, 10]} justify="space-between" className="mb-3">
-            <Col xl={18} lg={16} md={16} sm={12} xs={12}>
-              <Card.Title>Rapid Antigen</Card.Title>
+            <Col xl={5} lg={8} md={10} sm={12} xs={12}>
+              <Form.Item className="mb-0">
+                <Input 
+                  prefix={<i className="far fa-search pr-2" />}
+                  placeholder="Cari nik / nama pasien" 
+                />
+              </Form.Item>
             </Col>
-            <Col xl={6} lg={8} md={8} sm={12} xs={12}>
+            <Col xl={6} lg={12} md={12} sm={12} xs={12}>
               <Space className="float-right">
                 <ExportToExcel jsonData={reformatData(dataSourceReports)} fileName={new Date()} />
                 <Button 
@@ -131,7 +136,7 @@ const AntigenContainer = () => {
           />
 
           <Card.Body className="pb-2 px-0">
-            <div className={screens.md ? "float-right" : "text-center"}>
+            <div className="text-center">
               <Pagination 
                 current={page} 
                 hideOnSinglePage 

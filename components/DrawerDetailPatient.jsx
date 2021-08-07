@@ -6,6 +6,7 @@ import { formPatient } from 'formdata/patient'
 import 'moment/locale/id'
 import moment from 'moment'
 import TableMemo from 'components/TableMemo'
+import DrawerResultPatient from 'components/DrawerResultPatient'
 
 moment.locale('id')
 
@@ -20,8 +21,7 @@ const dataSource = [
     "birth_place": "GEROGAK",
     "birth_date": "31-Dec-1984",
     "address": "GEROGAK",
-    "checkup_date": "19-Jun-2021",
-    "checkup_time": "10:20",
+    "checkup_date": "19-Jun-2021 10:20",
     "result": "NEGATIF",
   },
   {
@@ -32,8 +32,7 @@ const dataSource = [
     "birth_place": "SUMENEP",
     "birth_date": "10-Oct-1999",
     "address": "DUSUN CEN LECEN",
-    "checkup_date": "30-Jun-2021",
-    "checkup_time": "12:06",
+    "checkup_date": "30-Jun-2021 12:06",
     "result": "POSITIF"
   },
   {
@@ -44,19 +43,26 @@ const dataSource = [
     "birth_place": "BANYUWANGI",
     "birth_date": "23-Sep-1989",
     "address": "BENDOREJO",
-    "checkup_date": "14-Jul-2021",
-    "checkup_time": "12:12",
+    "checkup_date": "14-Jul-2021 12:12",
     "result": "NEGATIF"
-  }
+  },
 ]
 
 export const columnsReports = [
+  {
+    key: 'checkupType',
+    title: 'JENIS PEMERIKSAAN',
+    align: 'center',
+    dataIndex: 'checkupType',
+    width: 200,
+    render: () => <span className="text-uppercase">Antigen</span>
+  },
   {
     key: 'institution',
     title: 'INSTANSI',
     align: 'center',
     dataIndex: 'institution',
-    width: 80,
+    width: 200,
     render: () => <span className="text-uppercase">Bhaktirahayu Denpasar</span>
   },
   {
@@ -64,7 +70,7 @@ export const columnsReports = [
     title: 'PENANGGUNG JAWAB',
     align: 'center',
     dataIndex: 'pic',
-    width: 70,
+    width: 200,
     render: () => <span className="text-uppercase">dr. Okky Suardhana</span>
   },
   {
@@ -72,7 +78,7 @@ export const columnsReports = [
     title: 'LOKASI PELAYANAN',
     align: 'center',
     dataIndex: 'location-service',
-    width: 60,
+    width: 200,
     render: () => <span className="text-uppercase">Hotel</span>
   },
   {
@@ -80,31 +86,23 @@ export const columnsReports = [
     title: 'PENJAMIN',
     align: 'center',
     dataIndex: 'guardian',
-    width: 50,
+    width: 150,
     render: () => <span className="text-uppercase">-</span>
   },
   {
     key: 'checkup_date',
-    title: 'TANGGAL PERIKSA',
+    title: 'TANGGAL & WAKTU PERIKSA',
     align: 'center',
     dataIndex: 'checkup_date',
-    width: 60,
-    render: (item) => <span className="text-uppercase">{moment(item).format('DD MMMM YYYY')}</span>
-  },
-  {
-    key: 'checkup_time',
-    title: 'WAKTU PERIKSA',
-    align: 'center',
-    dataIndex: 'checkup_time',
-    width: 50,
-    render: (item) => <span className="text-uppercase">{moment(item, 'HH:mm').format('HH:mm')}</span>
+    width: 250,
+    render: (item) => <span className="text-uppercase">{moment(item).format('DD MMMM YYYY HH:mm')}</span>
   },
   {
     key: 'result',
     title: 'HASIL',
     align: 'center',
     dataIndex: 'result',
-    width: 30,
+    width: 100,
     render: (item) => <span className={`${item.toUpperCase() === 'POSITIF' && 'text-danger font-weight-bold'}`}>{item.toUpperCase()}</span>
   },
   {
@@ -114,7 +112,7 @@ export const columnsReports = [
     align: 'center',
     fixed: 'right',
     dataIndex: 'action',
-    width: 40,
+    width: 100,
     editable: true
   },
 ]
@@ -126,11 +124,11 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
     childNode = (
       type === "action" && (
         <Space>
-          <Tooltip placement="top" title="Ubah">
-            <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
-          </Tooltip>
           <Tooltip placement="top" title="Hasil">
             <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
+          </Tooltip>
+          <Tooltip placement="top" title="Ubah">
+            <a onClick={() => onShowDrawer(record)}><i className="fal fa-edit text-center" /></a>
           </Tooltip>
           <Tooltip placement="top" title="Hapus">
             <Popconfirm
@@ -154,6 +152,7 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
 const DrawerPatient = ({ visible, data, onClose }) => {
   const screens = useBreakpoint();
 
+  const [showDrawer, setShowDrawer] = useState(false)
   const [patient, setPatient] = useState(formPatient)
 
   const columnsPatient = columnsReports.map(col => {
@@ -164,7 +163,7 @@ const DrawerPatient = ({ visible, data, onClose }) => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
-        onShowDrawer: () => {},
+        onShowDrawer: () => setShowDrawer(true),
         onShowDetailPatient: () => {}
       })
     }
@@ -217,6 +216,11 @@ const DrawerPatient = ({ visible, data, onClose }) => {
           dataSource={dataSource} 
           scroll={{ y: 485, x: 1180 }} 
           components={{ body: { cell: ProductCellEditable } }}
+        />
+
+        <DrawerResultPatient
+          visible={showDrawer}
+          onClose={() => setShowDrawer(false)}
         />
 
       </Drawer>

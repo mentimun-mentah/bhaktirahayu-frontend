@@ -1,32 +1,35 @@
 import { motion } from 'framer-motion'
+import { useState, useCallback } from 'react'
 import { Container, Media } from 'react-bootstrap'
-import { useState, useCallback, useRef } from 'react'
 import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
-import { DatePicker, Spin, message, Select, Radio, Input, Popover } from 'antd'
+import { DatePicker, message, Select, Radio, Input, Popover, Slider } from 'antd'
 
+import { urltoFile } from 'lib/utility'
 import { formImage } from 'formdata/image'
+import { getCroppedImg } from 'lib/canvasUtils'
 import { formRegister } from 'formdata/register'
-import { useWindowSize } from 'lib/useWindowSize'
 import { formIdentityCard } from 'formdata/identityCard'
 import { step_list, preparation_list, howToCrop } from 'data/home'
-import { imagePreview, uploadButton, imageValidationNoHeader } from 'lib/imageUploader'
+import { imagePreview, uploadButton, imageValidationNoHeader, getBase64 } from 'lib/imageUploader'
 
 import _ from 'lodash'
 import 'moment/locale/id'
 import moment from 'moment'
 import Image from 'next/image'
 import isIn from 'validator/lib/isIn'
+import ReactCropper from 'react-easy-crop'
 import id_ID from "antd/lib/date-picker/locale/id_ID"
 
 import axios from 'lib/axios'
-import Cropper from 'react-perspective-cropper'
 import ErrorMessage from 'components/ErrorMessage'
+
 
 moment.locale('id')
 message.config({ duration: 3, maxCount: 1 });
 
 const Loader = "/static/images/loader.gif";
+const MIN_ROTATE = 0, MAX_ROTATE = 360, ZOOM_STEP = 0.00001, MIN_ZOOM = 1, MAX_ZOOM = 3
 
 const ButtonAction = ({ onClick, title, type, disabled }) => (
   <Button block type={type} size="large" className="fs-14" onClick={onClick} disabled={disabled}>
@@ -35,67 +38,90 @@ const ButtonAction = ({ onClick, title, type, disabled }) => (
 )
 
 const Home = () => {
-  const cropperRef = useRef()
-  const size = useWindowSize()
-
   const [step, setStep] = useState(0)
-  const [cropState, setCropState] = useState()
   const [loading, setLoading] = useState(false)
+  const [imageSrc, setImageSrc] = useState(null)
   const [isShowTips, setIsShowTips] = useState(false)
   const [imageList, setImageList] = useState(formImage)
-  const [showCropper, setShowCropper] = useState(false)
   const [register, setRegister] = useState(formRegister)
   const [loadingImage, setLoadingImage] = useState(false)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
   const [identityCard, setIdentityCard] = useState(formIdentityCard)
 
+  const [zoom, setZoom] = useState(1)
+  const [rotation, setRotation] = useState(0)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
 
-  const onCropperDragStop = useCallback((s) => setCropState(s), [])
-  const onCropperChange = useCallback((s) => setCropState(s), [])
+  const isMinZoom = zoom - ZOOM_STEP < MIN_ZOOM;
+  const isMaxZoom = zoom + ZOOM_STEP > MAX_ZOOM;
+  const isMinRotate = rotation <= MIN_ROTATE;
+  const isMaxRotate = rotation >= MAX_ROTATE;
 
   const { file } = imageList
   const { kind } = identityCard
   const { nik, name, birth_place, birth_date, gender, address } = register
 
-  const onCropSaveHandler = async () => {
-    try {
-      const res = await cropperRef.current.done({ preview: true })
-      setShowCropper(false)
-      const file = new File([res], res.name, { type: res.type, lastModified: new Date().getTime() })
-      const dataImage = {
-        size: res.size,
-        type: res.type,
-        name: res.name,
-        uid: -Math.abs(Math.random()),
-        lastModified: new Date().getTime(),
-        originFileObj: file
-      }
-      const data = {
-        ...imageList,
-        file: { value: [dataImage], isValid: true, message: null }
-      }
-      setImageList(data)
-    } catch (e) {
-      message.error('Terjadi kesalahan saat mengunggah foto!')
-    }
-  }
-
+  const onCropComplete = useCallback((_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
 
   const onNextStep = val => setStep(val)
 
   /* IMAGE CHANGE FUNCTION */
-  const imageChangeHandler = ({ fileList: newFileList, file }) => {
-    if(file.status === "done") {
-      setTimeout(() => {
-        setShowCropper(true)
-      }, 500)
-    }
+  const imageChangeHandler = async ({ fileList: newFileList }) => {
+    setLoadingImage(true)
+
     const data = {
       ...imageList,
       file: { value: newFileList, isValid: true, message: null }
     }
+
+    if(newFileList[0]?.originFileObj) {
+      let imageDataUrl = await getBase64(newFileList[0]?.originFileObj)
+      setImageSrc(imageDataUrl)
+    }
+    setLoadingImage(false)
     setImageList(data)
   };
   /* IMAGE CHANGE FUNCTION */
+
+  const onSaveCroppedImage = useCallback(async () => {
+    setLoadingImage(true)
+    try {
+      const imageUrl = await getCroppedImg(imageSrc, croppedAreaPixels, rotation)
+      const file = await urltoFile(imageUrl, 'identity-card.png','image/png')
+      const imageFile = {
+        size: file.size,
+        type: file.type,
+        name: file.name,
+        status: 'done',
+        uid: -Math.abs(Math.random()),
+        lastModified: new Date().getTime(),
+        lastModifiedDate: new Date(),
+        originFileObj: file,
+        thumbUrl: imageUrl,
+      }
+
+      const data = {
+        ...imageList,
+        file: { value: [imageFile], isvalid: true, message: null }
+      }
+
+      setZoom(1)
+      setRotation(0)
+      setImageList(data)
+      setCrop({ x: 0, y: 0 })
+      setTimeout(() => {
+        setImageSrc(null)
+        setLoadingImage(false)
+      }, 200)
+    } catch (e) {
+      message.error('Terjadi kesalahan saat mengunggah foto!')
+      setImageSrc(null)
+      setLoadingImage(false)
+    }
+
+  }, [imageSrc, croppedAreaPixels, rotation, imageList])
 
   /* CARD KIND CHANGE FUNCTION */
   const identityCardChangeHandler = e => {
@@ -208,65 +234,129 @@ const Home = () => {
 
   return (
     <>
-      <Container className="py-5" style={{ height: '100vh', maxHeight: '100vh' }}>
+      <Container style={{ height: '100vh', maxHeight: '100vh' }}>
         <section className="h-100">
           <Row gutter={[16,16]} className="h-100">
 
-            {file.value[0]?.originFileObj && showCropper ? (
+            {imageSrc && file.value.length > 0 ? (
               <Col span={24} className="user-select-none">
-                {cropState?.loading && ( 
-                  <div className="cropper-container cropper-loading">
-                    <Spin />
-                  </div>
-                )}
-                <div className="cropper-container">
-                  {!cropState?.loading && file.value[0]?.originFileObj && ( 
-                    <h6 className="text-center font-weight-bold mb-4">
-                      Rapikan Foto 
-                      <Popover 
-                        title="Tips" 
-                        trigger="click"
-                        placement="bottom" 
-                        content={howToCrop}
-                        onVisibleChange={val => {
-                          setTimeout(() => {
-                            setIsShowTips(val)
-                          }, 500)
-                        }}
-                      >
-                        <i className="far fa-info-circle text-muted hover-pointer ml-1" />
-                      </Popover>
-                    </h6> 
-                  )}
-                  <Cropper
-                    ref={cropperRef}
-                    openCvPath="/static/opencv/opencv.js"
-                    onChange={onCropperChange}
-                    image={file.value[0]?.originFileObj}
-                    onDragStop={onCropperDragStop}
-                    maxWidth={size.width - 200}
-                    maxHeight={size.height - 200}
-                    lineColor="#00ff6f"
-                    pointBorder="5px solid #00ff6f"
-                    lineWidth={5}
-                  />
-
-                  {!cropState?.loading && file.value[0]?.originFileObj && (
-                    <Button 
-                      type="primary"
-                      className="mt-3"
-                      onClick={isShowTips ? () => {} : onCropSaveHandler}
-                      disabled={isShowTips}
-                      icon={<CheckOutlined />}
+                <div className="text-center px-lg-5 user-select-none mx-auto" style={{ width: '80vw' }}>
+                  <h6 className="text-center font-weight-bold mb-4 mt-4">
+                    Rapikan Foto 
+                    <Popover 
+                      title="Tips" 
+                      trigger="click"
+                      placement="bottom" 
+                      content={howToCrop}
+                      onVisibleChange={val => {
+                        setTimeout(() => {
+                          setIsShowTips(val)
+                        }, 500)
+                      }}
                     >
-                      Selesai
-                    </Button>
-                  )}
+                      <i className="far fa-info-circle text-muted hover-pointer ml-1" />
+                    </Popover>
+                  </h6>
+                  <div className="crop-container">
+                    <ReactCropper
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={3 / 2}
+                      image={imageSrc}
+                      rotation={rotation}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      zoomWithScroll={false}
+                      onRotationChange={setRotation}
+                      onCropComplete={onCropComplete}
+                    />
+                  </div>
+
+                  <Row gutter={[20,20]} justify="center" className="mt-3">
+                    <Col span={24}>
+                      <div className="control-button">
+                        <Button 
+                          type="text"
+                          disabled={isMinZoom}
+                          onClick={() => setZoom(s => {
+                            if(s - 0.01 <= MIN_ZOOM) return MIN_ZOOM
+                            else return s - 0.01
+                          })}
+                        >
+                          <i className="far fa-search-minus fs-16" />
+                        </Button>
+                        <Slider
+                          value={zoom}
+                          min={MIN_ZOOM}
+                          max={MAX_ZOOM}
+                          step={ZOOM_STEP}
+                          className="w-100 mx-3"
+                          tooltipVisible={false}
+                          onChange={val => setZoom(val)}
+                        />
+                        <Button 
+                          type="text"
+                          disabled={isMaxZoom}
+                          onClick={() => setZoom(s => {
+                            if(s + 0.01 >= MAX_ZOOM) return MAX_ZOOM
+                            else return s + 0.01
+                          })}
+                        >
+                          <i className="far fa-search-plus fs-16" />
+                        </Button>
+                      </div>
+
+                      <div className="control-button">
+                        <Button 
+                          type="text" 
+                          disabled={isMinRotate}
+                          onClick={() => setRotation(s => {
+                            if(s - 1 <= MIN_ROTATE) return MIN_ROTATE
+                            else return s - 1
+                          })}
+                        >
+                          <i className="far fa-undo" />
+                        </Button>
+                        <Slider
+                          min={MIN_ROTATE}
+                          max={MAX_ROTATE}
+                          step={ZOOM_STEP}
+                          value={rotation}
+                          className="w-100 mx-3"
+                          tooltipVisible={false}
+                          onChange={val => setRotation(val)}
+                        />
+                        <Button 
+                          type="text" 
+                          disabled={isMaxRotate}
+                          onClick={() => setRotation(s => {
+                            if(s + 1 >= MAX_ROTATE) return MAX_ROTATE
+                            else return s + 1
+                          })}
+                        >
+                          <i className="far fa-redo" />
+                        </Button>
+                      </div>
+                    </Col>
+
+                    <Col span={24}>
+                      <Button
+                        type="primary"
+                        loading={loadingImage}
+                        disabled={loadingImage || isShowTips}
+                        onClick={isShowTips ? () => {} : onSaveCroppedImage}
+                        icon={<CheckOutlined />}
+                      >
+                        Selesai
+                      </Button>
+                    </Col>
+
+                  </Row>
                 </div>
               </Col>
             ) : (
               <>
-                <Col xxl={12} xl={12} lg={14} md={24} sm={24} xs={24}>
+                <Col xxl={12} xl={12} lg={14} md={24} sm={24} xs={24} className="py-5">
 
                   <section className="d-flex flex-column justify-content-between h-100 px-lg-5">
                     <div className="w-100 user-select-none">
@@ -557,7 +647,7 @@ const Home = () => {
                   </section>
                 </Col>
 
-                <Col xxl={12} xl={12} lg={10} md={0} sm={0} xs={0}>
+                <Col xxl={12} xl={12} lg={10} md={0} sm={0} xs={0} className="py-5">
                   <section className="d-flex flex-column h-100 text-center justify-content-center user-select-none">
                     <AntImage
                       preview={false}
@@ -569,6 +659,7 @@ const Home = () => {
                 </Col>
               </>
             )}
+
           </Row>
         </section>
       </Container>
@@ -585,18 +676,6 @@ const Home = () => {
         object-fit: cover;
       }
 
-      :global(.cropper-container) {
-        justify-content: space-between;
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        height: calc(100vh - 48px - 32px - 130px);
-      }
-      :global(.cropper-container.cropper-loading) {
-        justify-content: center;
-      }
-
       :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
         height: 40px!important;
       }
@@ -605,12 +684,23 @@ const Home = () => {
         line-height: 38px;
       }
 
-      /* LOGIN & REGISTER */
-      :global(.modal-login > .ant-modal-content, .modal-login
-          > .ant-modal-content
-          > .ant-modal-header) {
-        border-radius: 10px;
-        border: unset;
+      .crop-container {
+        position: relative;
+        width: 100%;
+        height: 50vh;
+        background: #ffffff;
+      }
+
+      .control-button {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      :global(.control-button button) {
+        width: 46px;
       }
 
       `}</style>

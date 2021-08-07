@@ -19,6 +19,16 @@ const genderList = [
     value: 'PEREMPUAN'
   }
 ];
+const checkTypeList = [
+  {
+    label: 'GeNose',
+    value: 'genose'
+  },
+  {
+    label: 'Antigen',
+    value: 'antigen'
+  }
+];
 const checkResultList = [
   {
     label: 'Positive',
@@ -37,6 +47,7 @@ const checkResultList = [
 const DrawerFilter = ({ visible, onClose }) => {
   const screens = useBreakpoint();
   const [gender, setGender] = useState([])
+  const [checkType, setCheckType] = useState([])
   const [checkResult, setCheckResult] = useState([])
 
   const onChangeGender = (tag) => {
@@ -44,8 +55,12 @@ const DrawerFilter = ({ visible, onClose }) => {
     else setGender([tag])
   }
 
+  const onChangeCheckType = (tag) => {
+    if(tag === checkType[0]) setCheckType([])
+    else setCheckType([tag])
+  }
+
   const onChangeCheckResult = (tag) => {
-    console.log(tag)
     if(tag === checkResult[0]) setCheckResult([])
     else setCheckResult([tag])
   }
@@ -78,9 +93,18 @@ const DrawerFilter = ({ visible, onClose }) => {
         <Form layout="vertical" className="mb-3">
           <div className="p-3">
             <Form.Item 
-              label={<span className="filter-title">NIK / Nama</span>}
+              label={<span className="filter-title">Jenis Pemeriksaan</span>}
             >
-              <Input placeholder="NIK / Nama pasien" />
+              {checkTypeList.map(tag => (
+                <Tag.CheckableTag
+                  key={tag.value}
+                  className="py-1 user-select-none"
+                  checked={checkType.indexOf(tag.value) > -1}
+                  onChange={() => onChangeCheckType(tag.value)}
+                >
+                  {tag.label}
+                </Tag.CheckableTag>
+              ))}
             </Form.Item>
 
             <Form.Item 
@@ -118,12 +142,17 @@ const DrawerFilter = ({ visible, onClose }) => {
             >
               <Select 
                 showSearch 
+                allowClear
+                mode="multiple"
                 defaultValue={[]}
                 className="w-100"
                 placeholder="Cari instansi"
               >
-                <Select.Option value="Bhakti Rahayu Denpasar">
-                  Bhakti Rahayu Denpasar
+                <Select.Option value="Denpasar">
+                  Denpasar
+                </Select.Option>
+                <Select.Option value="Tabanan">
+                  Tabanan
                 </Select.Option>
               </Select>
             </Form.Item>
@@ -133,12 +162,17 @@ const DrawerFilter = ({ visible, onClose }) => {
             >
               <Select 
                 showSearch 
+                allowClear
+                mode="multiple"
                 defaultValue={[]}
                 className="w-100"
                 placeholder="Cari dokter"
               >
                 <Select.Option value="Okky Suardhana">
                   Okky Suardhana
+                </Select.Option>
+                <Select.Option value="Suardhana Okky">
+                  Suardhana Okky
                 </Select.Option>
               </Select>
             </Form.Item>
@@ -148,12 +182,17 @@ const DrawerFilter = ({ visible, onClose }) => {
             >
               <Select 
                 showSearch 
+                allowClear
+                mode="multiple"
                 defaultValue={[]}
                 className="w-100"
                 placeholder="Cari penjamin"
               >
                 <Select.Option value="I Komang Okky">
                   I Komang Okky
+                </Select.Option>
+                <Select.Option value="Suardhana">
+                  Suardhana
                 </Select.Option>
               </Select>
             </Form.Item>
@@ -163,13 +202,17 @@ const DrawerFilter = ({ visible, onClose }) => {
             >
               <Select 
                 showSearch 
+                allowClear
+                mode="multiple"
                 defaultValue={[]}
                 className="w-100"
                 placeholder="Cari lokasi pelayanan"
               >
-                <Select.Option value="Hotel">
-                  Hotel
-                </Select.Option>
+                {[...Array(30)].map((_, i) => (
+                  <Select.Option value={`Hotel${i}`} key={i}>
+                    Hotel {i}
+                  </Select.Option>
+                ))}
               </Select>
             </Form.Item>
 
