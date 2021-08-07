@@ -1,4 +1,5 @@
 export { getUser, logout } from './auth'
 export { getDoctor } from './doctor'
 export { getGuardian } from './guardian'
+export { getInstitution } from './institution'
 export { getLocationService } from './locationService'

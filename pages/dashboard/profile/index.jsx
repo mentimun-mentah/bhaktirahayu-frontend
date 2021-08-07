@@ -122,7 +122,7 @@ const ProfileContainer = () => {
       })
     }
 
-    axios.put('users/update-account', formData, formHeaderHandler())
+    axios.put('/users/update-account', formData, formHeaderHandler())
       .then(res => {
         setLoading(false)
         dispatch(actions.getUser())

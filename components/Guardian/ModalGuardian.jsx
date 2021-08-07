@@ -42,13 +42,13 @@ const ModalGuardian = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
     e.preventDefault()
     if(formGuardianIsValid(guardian, setGuardian)) {
       let config = {
-        url: 'guardians/create',
+        url: '/guardians/create',
         method: 'post'
       }
       if(isUpdate) {
         const { id } = guardian
         config = {
-          url: `guardians/update/${id.value}`,
+          url: `/guardians/update/${id.value}`,
           method: 'put'
         }
       }
@@ -59,7 +59,7 @@ const ModalGuardian = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
       axios[config.method](config.url, data, jsonHeaderHandler())
         .then(res => {
           getGuardian()
-          formErrorMessage('success', res.data?.detail)
+          formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
           setLoading(false)
           onCloseModalHandler()
         })
@@ -68,10 +68,10 @@ const ModalGuardian = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
           const state = _.cloneDeep(guardian)
           const errDetail = err.response?.data.detail
 
-          if(errDetail == signature_exp) {
+          if(errDetail === signature_exp) {
             getGuardian()
             onCloseModalHandler()
-            formErrorMessage("success", "Successfully add a new guardian.")
+            formErrorMessage(err.response.status === 404 ? 'error' : 'success', isUpdate ? 'Successfully update the guardian.' : 'Successfully add a new guardian.')
             if(isUpdate) setIsUpdate(false)
           }
           else if(typeof errDetail === "string" && isIn(errDetail, errName)) {

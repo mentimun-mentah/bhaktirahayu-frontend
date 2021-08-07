@@ -424,7 +424,7 @@ const Home = () => {
                           ) : (
                             <div className="text-center">
                               <Upload
-                                accept="image/*"
+                                accept="image/jpeg,image/png"
                                 listType="picture-card"
                                 className="ktp-kis-uploader text-center user-select-none"
                                 onPreview={imagePreview}
