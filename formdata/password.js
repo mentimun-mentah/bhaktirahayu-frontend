@@ -16,19 +16,19 @@ export const formConfigPasswordIsValid = (state, setState) => {
   const confirm_password = { ...state.confirm_password }
   let isGood = true
 
-  if(!isLength(old_password.value, { min: 6, max: 100 })){
+  if(!isLength(old_password.value || "", { min: 6, max: 100 })){
     isGood = false;
     old_password.isValid = false;
     old_password.message = "Ensure this value has 6 - 100 characters";
   }
 
-  if(!isLength(password.value, { min: 6, max: 100 })){
+  if(!isLength(password.value || "", { min: 6, max: 100 })){
     isGood = false;
     password.isValid = false;
     password.message = "Ensure this value has 6 - 100 characters";
   }
 
-  if(!isLength(confirm_password.value, { min: 6, max: 100 })){
+  if(!isLength(confirm_password.value || "", { min: 6, max: 100 })){
     isGood = false;
     confirm_password.isValid = false;
     confirm_password.message = "Ensure this value has 6 - 100 characters";
@@ -43,7 +43,7 @@ export const formVerifyPasswordIsValid = (state, setState) => {
   const password = { ...state.password }
   let isGood = true
 
-  if(!isLength(password.value, { min: 6, max: 100 })){
+  if(!isLength(password.value || "", { min: 6, max: 100 })){
     isGood = false;
     password.isValid = false;
     password.message = "Ensure this value has 6 - 100 characters";

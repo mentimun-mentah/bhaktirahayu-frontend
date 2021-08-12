@@ -1,5 +1,5 @@
-export const HOME = "HOME", GENOSE = "GENOSE", ANTIGEN = "ANTIGEN", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS", 
-  GUARDIAN = "GUARDIAN", LOCATION = "LOCATION-SERVICE", ADMIN = "ADMIN", PROFILE = "PROFILE", INSTITUTION = "INSTITUTION"
+export const HOME = "HOME", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS", 
+  GUARDIAN = "GUARDIAN", LOCATION = "LOCATION-SERVICE", ADMIN = "ADMIN", PROFILE = "PROFILE", INSTITUTION = "INSTITUTION", CLIENTS = "CLIENTS"
 
 export const dashboard_routes = [
   {
@@ -17,17 +17,10 @@ export const dashboard_routes = [
     role: ['admin','doctor']
   },
   {
-    key: ANTIGEN,
-    icon: 'far fa-sword-laser',
-    route: '/dashboard/antigen',
-    label: 'Antigen',
-    role: ['admin','doctor']
-  },
-  {
-    key: GENOSE,
-    icon: 'far fa-wind',
-    route: '/dashboard/genose',
-    label: 'GeNose',
+    key: CLIENTS,
+    icon: 'far fa-user-friends',
+    route: '/dashboard/clients',
+    label: 'Clients',
     role: ['admin','doctor']
   },
   {

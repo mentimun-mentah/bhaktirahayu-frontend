@@ -19,31 +19,31 @@ export const formAdminIsValid = (state, setState, isUpdate) => {
 
   let isGood = true
 
-  if(isEmpty(username?.value)) {
+  if(isEmpty(username?.value || "")) {
     isGood = false
     username.isValid = false
     username.message = "Value can't be empty"
   }
 
-  if(!isEmail(email.value)){
+  if(!isEmail(email?.value || "")){
     isGood = false
     email.isValid = false
     email.message = "Value is not a valid email address"
   }
 
-  if(!isLength(password.value, { min: 6, max: 100 })){
+  if(!isLength(password?.value || "", { min: 6, max: 100 })){
     isGood = false;
     password.isValid = false;
     password.message = "Ensure this value has 6 - 100 characters";
   }
 
-  if(isUpdate && !isLength(old_password.value, { min: 6, max: 100 })){
+  if(isUpdate && !isLength(old_password?.value || "", { min: 6, max: 100 })){
     isGood = false;
     old_password.isValid = false;
     old_password.message = "Ensure this value has 6 - 100 characters";
   }
 
-  if(!isLength(confirm_password.value, { min: 6, max: 100 })){
+  if(!isLength(confirm_password?.value || "", { min: 6, max: 100 })){
     isGood = false;
     confirm_password.isValid = false;
     confirm_password.message = "Ensure this value has 6 - 100 characters";

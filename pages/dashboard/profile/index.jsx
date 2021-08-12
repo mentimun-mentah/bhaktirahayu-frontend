@@ -135,7 +135,7 @@ const ProfileContainer = () => {
         const stateImage = _.cloneDeep(imageList)
         const errDetail = err.response?.data.detail
 
-        if(errDetail == signature_exp) {
+        if(errDetail === signature_exp) {
           dispatch(actions.getUser())
           formErrorMessage("success", "Success updated your account.")
         }

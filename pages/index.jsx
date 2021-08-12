@@ -1,16 +1,19 @@
 import { motion } from 'framer-motion'
-import { useState, useCallback } from 'react'
 import { Container, Media } from 'react-bootstrap'
+import { useSelector, useDispatch } from 'react-redux'
+import { useState, useEffect, useCallback } from 'react'
 import { LoadingOutlined, CheckOutlined } from '@ant-design/icons'
 import { Row, Col, Steps, Button, Form, Upload, Image as AntImage } from 'antd'
-import { DatePicker, message, Select, Radio, Input, Popover, Slider } from 'antd'
+import { DatePicker, message, Select, Radio, Input, Popover, Slider, Modal } from 'antd'
 
 import { urltoFile } from 'lib/utility'
 import { formImage } from 'formdata/image'
 import { getCroppedImg } from 'lib/canvasUtils'
-import { formRegister } from 'formdata/register'
+import { formErrorMessage, errPhone } from 'lib/axios'
 import { formIdentityCard } from 'formdata/identityCard'
+import { disabledTomorrow, DATE_FORMAT } from 'lib/disabledDate'
 import { step_list, preparation_list, howToCrop } from 'data/home'
+import { formRegister, formRegisterIsValid } from 'formdata/register'
 import { imagePreview, uploadButton, imageValidationNoHeader, getBase64 } from 'lib/imageUploader'
 
 import _ from 'lodash'
@@ -22,8 +25,8 @@ import ReactCropper from 'react-easy-crop'
 import id_ID from "antd/lib/date-picker/locale/id_ID"
 
 import axios from 'lib/axios'
+import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
-
 
 moment.locale('id')
 message.config({ duration: 3, maxCount: 1 });
@@ -38,6 +41,10 @@ const ButtonAction = ({ onClick, title, type, disabled }) => (
 )
 
 const Home = () => {
+  const dispatch = useDispatch()
+
+  const institutions = useSelector(state => state.institution.institution)
+
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [imageSrc, setImageSrc] = useState(null)
@@ -59,7 +66,7 @@ const Home = () => {
 
   const { file } = imageList
   const { kind } = identityCard
-  const { nik, name, birth_place, birth_date, gender, address } = register
+  const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id } = register
 
   const onCropComplete = useCallback((_, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels)
@@ -138,7 +145,27 @@ const Home = () => {
   const onChangeHandler = (e, item) => {
     const name = !item && e.target.name;
     const value = !item && e.target.value;
-    if(item){
+
+    if(item === "nik"){
+      const { value } = e.target;
+      const reg = /^-?\d*(\.\d*)?$/;
+      if ((!isNaN(value) && reg.test(value)) || value === '') {
+        const data = {
+          ...register,
+          nik: { ...register['nik'], value: value, isValid: true, message: null }
+        }
+        setRegister(data)
+      }
+    } 
+    else if(item === "checking_type") {
+      const data = {
+        ...register,
+        [item]: { ...register[item], value: e, isValid: true, message: null },
+        institution_id: { ...register['institution_id'], value: [] }
+      }
+      setRegister(data)
+    }
+    else if(item) {
       const data = {
         ...register,
         [item]: { ...register[item], value: e, isValid: true, message: null }
@@ -153,22 +180,124 @@ const Home = () => {
       setRegister(data)
     }
   }
+
+  const onBirthDateChangeHandler = (date) => {
+    if(moment(date).isValid()) {
+      const data = {
+        ...register,
+        birth_date: { ...register['birth_date'], value: moment(date).format(DATE_FORMAT), isValid: true, message: null }
+      }
+      setRegister(data)
+    }
+  }
   /* REGISTER CHANGE FUNCTION */
 
   const onSubmitHandler = e => {
     e.preventDefault()
-    setLoading(true)
+    if(formRegisterIsValid(register, setRegister)) {
+      setLoading(true)
+      const data = {
+        nik: nik?.value.toUpperCase(),
+        name: name?.value.toUpperCase(),
+        birth_place: birth_place?.value.toUpperCase(),
+        birth_date: birth_date?.value,
+        gender: gender?.value,
+        address: address?.value.toUpperCase(),
+        phone: phone?.value,
+        checking_type: checking_type?.value,
+        institution_id: institution_id?.value
+      }
+      axios.post('/clients/create', data)
+        .then(res => {
+          setStep(0)
+          setLoading(false)
+          setImageSrc(null)
+          setImageList(formImage)
+          setRegister(formRegister)
+          setCroppedAreaPixels(null)
+          setIdentityCard(formIdentityCard)
+          formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
+        })
+        .catch(err => {
+          setLoading(false)
+          const state = _.cloneDeep(register)
+          const errDetail = err.response?.data.detail
+          if(typeof errDetail === "string" && isIn(errDetail, errPhone)) {
+            state['phone'].value = state['phone'].value
+            state['phone'].isValid = false
+            state['phone'].message = errDetail
+          }
+          else if(typeof errDetail === "string" && !isIn(errDetail, errPhone)) {
+            Modal.error({ content: errDetail, centered: true })
+          }
+          else {
+            errDetail.map((data) => {
+              const key = data.loc[data.loc.length - 1];
+              if(state[key]) {
+                state[key].isValid = false
+                state[key].message = data.msg
+              }
+            });
+          }
+          setRegister(state)
+        })
+    }
+  }
 
-    setTimeout(() => {
-      setLoading(false)
-      setImageList(formImage)
-      setRegister(formRegister)
-      message.success('Sukses mendaftar!')
-    }, 2000)
+  const getDataByNik = (nik) => {
+    const query = { nik: nik }
+    axios.get('/clients/get-data-by-nik', { params: query })
+      .then(res => {
+        if(res?.data) {
+          const state = _.cloneDeep(register)
+          for (const [key, value] of Object.entries(res.data)) {
+            if(state[key] && key !== "nik") {
+              state[key].value = value
+              state[key].isValid = true
+              state[key].message = null
+            }
+            if(key === "birth_date" && value) {
+              state[key].value = moment(value).format(DATE_FORMAT)
+              state[key].isValid = true
+              state[key].message = null
+            }
+          }
+          setRegister(state)
+        }
+        else if(res?.data === null) {
+          getInfoByNik(nik)
+        }
+        else {
+          return null
+        }
+      })
+      .catch(() => {
+        return null
+      })
+  }
 
-    setTimeout(() => {
-      setStep(0)
-    }, 3000)
+  const getInfoByNik = (nik) => {
+    const query = { nik: nik }
+    axios.get('/clients/get-info-by-nik', { params: query })
+      .then(res => {
+        if(res?.data?.valid) {
+          const state = _.cloneDeep(register)
+          if(res?.data?.gender) {
+            state['gender'].value = res?.data?.gender
+            state['gender'].isValid = true
+            state['gender'].message = null
+          }
+          if(res?.data?.birth_date) {
+            state['birth_date'].value = moment(res?.data?.birth_date).format(DATE_FORMAT)
+            state['birth_date'].isValid = true
+            state['birth_date'].message = null
+          }
+          setRegister(state)
+        }
+      })
+      .catch(() => {
+        return null
+      })
   }
 
   const onUploadPhotoHandler = e => {
@@ -187,8 +316,9 @@ const Home = () => {
       }
     })
 
-    axios.post('/users/identity-card-ocr', formData)
+    axios.post('/clients/identity-card-ocr', formData)
       .then(res => {
+        console.log("CARD OCR => ", res.data)
         setLoading(false)
         const state = _.cloneDeep(register)
         for (const [key, value] of Object.entries(res.data)) {
@@ -197,11 +327,17 @@ const Home = () => {
             state[key].isValid = true
             state[key].message = null
           }
+          if(key === "birth_date" && value) {
+            state[key].value = moment(value).format(DATE_FORMAT)
+            state[key].isValid = true
+            state[key].message = null
+          }
         }
         setRegister(state)
         setStep(2)
       })
       .catch(err => {
+        console.log(err)
         setLoading(false)
         const state = _.cloneDeep(identityCard)
         const stateImage = _.cloneDeep(imageList)
@@ -212,7 +348,7 @@ const Home = () => {
           stateImage.file.message = errDetail
         }
         else {
-          errDetail.map((data) => {
+          errDetail?.map((data) => {
             const key = data.loc[data.loc.length - 1];
             if(state[key]){
               state[key].value = state[key].value
@@ -231,6 +367,20 @@ const Home = () => {
         setImageList(stateImage)
       })
   }
+
+  useEffect(() => {
+    if(nik && nik?.value?.length === 16) {
+      getDataByNik(nik.value)
+    }
+  }, [nik.value])
+
+  useEffect(() => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = 100
+    queryString["checking_type"] = checking_type.value
+    dispatch(actions.getInstitution({ ...queryString }))
+  }, [checking_type.value])
 
   return (
     <>
@@ -430,7 +580,7 @@ const Home = () => {
                                 onPreview={imagePreview}
                                 onChange={imageChangeHandler}
                                 fileList={file.value}
-                                beforeUpload={f => imageValidationNoHeader(f, "image", "/users/identity-card-ocr", "post", setLoadingImage)}
+                                beforeUpload={f => imageValidationNoHeader(f, "image", "/clients/identity-card-ocr", "post", setLoadingImage)}
                               >
                                 {file.value.length >= 1 ? null : uploadButton(loadingImage)}
                               </Upload>
@@ -499,9 +649,9 @@ const Home = () => {
                             >
                               <Input 
                                 name="nik"
-                                className="py-2"
                                 value={nik.value}
-                                onChange={onChangeHandler}
+                                className="py-2 text-uppercase"
+                                onChange={(e) => onChangeHandler(e, "nik")}
                                 placeholder="Nomor Induk Kependudukan"
                               />
                               <ErrorMessage item={nik} />
@@ -513,7 +663,7 @@ const Home = () => {
                             >
                               <Input 
                                 name="name"
-                                className="py-2"
+                                className="py-2 text-uppercase"
                                 value={name.value}
                                 onChange={onChangeHandler}
                                 placeholder="Nama Lengkap"
@@ -521,62 +671,92 @@ const Home = () => {
                               <ErrorMessage item={name} />
                             </Form.Item>
                             
-                            <Form.Item
-                              label="Tempat Lahir"
-                              validateStatus={!birth_place.isValid && birth_place.message && "error"}
-                            >
-                              <Input 
-                                name="birth_place"
-                                className="py-2"
-                                value={birth_place.value}
-                                onChange={onChangeHandler}
-                                placeholder="Tempat Lahir"
-                              />
-                              <ErrorMessage item={birth_place} />
-                            </Form.Item>
+                            <Row gutter={[10,10]}>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item
+                                  label="Tempat Lahir"
+                                  validateStatus={!birth_place.isValid && birth_place.message && "error"}
+                                >
+                                  <Input 
+                                    name="birth_place"
+                                    className="py-2 text-uppercase"
+                                    value={birth_place.value}
+                                    onChange={onChangeHandler}
+                                    placeholder="Tempat Lahir"
+                                  />
+                                  <ErrorMessage item={birth_place} />
+                                </Form.Item>
+                              </Col>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item 
+                                  label="Tanggal Lahir"
+                                  validateStatus={!birth_date.isValid && birth_date.message && "error"}
+                                >
+                                  <DatePicker 
+                                    inputReadOnly
+                                    locale={id_ID}
+                                    format="DD MMMM YYYY"
+                                    className="w-100 fs-14 py-2"
+                                    placeholder="Tanggal Lahir"
+                                    disabledDate={disabledTomorrow}
+                                    onChange={onBirthDateChangeHandler}
+                                    value={birth_date?.value ? moment(birth_date?.value, DATE_FORMAT) : ''}
+                                  />
+                                  <ErrorMessage item={birth_date} />
+                                </Form.Item>
+                              </Col>
+                            </Row>
 
-                            <Form.Item 
-                              label="Tanggal Lahir"
-                              validateStatus={!birth_date.isValid && birth_date.message && "error"}
-                            >
-                              <DatePicker 
-                                inputReadOnly
-                                locale={id_ID}
-                                format="DD MMMM YYYY"
-                                className="w-100 fs-14 py-2"
-                                placeholder="Tanggal Lahir"
-                                value={birth_date.value ? moment(birth_date.value) : ""}
-                              />
-                              <ErrorMessage item={birth_date} />
-                            </Form.Item>
 
-                            <Form.Item
-                              label="Jenis Kelamin"
-                              validateStatus={!gender.isValid && gender.message && "error"}
-                            >
-                              <Select 
-                                value={gender.value}
-                                placeholder="Jenis Kelamin"
-                                className="w-100 select-py-2"
-                                onChange={e => onChangeHandler(e, "gender")}
-                              >
-                                <Select.Option value="LAKI-LAKI">
-                                  <span className="va-sub">LAKI-LAKI</span>
-                                </Select.Option>
-                                <Select.Option value="PEREMPUAN">
-                                  <span className="va-sub">PEREMPUAN</span>
-                                </Select.Option>
-                              </Select>
-                              <ErrorMessage item={gender} />
-                            </Form.Item>
+                            
+                            <Row gutter={[10,10]}>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item
+                                  label="Jenis Kelamin"
+                                  validateStatus={!gender.isValid && gender.message && "error"}
+                                >
+                                  <Select 
+                                    value={gender.value}
+                                    placeholder="Jenis Kelamin"
+                                    className="w-100 select-py-2"
+                                    onChange={e => onChangeHandler(e, "gender")}
+                                  >
+                                    <Select.Option value="LAKI-LAKI">
+                                      <span className="va-sub text-uppercase">LAKI-LAKI</span>
+                                    </Select.Option>
+                                    <Select.Option value="PEREMPUAN">
+                                      <span className="va-sub text-uppercase">PEREMPUAN</span>
+                                    </Select.Option>
+                                  </Select>
+                                  <ErrorMessage item={gender} />
+                                </Form.Item>
+                              </Col>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item
+                                  label="No. Telepon"
+                                  validateStatus={!phone.isValid && phone.message && "error"}
+                                >
+                                  <Input
+                                    name="phone"
+                                    className="py-2 text-uppercase"
+                                    value={phone.value}
+                                    onChange={onChangeHandler}
+                                    placeholder="Nomor Telepon"
+                                    prefix="+62"
+                                  />
+                                  <ErrorMessage item={phone} />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+
 
                             <Form.Item
                               label="Alamat"
                               validateStatus={!address.isValid && address.message && "error"}
                             >
-                              <Input 
+                              <Input
                                 name="address"
-                                className="py-2"
+                                className="py-2 text-uppercase"
                                 value={address.value}
                                 onChange={onChangeHandler}
                                 placeholder="Alamat"
@@ -584,42 +764,51 @@ const Home = () => {
                               <ErrorMessage item={address} />
                             </Form.Item>
 
-                            <Form.Item label="Jenis Pemeriksaan">
-                              <Select 
-                                defaultValue="antigen" 
-                                className="w-100 select-py-2"
-                                placeholder="Jenis Pemeriksaan"
-                              >
-                                <Select.Option value="antigen">
-                                  <span className="va-sub">Antigen</span>
-                                </Select.Option>
-                                <Select.Option value="genose">
-                                  <span className="va-sub">Genose</span>
-                                </Select.Option>
-                              </Select>
-                            </Form.Item>
 
-                            <Form.Item label="Pilih Instansi">
-                              <Select 
-                                showSearch 
-                                defaultValue={[]}
-                                className="w-100 select-py-2 with-input"
-                                placeholder="Pilih Instansi"
-                              >
-                                <Select.Option value="Bhakti Rahayu Denpasar">
-                                  <span className="va-sub">Bhakti Rahayu Denpasar</span>
-                                </Select.Option>
-                                <Select.Option value="Bhakti Rahayu Tabanan">
-                                  <span className="va-sub">Bhakti Rahayu Tabanan</span>
-                                </Select.Option>
-                                <Select.Option value="Bhaksena Bypass Ngurah Rai">
-                                  <span className="va-sub">Bhaksena Bypass Ngurah Rai</span>
-                                </Select.Option>
-                                <Select.Option value="Bhaksena Pelabuhan Gilimanuk">
-                                  <span className="va-sub">Bhaksena Pelabuhan Gilimanuk</span>
-                                </Select.Option>
-                              </Select>
-                            </Form.Item>
+                            <Row gutter={[10,10]}>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item 
+                                  label="Jenis Pemeriksaan"
+                                  validateStatus={!checking_type.isValid && checking_type.message && "error"}
+                                >
+                                  <Select 
+                                    className="w-100 select-py-2"
+                                    placeholder="Jenis Pemeriksaan"
+                                    onChange={e => onChangeHandler(e, "checking_type")}
+                                  >
+                                    <Select.Option value="antigen">
+                                      <span className="va-sub">Antigen</span>
+                                    </Select.Option>
+                                    <Select.Option value="genose">
+                                      <span className="va-sub">Genose</span>
+                                    </Select.Option>
+                                  </Select>
+                                  <ErrorMessage item={checking_type} />
+                                </Form.Item>
+                              </Col>
+                              <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+                                <Form.Item 
+                                  label="Pilih Instansi"
+                                  validateStatus={!institution_id.isValid && institution_id.message && "error"}
+                                >
+                                  <Select 
+                                    showSearch 
+                                    placeholder="Pilih Instansi"
+                                    className="w-100 select-py-2 with-input"
+                                    value={institution_id.value}
+                                    onChange={e => onChangeHandler(e, "institution_id")}
+                                  >
+                                    {institutions?.data?.length > 0 && institutions?.data.map(institution => (
+                                      <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
+                                        <span className="va-sub">{institution.institutions_name}</span>
+                                      </Select.Option>
+                                    ))}
+                                  </Select>
+                                  <ErrorMessage item={institution_id} />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+
                           </Form>
                         </div>
 
@@ -674,14 +863,6 @@ const Home = () => {
       }
       :global(.ktp-kis-uploader .ant-upload-list-picture-card .ant-upload-list-item-thumbnail, .ant-upload-list-picture-card .ant-upload-list-item-thumbnail img) {
         object-fit: cover;
-      }
-
-      :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
-        height: 40px!important;
-      }
-
-      :global(.select-py-2.with-input .ant-select-selector .ant-select-selection-placeholder) {
-        line-height: 38px;
       }
 
       .crop-container {

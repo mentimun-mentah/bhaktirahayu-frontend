@@ -87,8 +87,12 @@ export const logout = () => {
 
     dispatch(getUserSuccess({}))
 
-    if (csrf_access_token && csrf_refresh_token) {
+    const removeClientInstitutionId = () => {
+      nookies.destroy(null, 'institution_id')
+      nookies.destroy(null, 'location_service_id ')
+    }
 
+    if (csrf_access_token && csrf_refresh_token) {
       let headerAccessConfig = { headers: { "X-CSRF-TOKEN": csrf_access_token, } };
       let headerRefreshConfig = { headers: { "X-CSRF-TOKEN": csrf_refresh_token, } };
 
@@ -98,24 +102,30 @@ export const logout = () => {
       return Promise.all([req_access_revoke, req_refresh_revoke])
         .then(() => {
           axios.delete("/users/delete-cookies")
+          removeClientInstitutionId()
         })
         .catch(() => {
           axios.delete("/users/delete-cookies")
           Promise.reject([req_access_revoke, req_refresh_revoke])
+          removeClientInstitutionId()
         })
         .then(() => {
           axios.delete("/users/delete-cookies")
+          removeClientInstitutionId()
           dispatch(authLogout())
         })
     } 
     else {
       if(csrf_access_token){
         axios.delete(access_revoke, jsonHeaderHandler())
+        removeClientInstitutionId()
       }
       else if(csrf_refresh_token){
         axios.delete(refresh_revoke, refreshHeader())
+        removeClientInstitutionId()
       }
       axios.delete("/users/delete-cookies")
+      removeClientInstitutionId()
       dispatch(authLogout())
     }
 

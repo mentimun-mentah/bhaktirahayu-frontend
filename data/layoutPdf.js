@@ -138,7 +138,7 @@ export const headerGilimanukGenose = doc => {
 export const saran = (doc, h) => {
   const width = doc.internal.pageSize.getWidth()
 
-  let hi = 265
+  let hi = 275
   if(h) hi = h
 
   doc.setFontSize(8)
@@ -152,8 +152,8 @@ export const saran = (doc, h) => {
   return doc
 }
 
-export const footerPdf = (doc, h) => {
-  let hi = 365
+export const footerPdf = (doc, h, doctor_name, doctor_signature, qrcode, stamp) => {
+  let hi = 375
   if(h) hi = h
 
   /* FOOTER SIGNATURE */
@@ -162,10 +162,11 @@ export const footerPdf = (doc, h) => {
   doc.setFont('times', 'bold')
   doc.text("Dokter Penanggung Jawab", 270, hi+10, null, null, "center")
   doc.setFont('times', 'normal')
-  doc.text('dr. I Nym.Gede Bayu Wiratama S., MARS', 270, hi+60, null, null, "center")
-  doc.addImage(signature, 'png', 250, hi+12, 40, 40, "center")
+  doc.text(doctor_name, 270, hi+60, null, null, "center")
+  doc.addImage(doctor_signature, 'png', 250, hi+12, 40, 40, "center")
  
-  doc.addImage(qr_code, 'png', 45, hi, 60, 60)
+  doc.addImage(stamp, 'png', 220, hi+8, 50, 50)
+  doc.addImage(qrcode, 'png', 45, hi, 60, 60)
   /* FOOTER SIGNATURE */
 
   return doc

@@ -79,7 +79,7 @@ const ModalGuardian = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
             state.name.isValid = false
             state.name.message = errDetail
           }
-          else if(typeof(errDetail) === "string" && !isIn(errDetail, errName)) {
+          else if(typeof errDetail === "string" && !isIn(errDetail, errName)) {
             formErrorMessage("error", errDetail)
           }
           else {

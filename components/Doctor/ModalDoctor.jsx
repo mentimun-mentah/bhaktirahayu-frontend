@@ -388,9 +388,9 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
 
                 <h2 className="fs-14 bold m-b-0">Note:</h2>
                 <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
-                  <li>Password lama akan di ubah menjadi <mark>asdasd</mark></li>
+                  <li>Password lama akan di ubah menjadi <mark>bhaktirahayu</mark></li>
                   <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password 
-                      <mark>asdasd</mark> dan mengubah passwordnya pada halaman profile
+                      <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
                   </li>
                 </ul>
               </Form>
@@ -416,9 +416,9 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
             <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
               <li>Ukuran file: maks. 5MB</li>
               <li>Ukuran gambar: 500 × 500 px</li>
-              <li>Password default adalah <mark>asdasd</mark></li>
+              <li>Password default adalah <mark>bhaktirahayu</mark></li>
               <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password 
-                  <mark>asdasd</mark> dan mengubah passwordnya pada halaman profile
+                  <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
               </li>
             </ul>
           </Form>

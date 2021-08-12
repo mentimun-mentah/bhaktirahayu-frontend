@@ -11,7 +11,7 @@ export const formInstitutionIsValid = (state, setState) => {
   const checking_type = { ...state.checking_type }
   let isGood = true
 
-  if(isEmpty(name?.value)) {
+  if(isEmpty(name?.value || "")) {
     isGood = false
     name.isValid = false
     name.message = "Value can't be empty"

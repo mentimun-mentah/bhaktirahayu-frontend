@@ -3,7 +3,7 @@ import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, Dropdown, Menu } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { columns_instansi } from 'data/tableInstansi'
@@ -12,22 +12,41 @@ import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
+import pdfGenerator from 'lib/pdfGenerator'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import ModalInstitution from 'components/Institution/ModalInstitution'
 
-const ProductCellEditable = ({ index, record, editable, type, onEditHandler, onDeleteHandler, children, ...restProps }) => {
+const previewMenu = (id, arr, onPreviewDocument) => (
+  <Menu>
+    {arr.map(data => (
+      <Menu.Item key={data.value} onClick={() => onPreviewDocument(id, data.value)}>
+        {data.label}
+      </Menu.Item>
+    ))}
+  </Menu>
+)
+
+const ProductCellEditable = (
+  { index, record, editable, type, onEditHandler, onDeleteHandler, onPreviewDocument, children, ...restProps }
+) => {
   let childNode = children
 
   if(editable){
+    let availableCheckType = []
+    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
+    if(record?.institutions_antigen) availableCheckType.push({label: 'Antigen', value: 'antigen'})
+
     childNode = (
       type === "action" && (
         <Space>
+          <Tooltip placement="top" title="Pratinjau">
+            <Dropdown overlay={previewMenu(record?.institutions_id, availableCheckType, onPreviewDocument)} placement="bottomRight">
+              <i className="fal fa-eye text-center" />
+            </Dropdown>
+          </Tooltip>
           <Tooltip placement="top" title="Ubah">
             <a onClick={() => onEditHandler(record)}><i className="fal fa-edit text-center" /></a>
-          </Tooltip>
-          <Tooltip placement="top" title="Pratinjau">
-            <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
           </Tooltip>
           <Tooltip placement="top" title="Hapus">
             <Popconfirm
@@ -48,7 +67,7 @@ const ProductCellEditable = ({ index, record, editable, type, onEditHandler, onD
   return <td {...restProps}>{childNode}</td>
 }
 
-const per_page = 10
+const per_page = 20
 const addTitle = "Tambah Instansi"
 const editTitle = "Edit Instansi"
 
@@ -77,6 +96,7 @@ const InstitutionContainer = () => {
         editable: col.editable,
         onDeleteHandler: id => onDeleteHandler(id),
         onEditHandler: record => onEditHandler(record),
+        onPreviewDocument: (id, type) => onPreviewDocument(id, type)
       })
     }
   })
@@ -138,6 +158,29 @@ const InstitutionContainer = () => {
     setModalTitle(editTitle)
   }
 
+  const onPreviewDocument = (institution_id, checking_type) => {
+    const params = { checking_type: checking_type }
+    axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+      .then(res => {
+        console.log(res.data)
+        pdfGenerator(res.data)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+            .then(res => {
+              console.log(res.data)
+              pdfGenerator(res.data)
+            })
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
   const onDeleteHandler = (id) => {
     let queryString = {}
     queryString["page"] = page
@@ -153,7 +196,7 @@ const InstitutionContainer = () => {
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
-        if(errDetail == signature_exp){
+        if(errDetail === signature_exp){
           dispatch(actions.getInstitution({ ...queryString }))
           formErrorMessage('success', "Successfully delete the doctor.")
         } else if(typeof(errDetail) === "string") {
@@ -230,6 +273,7 @@ const InstitutionContainer = () => {
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
               <Input 
+                value={q}
                 placeholder="Cari instansi"
                 prefix={<SearchOutlined />} 
                 onChange={e => setQ(e.target.value)}

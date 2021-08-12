@@ -45,7 +45,7 @@ const ProductCellEditable = ({ index, record, editable, type, children, onEditHa
   return <td {...restProps}>{childNode}</td>
 }
 
-const per_page = 10
+const per_page = 20
 const addTitle = "Tambah Dokter"
 const editTitle = "Edit Dokter"
 
@@ -118,7 +118,7 @@ const DoctorsContainer = () => {
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
-        if(errDetail == signature_exp){
+        if(errDetail === signature_exp){
           dispatch(actions.getDoctor({ ...queryString }))
           formErrorMessage('success', "Successfully delete the doctor.")
         } else if(typeof(errDetail) === "string") {
@@ -194,6 +194,7 @@ const DoctorsContainer = () => {
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
               <Input 
+                value={q}
                 placeholder="Cari nama / email dokter" 
                 prefix={<SearchOutlined />} 
                 onChange={e => setQ(e.target.value)}

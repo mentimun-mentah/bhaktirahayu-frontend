@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { setCookie } from 'nookies'
 import { useRouter } from 'next/router'
-import { useDispatch } from 'react-redux'
 import { Container } from 'react-bootstrap'
-import { LoadingOutlined } from '@ant-design/icons'
+import { useSelector, useDispatch } from 'react-redux'
 import { Row, Col, Input, Select, Button, Form, Image as AntImage } from 'antd'
 
+import { enterPressHandler } from 'lib/utility'
 import { resNotification, signature_exp } from 'lib/axios'
 import { formLogin, formLoginIsValid } from 'formdata/login'
 
@@ -15,27 +16,55 @@ import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
 
+const per_page = 20
+
 const LoginPage = () => {
   const router = useRouter()
   const dispatch = useDispatch()
 
+  const institutions = useSelector(state => state.institution.institution)
+  const locationServices = useSelector(state => state.locationService.locationService)
+
   const [loading, setLoading] = useState(false)
   const [login, setLogin] = useState(formLogin)
 
-  const { email, password } = login
+  const { email, password, institution_id, location_service_id } = login
 
   /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
-    const name = e.target.name
-    const value = e.target.value
-
-    const data = {
-      ...login,
-      [name]: { ...login[name], value: value, isValid: true, message: null },
-    };
-    setLogin(data)
+  const onChangeHandler = (e, item) => {
+    const name = !item && e.target.name;
+    const value = !item && e.target.value;
+    if(item) {
+      const data = {
+        ...login,
+        [item]: { ...login[item], value: e, isValid: true, message: null }
+      }
+      setLogin(data)
+    }
+    else {
+      const data = {
+        ...login,
+        [name]: { ...login[name], value: value, isValid: true, message: null },
+      };
+      setLogin(data)
+    }
   }
   /* INPUT CHANGE FUNCTION */
+
+  const setCookieHandler = (location_service_id, institution_id) => {
+    if(institution_id && institution_id.length > 0){
+      setCookie(null, 'institution_id', institution_id, {
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      })
+    }
+    if(location_service_id && location_service_id.length > 0){
+      setCookie(null, 'location_service_id', location_service_id, {
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      })
+    }
+  }
 
   /* SUBMIT FORM FUNCTION */
   const onSubmitHandler = e => {
@@ -50,13 +79,14 @@ const LoginPage = () => {
 
       axios.post("/users/login", data)
         .then(res => {
+          setCookieHandler(location_service_id.value, institution_id.value)
           resNotification('success', 'Success', res.data.detail, 'topRight')
           router.replace("/dashboard")
           setLoading(false)
           dispatch(actions.getUser())
           setLogin(formLogin)
         })
-        .catch((err) => {
+        .catch(err => {
           setLoading(false)
           const state = _.cloneDeep(login)
           const errDetail = err.response?.data.detail;
@@ -80,6 +110,40 @@ const LoginPage = () => {
   }
   /* SUBMIT FORM FUNCTION */
 
+  const onSearchInstitutionServices = val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+    dispatch(actions.getInstitution({ ...queryString }))
+  }
+
+  const onFocusInstitutionServices = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+    dispatch(actions.getInstitution({ ...queryString }))
+  }
+
+  const onSearchLocationServices = val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+    dispatch(actions.getLocationService({ ...queryString }))
+  }
+
+  const onFocusLocationServices = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+    dispatch(actions.getLocationService({ ...queryString }))
+  }
+
   return (
     <>
       <Container className="py-5" style={{ height: '100vh', maxHeight: '100vh' }}>
@@ -87,11 +151,9 @@ const LoginPage = () => {
           <Row gutter={[16,16]} className="h-100" align="middle">
             <Col xxl={12} xl={12} lg={11} md={24} sm={24} xs={24}>
 
-              <h4 className="fs-20-s mb-4">
-                Silahkan Masuk
-              </h4>
+              <h4 className="fs-20-s mb-4">Silahkan Masuk</h4>
 
-              <Form name="login" layout="vertical">
+              <Form name="login" layout="vertical" onKeyUp={e => enterPressHandler(e, onSubmitHandler)}>
                 <Form.Item 
                   label="Email"
                   className="mb-3"
@@ -100,7 +162,6 @@ const LoginPage = () => {
                   <Input 
                     name="email"
                     type="email"
-                    className="py-2"
                     placeholder="Email" 
                     value={email.value}
                     onChange={onChangeHandler}
@@ -114,7 +175,6 @@ const LoginPage = () => {
                 >
                   <Input.Password 
                     name="password"
-                    className="py-2"
                     placeholder="Password" 
                     value={password.value}
                     onChange={onChangeHandler}
@@ -125,49 +185,61 @@ const LoginPage = () => {
                 <Form.Item 
                   label="Pilih Instansi"
                   className="mb-3"
+                  validateStatus={!institution_id.isValid && institution_id.message && "error"}
                 >
                   <Select 
+                    allowClear
                     showSearch 
-                    defaultValue={[]}
-                    className="w-100 select-py-2 with-input"
+                    className="w-100"
                     placeholder="Pilih Instansi"
+                    value={institution_id.value}
+                    onFocus={onFocusInstitutionServices}
+                    onSearch={onSearchInstitutionServices}
+                    onChange={e => onChangeHandler(e, "institution_id")}
+                    getPopupContainer={triggerNode => triggerNode.parentElement}
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
                   >
-                    <Select.Option value="Bhakti Rahayu Denpasar">
-                      <span className="va-sub">Bhakti Rahayu Denpasar</span>
-                    </Select.Option>
-                    <Select.Option value="Bhakti Rahayu Tabanan">
-                      <span className="va-sub">Bhakti Rahayu Tabanan</span>
-                    </Select.Option>
-                    <Select.Option value="Bhaksena Bypass Ngurah Rai">
-                      <span className="va-sub">Bhaksena Bypass Ngurah Rai</span>
-                    </Select.Option>
-                    <Select.Option value="Bhaksena Pelabuhan Gilimanuk">
-                      <span className="va-sub">Bhaksena Pelabuhan Gilimanuk</span>
-                    </Select.Option>
+                    {institutions?.data?.length > 0 && institutions?.data.map(institution => (
+                      <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
+                        {institution.institutions_name}
+                      </Select.Option>
+                    ))}
                   </Select>
+                  <ErrorMessage item={institution_id} />
                 </Form.Item>
 
                 <Form.Item 
                   label="Pilih Lokasi"
+                  validateStatus={!location_service_id.isValid && location_service_id.message && "error"}
                 >
                   <Select 
+                    allowClear
                     showSearch 
-                    defaultValue={[]}
-                    className="w-100 select-py-2 with-input"
-                    placeholder="Pilih Instansi"
+                    className="w-100"
+                    placeholder="Pilih Lokasi Pelayanan"
+                    value={location_service_id.value}
+                    onFocus={onFocusLocationServices}
+                    onSearch={onSearchLocationServices}
+                    onChange={e => onChangeHandler(e, "location_service_id")}
+                    getPopupContainer={triggerNode => triggerNode.parentElement}
+                    filterOption={(input, option) =>
+                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }
                   >
-                    <Select.Option value="Hotel">
-                      <span className="va-sub">Hotel</span>
-                    </Select.Option>
-                    <Select.Option value="Lapangan">
-                      <span className="va-sub">Lapangan</span>
-                    </Select.Option>
+                    {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
+                      <Select.Option value={loct.location_services_id} key={loct.location_services_id}>
+                        {loct.location_services_name}
+                      </Select.Option>
+                    ))}
                   </Select>
+                  <ErrorMessage item={location_service_id} />
                 </Form.Item>
 
                 <Form.Item className="mt-4">
-                  <Button block type="primary" size="large" className="fs-16" onClick={onSubmitHandler} disabled={loading}>
-                    {loading ? <LoadingOutlined /> : "Masuk"}
+                  <Button block type="primary" className="fs-14" onClick={onSubmitHandler} disabled={loading} loading={loading}>
+                    Masuk
                   </Button>
                 </Form.Item>
               </Form>
@@ -225,6 +297,10 @@ const LoginPage = () => {
           > .ant-modal-header) {
         border-radius: 10px;
         border: unset;
+      }
+
+      :global(#scrollable-intitution-id) {
+        height: 100px;
       }
 
       `}</style>

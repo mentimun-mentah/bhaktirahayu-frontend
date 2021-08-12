@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from 'react'
 import { Form, Input, Modal } from 'antd'
+import { useState, useEffect, memo } from 'react'
 
 import { enterPressHandler } from 'lib/utility'
 import { formLocation, formLocationIsValid } from 'formdata/locationService'
@@ -12,7 +12,6 @@ import axios from 'lib/axios'
 import ErrorMessage from 'components/ErrorMessage'
 
 const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, dataLocation, getLocationService }) => {
-
   const [loading, setLoading] = useState(false)
   const [locationService, setLocationService] = useState(formLocation)
 
@@ -122,6 +121,7 @@ const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
             validateStatus={!name.isValid && name.message && "error"}
           >
             <Input
+              autoFocus
               name="name"
               value={name.value}
               onChange={onChangeHandler}
