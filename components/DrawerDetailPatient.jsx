@@ -1,139 +1,54 @@
+import { useRouter } from 'next/router'
 import { memo, useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { Drawer, Grid, Space, Tooltip, Popconfirm } from 'antd'
 
+import { formCheckup } from 'formdata/checkup'
 import { formPatient } from 'formdata/patient'
+import { DATE_FORMAT } from 'lib/disabledDate'
+import { columnsRiwayatPatient } from 'data/table'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
 import 'moment/locale/id'
 import moment from 'moment'
+
+import axios from 'lib/axios'
+import * as actions from 'store/actions'
+import pdfGenerator from 'lib/pdfGenerator'
 import TableMemo from 'components/TableMemo'
+import DrawerResultPatient from 'components/DrawerResultPatient'
 
 moment.locale('id')
 
 const useBreakpoint = Grid.useBreakpoint;
 
-const dataSource = [
-  {
-    "key": "1",
-    "nik": "5129365972846713",
-    "name": "SUPIATUN",
-    "gender": "Laki-laki",
-    "birth_place": "GEROGAK",
-    "birth_date": "31-Dec-1984",
-    "address": "GEROGAK",
-    "checkup_date": "19-Jun-2021",
-    "checkup_time": "10:20",
-    "result": "NEGATIF",
-  },
-  {
-    "key": "42",
-    "nik": "1388881739777555",
-    "name": "ZULFA RIYANA",
-    "gender": "Laki-laki",
-    "birth_place": "SUMENEP",
-    "birth_date": "10-Oct-1999",
-    "address": "DUSUN CEN LECEN",
-    "checkup_date": "30-Jun-2021",
-    "checkup_time": "12:06",
-    "result": "POSITIF"
-  },
-  {
-    "key": "50",
-    "nik": "2835671100698890",
-    "name": "SEPTYAN EKO CAHYONO",
-    "gender": "Laki-laki",
-    "birth_place": "BANYUWANGI",
-    "birth_date": "23-Sep-1989",
-    "address": "BENDOREJO",
-    "checkup_date": "14-Jul-2021",
-    "checkup_time": "12:12",
-    "result": "NEGATIF"
-  }
-]
-
-export const columnsReports = [
-  {
-    key: 'checkup_date',
-    title: 'TANGGAL PERIKSA',
-    align: 'center',
-    dataIndex: 'checkup_date',
-    width: 60,
-    render: (item) => <span className="text-uppercase">{moment(item).format('DD MMMM YYYY')}</span>
-  },
-  {
-    key: 'checkup_time',
-    title: 'WAKTU PERIKSA',
-    align: 'center',
-    dataIndex: 'checkup_time',
-    width: 50,
-    render: (item) => <span className="text-uppercase">{moment(item, 'HH:mm').format('HH:mm')}</span>
-  },
-  {
-    key: 'result',
-    title: 'HASIL',
-    align: 'center',
-    dataIndex: 'result',
-    width: 30,
-    render: (item) => <span className={`${item.toUpperCase() === 'POSITIF' && 'text-danger font-weight-bold'}`}>{item.toUpperCase()}</span>
-  },
-  {
-    key: 'institution',
-    title: 'INSTANSI',
-    align: 'center',
-    dataIndex: 'institution',
-    width: 80,
-    render: () => <span className="text-uppercase">Bhaktirahayu Denpasar</span>
-  },
-  {
-    key: 'pic',
-    title: 'PENANGGUNG JAWAB',
-    align: 'center',
-    dataIndex: 'pic',
-    width: 70,
-    render: () => <span className="text-uppercase">dr. Okky Suardhana</span>
-  },
-  {
-    key: 'location-service',
-    title: 'LOKASI PELAYANAN',
-    align: 'center',
-    dataIndex: 'location-service',
-    width: 60,
-    render: () => <span className="text-uppercase">Hotel</span>
-  },
-  {
-    key: 'guardian',
-    title: 'PENJAMIN',
-    align: 'center',
-    dataIndex: 'guardian',
-    width: 50,
-    render: () => <span className="text-uppercase">-</span>
-  },
-  {
-    key: 'action',
-    title: 'AKSI',
-    type: 'action',
-    align: 'center',
-    fixed: 'right',
-    dataIndex: 'action',
-    width: 30,
-    editable: true
-  },
-]
-
-const ProductCellEditable = ({ index, record, editable, type, children, onShowDrawer, onShowDetailPatient, ...restProps }) => {
+const ProductCellEditable = (
+  { index, record, editable, type, children, isDoctor, onSeeDocument, onShowCheckupPatient, onDeleteCovidCheckupHandler, ...restProps }
+) => {
   let childNode = children
 
   if(editable){
+
+    let isSeenable = record.covid_checkups_doctor_id && record.covid_checkups_check_date && record.covid_checkups_check_result && record.covid_checkups_institution_id
+
     childNode = (
       type === "action" && (
         <Space>
-          <Tooltip placement="top" title="Hasil">
-            <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
-          </Tooltip>
+          {isSeenable && (
+            <Tooltip placement="top" title="Hasil">
+              <a onClick={() => onSeeDocument(record.covid_checkups_id)}><i className="fal fa-eye text-center" /></a>
+            </Tooltip>
+          )}
+          {isDoctor && (
+            <Tooltip placement="top" title="Ubah">
+              <a onClick={() => onShowCheckupPatient(record)}><i className="fal fa-edit text-center" /></a>
+            </Tooltip>
+          )}
           <Tooltip placement="top" title="Hapus">
             <Popconfirm
               placement="bottomRight"
               title="Hapus data ini?"
-              onConfirm={() => message.info('Data berhasil dihapus!')}
+              onConfirm={() => onDeleteCovidCheckupHandler(record.covid_checkups_id)}
               okText="Ya"
               cancelText="Batal"
             >
@@ -148,12 +63,32 @@ const ProductCellEditable = ({ index, record, editable, type, children, onShowDr
   return <td {...restProps}>{childNode}</td>
 }
 
-const DrawerPatient = ({ visible, data, onClose }) => {
-  const screens = useBreakpoint();
+const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
+  const router = useRouter()
+  const dispatch = useDispatch()
+  const screens = useBreakpoint()
+
+  const users = useSelector(state => state.auth.user)
+  const isDoctor = users?.role === "doctor"
 
   const [patient, setPatient] = useState(formPatient)
+  const [checkup, setCheckup] = useState(formCheckup)
+  const [showCheckupDrawer, setShowCheckupDrawer] = useState(false)
 
-  const columnsPatient = columnsReports.map(col => {
+  const { nik, name, birth_place, birth_date, gender, address, covid_checkups } = patient
+
+  const onCloseDetailPatientDrawerHandler = e => {
+    e?.preventDefault()
+    onCloseHandler()
+    setPatient(formPatient)
+  }
+
+  const onCloseCheckupDrawerHandler = () => {
+    setCheckup(formCheckup)
+    setShowCheckupDrawer(false)
+  }
+
+  const columnsPatient = columnsRiwayatPatient.map(col => {
     if (!col.editable) return col;
     return {
       ...col,
@@ -161,47 +96,142 @@ const DrawerPatient = ({ visible, data, onClose }) => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
-        onShowDrawer: () => {},
-        onShowDetailPatient: () => {}
+        isDoctor: users?.role === 'doctor',
+        onSeeDocument: covid_checkups_id => onSeeDocument(covid_checkups_id),
+        onDeleteCovidCheckupHandler: id => onDeleteCovidCheckupHandler(id),
+        onShowCheckupPatient: record => onShowCheckupPatient(record),
       })
     }
   })
 
+  const onDeleteCovidCheckupHandler = id => {
+    axios.delete(`/covid_checkups/delete/${id}`, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getClient({ ...router.query }))
+        formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          dispatch(actions.getClient({ ...router.query }))
+          formErrorMessage('success', "Successfully delete the covid-checkup.")
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const onSeeDocument = async id => {
+    await axios.get(`/covid_checkups/see-document/${id}`)
+      .then(async res => {
+        pdfGenerator(res.data)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.get(`/covid_checkups/see-document/${id}`)
+            .then(res => {
+              pdfGenerator(res.data)
+            })
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const getMultipleDoctor = (list_id) => {
+    const data = { list_id: list_id }
+    axios.post('/users/get-multiple-doctors', data, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getDoctorSuccess({ data: res.data }))
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.post('/users/get-multiple-doctors', data, jsonHeaderHandler())
+            .then(res => {
+              dispatch(actions.getDoctorSuccess({ data: res.data }))
+            })
+            .catch(() => {})
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const onShowCheckupPatient = record => {
+    let doctor_id = record.covid_checkups_doctor_id
+    if(record.covid_checkups_doctor_id) {
+      getMultipleDoctor(record.covid_checkups_doctor_id.split(','))
+    } 
+    if(!record.covid_checkups_doctor_id && isDoctor) {
+      doctor_id = users.id
+      getMultipleDoctor(users.id.split(','))
+    }
+
+    const data = {
+      ...checkup, 
+      id: { value: record.covid_checkups_id, isValid: true, message: null },
+      check_date: { 
+        value: record.covid_checkups_check_date ? moment(record.covid_checkups_check_date).format(`${DATE_FORMAT} HH:mm`) : moment().format(`${DATE_FORMAT} HH:mm`), 
+        isValid: true, 
+        message: null 
+      },
+      check_result: { value: record.covid_checkups_check_result, isValid: true, message: null },
+      doctor_id: { 
+        value: doctor_id, 
+        isValid: true, 
+        message: null 
+      },
+      guardian_id: { value: record.covid_checkups_guardian_id, isValid: true, message: null },
+      location_service_id: { value: record.covid_checkups_location_service_id, isValid: true, message: null },
+      institution_id: { value: record.covid_checkups_institution_id, isValid: true, message: null }
+    }
+    setCheckup(data)
+    setShowCheckupDrawer(true)
+  }
+
   useEffect(() => {
-    setPatient(data)
-  }, [data])
+    setPatient(dataPatient)
+  }, [dataPatient])
 
   return (
     <>
       <Drawer
-        width={screens.xl ? "50%" : screens.lg ? "80%" : "100%"}
+        visible={visible}
         placement="right"
         title="Riwayat Pemeriksaan"
-        visible={visible}
         closeIcon={<i className="fal fa-times" />}
-        onClose={onClose}
+        onClose={onCloseDetailPatientDrawerHandler}
+        width={screens.xl ? "50%" : screens.lg ? "80%" : "100%"}
       >
         <table className="table mb-4">
           <tbody>
             <tr>
               <th className="border-0" scope="row">NIK</th>
-              <td className="border-0">23131298343477</td>
+              <td className="border-0">{nik.value}</td>
             </tr>
             <tr>
               <th scope="row">Nama</th>
-              <td>Paulus Bonatua Simanjuntak</td>
+              <td>{name.value}</td>
             </tr>
             <tr>
               <th scope="row">Tempat Tanggal Lahir</th>
-              <td>Denpasar, 6 September 1999</td>
+              <td>{birth_place.value}, {moment(birth_date.value).format('DD MMMM YYYY')}</td>
             </tr>
             <tr>
               <th scope="row">Jenis Kelamin</th>
-              <td>Laki-laki</td>
+              <td>{gender.value}</td>
             </tr>
             <tr>
               <th scope="row">Alamat</th>
-              <td>Jl. Raya Puputan No.86, Dangin Puri Klod, Kec. Denpasar Timur</td>
+              <td>{address.value}</td>
             </tr>
           </tbody>
         </table>
@@ -211,9 +241,16 @@ const DrawerPatient = ({ visible, data, onClose }) => {
           size="middle"
           pagination={false} 
           columns={columnsPatient}
-          dataSource={dataSource} 
+          dataSource={covid_checkups.value} 
           scroll={{ y: 485, x: 1180 }} 
+          rowKey={record => record.covid_checkups_id}
           components={{ body: { cell: ProductCellEditable } }}
+        />
+
+        <DrawerResultPatient
+          dataCheckup={checkup}
+          visible={showCheckupDrawer}
+          onCloseHandler={onCloseCheckupDrawerHandler}
         />
 
       </Drawer>

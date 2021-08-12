@@ -1,39 +1,58 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from 'react-bootstrap'
-import { motion } from 'framer-motion'
 import { withAuth } from 'lib/withAuth'
 import { SearchOutlined } from '@ant-design/icons'
-import { Form, Input, Row, Col, Button, Modal, Space, Select, Upload, Tooltip, Popconfirm, message } from 'antd'
+import { useSelector, useDispatch } from 'react-redux'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, Dropdown, Menu } from 'antd'
 
-import { formImage, formImageIsValid } from 'formdata/image'
-import { imagePreview, uploadButton } from 'lib/imageUploader'
-import { columns_instansi, data_instansi } from 'data/tableInstansi'
-import { formInstitution, formInstitutionIsValid } from 'formdata/institution'
+import { formImage } from 'formdata/image'
+import { columns_instansi } from 'data/tableInstansi'
+import { formInstitution } from 'formdata/institution'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
-import isIn from 'validator/lib/isIn'
-
+import axios from 'lib/axios'
+import * as actions from 'store/actions'
+import pdfGenerator from 'lib/pdfGenerator'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
-import ErrorMessage from 'components/ErrorMessage'
+import ModalInstitution from 'components/Institution/ModalInstitution'
 
-const ProductCellEditable = ({ index, record, editable, type, showModal, children, ...restProps }) => {
+const previewMenu = (id, arr, onPreviewDocument) => (
+  <Menu>
+    {arr.map(data => (
+      <Menu.Item key={data.value} onClick={() => onPreviewDocument(id, data.value)}>
+        {data.label}
+      </Menu.Item>
+    ))}
+  </Menu>
+)
+
+const ProductCellEditable = (
+  { index, record, editable, type, onEditHandler, onDeleteHandler, onPreviewDocument, children, ...restProps }
+) => {
   let childNode = children
 
   if(editable){
+    let availableCheckType = []
+    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
+    if(record?.institutions_antigen) availableCheckType.push({label: 'Antigen', value: 'antigen'})
+
     childNode = (
       type === "action" && (
         <Space>
-          <Tooltip placement="top" title="Ubah">
-            <a onClick={showModal}><i className="fal fa-edit text-center" /></a>
-          </Tooltip>
           <Tooltip placement="top" title="Pratinjau">
-            <a onClick={() => pdfGenerator(record, index)}><i className="fal fa-eye text-center" /></a>
+            <Dropdown overlay={previewMenu(record?.institutions_id, availableCheckType, onPreviewDocument)} placement="bottomRight">
+              <i className="fal fa-eye text-center" />
+            </Dropdown>
+          </Tooltip>
+          <Tooltip placement="top" title="Ubah">
+            <a onClick={() => onEditHandler(record)}><i className="fal fa-edit text-center" /></a>
           </Tooltip>
           <Tooltip placement="top" title="Hapus">
             <Popconfirm
               placement="bottomRight"
-              title="Hapus data ini?"
-              onConfirm={() => message.info('Data berhasil dihapus!')}
+              title={<span>Menghapus instansi juga akan <br/> menghapus seluruh data pasien <br /> yang telah terdaftar pada instansi ini, lanjutkan?</span>}
+              onConfirm={() => onDeleteHandler(record.institutions_id)}
               okText="Ya"
               cancelText="Batal"
             >
@@ -48,37 +67,26 @@ const ProductCellEditable = ({ index, record, editable, type, showModal, childre
   return <td {...restProps}>{childNode}</td>
 }
 
+const per_page = 20
 const addTitle = "Tambah Instansi"
 const editTitle = "Edit Instansi"
 
 const InstitutionContainer = () => {
+  const dispatch = useDispatch()
+
+  const institutions = useSelector(state => state.institution.institution)
+
+  const [q, setQ] = useState("")
   const [page, setPage] = useState(1)
-  const [isOpen, setIsOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [kindCheck, setKindCheck] = useState([])
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [imageList, setImageList] = useState(formImage)
-  const [guardian, setGuardian] = useState(formInstitution)
   const [modalTitle, setModalTitle] = useState(addTitle)
+  const [imageStamp, setImageStamp] = useState(formImage)
+  const [imageGenose, setImageGenose] = useState(formImage)
+  const [imageAntigen, setImageAntigen] = useState(formImage)
+  const [institution, setInstitution] = useState(formInstitution)
 
-  const { name } = guardian
-
-  /* INPUT CHANGE FUNCTION */
-  const onChangeHandler = e => {
-    const name = e.target.name
-    const value = e.target.value
-
-    const data = {
-      ...guardian,
-      [name]: { ...guardian[name], value: value, isValid: true, message: null }
-    }
-
-    setGuardian(data)
-  }
-  /* INPUT CHANGE FUNCTION */
-
-  const columnsGuardians = columns_instansi.map(col => {
+  const columnsInstitution = columns_instansi.map(col => {
     if (!col.editable) return col;
     return {
       ...col,
@@ -86,26 +94,157 @@ const InstitutionContainer = () => {
         record, index: index,
         type: col.type, 
         editable: col.editable,
-        showModal: () => {
-          setIsUpdate(true)
-          setShowModal(true)
-          setModalTitle(editTitle)
-        }
+        onDeleteHandler: id => onDeleteHandler(id),
+        onEditHandler: record => onEditHandler(record),
+        onPreviewDocument: (id, type) => onPreviewDocument(id, type)
       })
     }
   })
 
-  const onSubmitHandler = e => {
-    e.preventDefault()
-    if(formGuardianIsValid(guardian, setGuardian, isUpdate)) {
-      setLoading(true)
-      const data = {
-        username: username.value,
-      }
+  const onEditHandler = (record) => {
+    let checking_type = []
 
-      console.log(data)
+    if(record.institutions_antigen !== null) {
+      const dataAntigen = {
+        file: { 
+          value: [{
+            uid: -Math.abs(Math.random()),
+            url: `${process.env.NEXT_PUBLIC_API_URL}/static/institution/${record.institutions_antigen}`
+          }], 
+          isValid: true, 
+          message: null 
+        }
+      }
+      setImageAntigen(dataAntigen)
+      checking_type.push('antigen')
     }
+
+    if(record.institutions_genose !== null) {
+      const dataGenose = {
+        file: { 
+          value: [{
+            uid: -Math.abs(Math.random()),
+            url: `${process.env.NEXT_PUBLIC_API_URL}/static/institution/${record.institutions_genose}`
+          }], 
+          isValid: true, 
+          message: null 
+        }
+      }
+      setImageGenose(dataGenose)
+      checking_type.push('genose')
+    }
+
+    const dataStamp = {
+      file: { 
+        value: [{
+          uid: -Math.abs(Math.random()),
+          url: `${process.env.NEXT_PUBLIC_API_URL}/static/institution/${record.institutions_stamp}`
+        }], 
+        isValid: true, 
+        message: null 
+      }
+    }
+
+    const dataInstitution = {
+      id: { value: record.institutions_id, isValid: true, message: null },
+      name: { value: record.institutions_name, isValid: true, message: null },
+      checking_type: { value: checking_type, isValid: true, message: null },
+    }
+
+    setImageStamp(dataStamp)
+    setInstitution(dataInstitution)
+    setIsUpdate(true)
+    setShowModal(true)
+    setModalTitle(editTitle)
   }
+
+  const onPreviewDocument = (institution_id, checking_type) => {
+    const params = { checking_type: checking_type }
+    axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+      .then(res => {
+        console.log(res.data)
+        pdfGenerator(res.data)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+            .then(res => {
+              console.log(res.data)
+              pdfGenerator(res.data)
+            })
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const onDeleteHandler = (id) => {
+    let queryString = {}
+    queryString["page"] = page
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    axios.delete(`/institutions/delete/${id}`, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getInstitution({ ...queryString }))
+        formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp){
+          dispatch(actions.getInstitution({ ...queryString }))
+          formErrorMessage('success', "Successfully delete the doctor.")
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const onCloseModalHandler = () => {
+    setShowModal(false)
+    setModalTitle(addTitle)
+    setImageStamp(formImage)
+    setImageGenose(formImage)
+    setImageAntigen(formImage)
+    setInstitution(formInstitution)
+    if(isUpdate) setIsUpdate(false)
+  }
+
+  useEffect(() => {
+    let queryString = {}
+    queryString["page"] = page
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    dispatch(actions.getInstitution({...queryString}))
+  }, [page])
+
+  useEffect(() => {
+    setPage(1)
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(q) queryString["q"] = q
+    else delete queryString["q"]
+
+    dispatch(actions.getInstitution({...queryString}))
+  }, [q])
+
+  useEffect(() => {
+    if(institutions && institutions.data && institutions.data.length < 1 && institutions.page > 1 && institutions.total > 1){
+      setPage(institutions.page - 1)
+    }
+  }, [institutions])
 
   return (
     <>
@@ -133,7 +272,12 @@ const InstitutionContainer = () => {
 
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
-              <Input placeholder="Cari instansi" prefix={<SearchOutlined />} />
+              <Input 
+                value={q}
+                placeholder="Cari instansi"
+                prefix={<SearchOutlined />} 
+                onChange={e => setQ(e.target.value)}
+              />
             </Form.Item>
           </Form>
 
@@ -141,143 +285,43 @@ const InstitutionContainer = () => {
             bordered
             size="middle"
             pagination={false} 
-            columns={columnsGuardians}
-            dataSource={data_instansi} 
+            columns={columnsInstitution}
+            dataSource={institutions?.data} 
+            rowKey={record => record.institutions_id}
             scroll={{ y: 485, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
-          <Card.Body className="pb-2 px-0">
-            <Row gutter={[10,10]} justify="space-between">
-              <Col xs={24} sm={24} md={24} lg={24} xl={24}>
-                <div className="text-center">
-                  <Pagination 
-                    current={page} 
-                    hideOnSinglePage 
-                    pageSize={10}
-                    total={304} 
-                    goTo={val => setPage(val)} 
-                  />
-                </div>
-              </Col>
-            </Row>
-          </Card.Body>
+          <Row gutter={[10,10]} justify="space-between">
+            <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+              <div className="text-center">
+                <Pagination 
+                  className="mt-3"
+                  current={page} 
+                  hideOnSinglePage 
+                  pageSize={per_page}
+                  total={institutions?.total}
+                  goTo={val => setPage(val)} 
+                />
+              </div>
+            </Col>
+          </Row>
 
         </Card.Body>
       </Card>
 
-
-      <Modal 
-        centered
+      <ModalInstitution 
         title={modalTitle}
         visible={showModal}
-        onOk={onSubmitHandler}
-        onCancel={() => setShowModal(false)}
-        okText="Simpan"
-        cancelText="Batal"
-        closeIcon={<i className="far fa-times" />}
-      >
-        <Form layout="vertical">
-
-          <Form.Item 
-            className="mb-3"
-            label="Nama Instansi"
-            validateStatus={!name.isValid && name.message && "error"}
-          >
-            <Input 
-              name="name"
-              value={name.value}
-              onChange={onChangeHandler}
-              placeholder="Nama instansi" 
-            />
-            <ErrorMessage item={name} />
-          </Form.Item>
-
-          <Form.Item 
-            className="mb-3"
-            label="Jenis Pemeriksaan"
-          >
-            <Select
-              mode="multiple"
-              style={{ width: '100%' }}
-              onChange={val => setKindCheck(val)}
-              placeholder="Pilih jenis pemeriksaan"
-              removeIcon={<i className="fal fa-times" />}
-              onDropdownVisibleChange={val => setIsOpen(val)}
-            >
-              <Select.Option value="antigen">Antigen</Select.Option>
-              <Select.Option value="genose">GeNose</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Row gutter={[10,10]}>
-            {isIn('antigen', kindCheck) && !isOpen && (
-              <Col>
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                >
-                  <Form.Item 
-                    label="Kop Antigen"
-                    className="m-b-0"
-                  >
-                    <Upload
-                      accept="image/*"
-                      listType="picture-card"
-                      onPreview={imagePreview}
-                      fileList={imageList.file.value}
-                    >
-                      {imageList.file.value.length >= 1 ? null : uploadButton(loading)}
-                    </Upload>
-                  </Form.Item>
-                </motion.div>
-              </Col>
-            )}
-            {isIn('genose', kindCheck) && !isOpen && (
-              <Col>
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                >
-                  <Form.Item 
-                    label="Kop GeNose"
-                    className="m-b-0"
-                  >
-                    <Upload
-                      accept="image/*"
-                      listType="picture-card"
-                      onPreview={imagePreview}
-                      fileList={imageList.file.value}
-                    >
-                      {imageList.file.value.length >= 1 ? null : uploadButton(loading)}
-                    </Upload>
-                  </Form.Item>
-                </motion.div>
-              </Col>
-            )}
-          </Row>
-
-          <Form.Item 
-            label="Cap Instansi"
-            className="m-b-0"
-          >
-            <Upload
-              accept="image/*"
-              listType="picture-card"
-              onPreview={imagePreview}
-              fileList={imageList.file.value}
-            >
-              {imageList.file.value.length >= 1 ? null : uploadButton(loading)}
-            </Upload>
-          </Form.Item>
-
-        </Form>
-
-        <h2 className="fs-14 bold m-b-0 mt-3">Note:</h2>
-        <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
-          <li>Ukuran file: maks. 5MB</li>
-          <li>Ukuran cap: 500 × 500 px</li>
-          <li>Ukuran kop: 1000 × 200 px</li>
-        </ul>
-      </Modal>
+        isUpdate={isUpdate}
+        setIsUpdate={setIsUpdate}
+        dataStamp={imageStamp}
+        dataGenose={imageGenose}
+        dataAntigen={imageAntigen}
+        dataInstitution={institution}
+        onCloseHandler={onCloseModalHandler}
+        getInstitution={() => dispatch(actions.getInstitution({ page: 1, per_page: per_page, q: '', checking_type: '' }))}
+      />
     </>
   )
 }

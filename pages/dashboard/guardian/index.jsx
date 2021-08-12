@@ -44,7 +44,7 @@ const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, o
   return <td {...restProps}>{childNode}</td>
 }
 
-const per_page = 10
+const per_page = 20
 const addTitle = "Tambah Penjamin"
 const editTitle = "Edit Penjamin"
 message.config({ maxCount: 1 })
@@ -108,7 +108,7 @@ const GuardiansContainer = () => {
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
-        if(errDetail == signature_exp){
+        if(errDetail === signature_exp){
           dispatch(actions.getGuardian({ ...queryString }))
           formErrorMessage('success', "Successfully delete the guardian.")
         } else if(typeof(errDetail) === "string") {
@@ -177,6 +177,7 @@ const GuardiansContainer = () => {
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
               <Input 
+                value={q}
                 placeholder="Cari penjamin"
                 prefix={<SearchOutlined />} 
                 onChange={e => setQ(e.target.value)}

@@ -1,20 +1,28 @@
 import { useRouter } from 'next/router'
 import { useState, useEffect, memo } from 'react'
-import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
+import { useSelector, useDispatch } from 'react-redux'
+import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 
-import { dashboard_routes, DASHBOARD } from './routes'
+import { dashboard_routes, DASHBOARD, LOGOUT } from './routes'
 
+import _ from 'lodash'
 import Image from 'next/image'
+import isIn from 'validator/lib/isIn'
 
 import Style from './Style'
+import * as actions from 'store/actions'
 
 const useBreakpoint = Grid.useBreakpoint
 
 const DashboardLayout = ({ children }) => {
   const router = useRouter()
+  const dispatch = useDispatch()
   const screens = useBreakpoint()
 
+  const users = useSelector(state => state.auth.user)
+
+  const [user, setUser] = useState(users)
   const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(DASHBOARD)
@@ -38,16 +46,30 @@ const DashboardLayout = ({ children }) => {
     setSelected(data)
   }, [router])
 
+  useEffect(() => {
+    setUser(users)
+  }, [])
+
+  const onLogoutHandler = () => {
+    if(typeof window !== 'undefined') window.location.replace('/')
+    router.replace('/')
+    dispatch(actions.logout())
+  }
+
   const renderSidemenu = () => {
-    return dashboard_routes.map(route => (
-      <Menu.Item 
-        key={route.key} 
-        icon={<i className={route.icon} />}
-        onClick={() => router.push(route.route)}
-      >
-        {route.label}
-      </Menu.Item>
-    ))
+    return dashboard_routes.map(route => {
+      if(isIn(user?.role || "", route.role)) {
+        return (
+          <Menu.Item 
+            key={route.key} 
+            icon={<i className={route.icon} />}
+            onClick={route.key === LOGOUT ? () => onLogoutHandler() : () => router.push(route.route)}
+          >
+            {route.label}
+          </Menu.Item>
+        )
+      }
+    })
   }
 
   return (

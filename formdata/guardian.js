@@ -9,7 +9,7 @@ export const formGuardianIsValid = (state, setState) => {
   const name = { ...state.name }
   let isGood = true
 
-  if(isEmpty(name?.value)) {
+  if(isEmpty(name?.value || "")) {
     isGood = false
     name.isValid = false
     name.message = "Value can't be empty"

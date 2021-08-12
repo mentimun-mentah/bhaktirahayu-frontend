@@ -9,7 +9,7 @@ export const step_list = [
 export const preparation_list = [
   { 
     image: '/static/images/ktp_4.png',
-    title: 'Pastikan posisi ponsel tegak lurus / vertikal',
+    title: 'Pastikan posisi KTP / KIS tegak lurus',
   },
   { 
     image: '/static/images/ktp_1.png',
@@ -28,7 +28,7 @@ export const preparation_list = [
 export const howToCrop = (
   <>
     <AntImage
-      src="/static/images/how_to_crop.png"
+      src="/static/images/how_to_crop_2.png"
       alt="how to crop"
     />
     <p className="mb-0">

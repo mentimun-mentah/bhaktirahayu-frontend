@@ -1,185 +1,273 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
-import { Row, Col, Select } from 'antd'
+import { Row, Col, Select, Grid } from 'antd'
+import { useSelector, useDispatch } from 'react-redux'
 
+import _ from 'lodash'
 import moment from 'moment'
 import dynamic from 'next/dynamic'
 
+import { periodList } from 'data/all'
+import { antigenGenoseOption } from 'lib/chartConfig'
+
+import * as actions from 'store/actions'
+
+const useBreakpoint = Grid.useBreakpoint
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const chart = {
-  options: {
-    chart: {
-      type: 'bar',
-      height: 350,
-      toolbar: {
-        show: false,
-        tools: {
-          download: false
-        }
-      }
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: '50%',
-        endingShape: 'rounded',
-        borderRadius: 5,
-        dataLabels: {
-          position: 'top', // top, center, bottom
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      offsetY: -20,
-      style: {
-        fontSize: '12px',
-        colors: ["#304758"]
-      }
-    },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ['transparent']
-    },
-    colors: ['#47e395', '#E91E63'],
-    xaxis: {
-      categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-      axisBorder: {
-        show: false
-      },
-      axisTicks: {
-        show: false
-      },
-      crosshairs: {
-        fill: {
-          type: 'gradient',
-          gradient: {
-            colorFrom: '#D8E3F0',
-            colorTo: '#BED1E6',
-            stops: [0, 100],
-            opacityFrom: 0.4,
-            opacityTo: 0.5,
-          }
-        }
-      },
-      tooltip: {
-        enabled: true,
-      }
-    },
-    yaxis: {
-      show: false,
-    },
-    fill: {
-      opacity: 1
-    },
-    tooltip: {
-      enabled: false,
-    },
-  }
-}
-
-const denpasar = [
+const stats_list = (data) => [
   {
-    name: 'Negatif',
-    data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
-  }, 
-  {
-    name: 'Positif',
-    data: [12, 32, 19, 8, 0, 2, 41, 14, 52]
-  }
-]
-
-const tabanan = [
-  {
-    name: 'Negatif',
-    data: [61, 55, 57, 56, 66, 58, 63, 44, 60]
-  }, 
-  {
-    name: 'Positif',
-    data: [8, 12, 0, 32, 2, 41, 14, 19, 52]
-  }
-]
-
-const bypass = [
-  {
-    name: 'Negatif',
-    data: [58, 63, 61, 60, 57, 56, 66, 44, 55]
-  }, 
-  {
-    name: 'Positif',
-    data: [8, 12, 0, 14, 32, 41, 52, 19, 2]
-  }
-]
-
-const gilimanuk = [
-  {
-    name: 'Negatif',
-    data: [58, 60, 63, 55, 57, 56, 66, 61, 44]
-  }, 
-  {
-    name: 'Positif',
-    data: [8, 12, 0, 14, 32, 41, 52, 19, 2]
-  }
-]
-
-const stats_list = [
-  {
-    title: "Total antigen",
-    sub: "192",
-    icon : "fas fa-sword-laser",
+    title: "Total Instansi",
+    sub: data?.total_institutions,
+    icon : "fas fa-hospitals",
     bg: "stats-1",
-    extra: " / hari ini"
-  },
-  {
-    title: "Total genose",
-    sub: "192",
-    icon : "fas fa-wind",
-    bg: "stats-1",
-    extra: " / hari ini"
-  },
-  {
-    title: "Total Pasien",
-    sub: "3.423",
-    icon : "fas fa-users",
-    bg: "stats-1",
-    extra: " / hari ini"
   },
   {
     title: "Total Dokter",
-    sub: "192",
+    sub: data?.total_doctors,
     icon : "fas fa-stethoscope",
     bg: "stats-1",
-    extra: ""
+  },
+  {
+    title: "Total Penjamin",
+    sub: data?.total_guardians,
+    icon : "fas fa-users-crown",
+    bg: "stats-1",
+  },
+  {
+    title: "Total Lokasi Pelayanan",
+    sub: data?.total_location_services,
+    icon : "fas fa-location-circle",
+    bg: "stats-1",
   },
 ]
 
-const Dashboard = () => {
-  const [series, setSeries] = useState(denpasar)
-  const [instansi, setInstansi] = useState("denpasar")
+const formAntigenGenose = [
+  { name: 'Negatif', data: [0, 0, 0, 0, 0, 0, 0] }, 
+  { name: 'Positif', data: [0, 0, 0, 0, 0, 0, 0] }
+]
 
-  const onChangeInstansiHandler = value => {
-    setInstansi(value)
-    if(value == "denpasar") setSeries(denpasar)
-    else if(value == "tabanan") setSeries(tabanan)
-    else if(value == "bypass") setSeries(bypass)
-    else if(value == "gilimanuk") setSeries(gilimanuk)
-    else setSeries(denpasar)
+const formDoneWaiting = [
+  { name: 'Terdaftar', data: [0, 0, 0, 0, 0, 0, 0] }, 
+  { name: 'Selesai', data: [0, 0, 0, 0, 0, 0, 0] }
+]
+
+const per_page = 30
+
+const Dashboard = () => {
+  const dispatch = useDispatch()
+  const screens = useBreakpoint()
+
+  const totalData = useSelector(state => state.dashboard.totalData)
+  const chartData = useSelector(state => state.dashboard.chartData)
+  const institutions = useSelector(state => state.institution.institution)
+  const locationServices = useSelector(state => state.locationService.locationService)
+
+  const [period, setPeriod] = useState("week")
+  const [institution, setInstitution] = useState([])
+  const [locationService, setLocationService] = useState([])
+  const [seriesGenose, setSeriesGenose] = useState(formAntigenGenose)
+  const [seriesAntigen, setSeriesAntigen] = useState(formAntigenGenose)
+  const [seriesDoneWaiting, setSeriesDoneWaiting] = useState(formDoneWaiting)
+
+  const [optionGenose, setOptionGenose] = useState(antigenGenoseOption)
+  const [optionAntigen, setOptionAntigen] = useState(antigenGenoseOption)
+  const [optionDoneWaiting, setOptionDoneWaiting] = useState({ ...antigenGenoseOption, colors: ['#fd9644', '#4b7bec']})
+
+  useEffect(() => {
+    dispatch(actions.getDashboardTotalData())
+  }, [])
+
+  useEffect(() => {
+    const query = {}
+    query['period'] = period
+    if(institution?.length > 0) query['institution_id'] = institution
+    else delete query['institution_id']
+
+    if(locationService?.length > 0) query['location_service_id'] = locationService
+    else delete query['location_service_id']
+
+    dispatch(actions.getDashboardChart({ ...query }))
+  }, [period, institution, locationService])
+
+  useEffect(() => {
+    let copyOptionGenose = _.cloneDeep(optionGenose)
+    let copyOptionAntigen = _.cloneDeep(optionAntigen)
+    let copyOptionDoneWaiting = _.cloneDeep(optionDoneWaiting)
+
+    copyOptionGenose = {
+      ...copyOptionGenose,
+      xaxis: {
+        ...copyOptionGenose['xaxis'],
+        categories: chartData?.genose_p_n?.date,
+      }
+    }
+
+    copyOptionAntigen = {
+      ...copyOptionAntigen,
+      xaxis: {
+        ...copyOptionAntigen['xaxis'],
+        categories: chartData?.antigen_p_n?.date,
+      }
+    }
+
+    copyOptionDoneWaiting = {
+      ...copyOptionDoneWaiting,
+      xaxis: {
+        ...copyOptionDoneWaiting['xaxis'],
+        categories: chartData?.done_waiting?.date,
+      }
+    }
+
+    setOptionGenose(copyOptionGenose)
+    setOptionAntigen(copyOptionAntigen)
+    setOptionDoneWaiting(copyOptionDoneWaiting)
+
+    setSeriesGenose(chartData?.genose_p_n?.series)
+    setSeriesAntigen(chartData?.antigen_p_n?.series)
+    setSeriesDoneWaiting(chartData?.done_waiting?.series)
+
+  }, [chartData])
+
+  const pieGender = {
+    series: [+totalData?.total_male, +totalData?.total_female],
+    options: {
+      chart: { width: 380, type: 'pie', },
+      labels: [
+        `Laki-laki`, 
+        `Perempuan`, 
+        `Total ${+totalData?.total_male + +totalData?.total_female} pasien`
+      ],
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: { width: 200 },
+          legend: { position: 'bottom' }
+        }
+      }]
+    },
+  };
+
+  const onSearchInstitutionServices = val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+    dispatch(actions.getInstitution({ ...queryString }))
+  }
+
+  const onFocusInstitutionServices = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+    dispatch(actions.getInstitution({ ...queryString }))
+  }
+
+  const onSearchLocationServices = val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+    dispatch(actions.getLocationService({ ...queryString }))
+  }
+
+  const onFocusLocationServices = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+    dispatch(actions.getLocationService({ ...queryString }))
   }
 
   return (
     <>
       <div className="header-dashboard">
-        <h1 className="h1 bold mb-0">Dashboard</h1>
-        <span className="header-date">
-          {moment().format("dddd, DD MMMM YYYY")}
-        </span>
+        <Row gutter={[20,20]} justify="space-between" align="middle">
+          <Col span={6}>
+            <h1 className="h1 bold mb-0">Dashboard</h1>
+            <span className="header-date">
+              {moment().format("dddd, DD MMMM YYYY")}
+            </span>
+          </Col>
+
+          <Col xxl={18} xl={18} lg={24} md={24} sm={24} xs={24}>
+            <Row gutter={[10,10]} align="middle">
+              <Col span={3}>
+                <b>Filter:</b>
+              </Col>
+
+              <Col span={7}>
+                <Select
+                  value={period}
+                  className="w-100"
+                  onChange={val => setPeriod(val)}
+                  getPopupContainer={triggerNode => triggerNode.parentElement}
+                >
+                  {periodList.map(period => (
+                    <Select.Option value={period.value} key={period.value}>
+                      {period.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Col>
+
+              <Col span={7}>
+                <Select
+                  allowClear
+                  showSearch
+                  className="w-100"
+                  value={institution}
+                  placeholder="Pilih Instansi"
+                  onFocus={onFocusInstitutionServices}
+                  onSearch={onSearchInstitutionServices}
+                  onChange={val => setInstitution(val)}
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                  getPopupContainer={triggerNode => triggerNode.parentElement}
+                >
+                  {institutions?.data?.length > 0 && institutions?.data.map(institution => (
+                    <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
+                      {institution.institutions_name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Col>
+
+              <Col span={7}>
+                <Select
+                  allowClear
+                  showSearch
+                  className="w-100"
+                  value={locationService}
+                  placeholder="Pilih Lokasi Pelayanan"
+                  onFocus={onFocusLocationServices}
+                  onSearch={onSearchLocationServices}
+                  onChange={val => setLocationService(val)}
+                  filterOption={(input, option) =>
+                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }
+                  getPopupContainer={triggerNode => triggerNode.parentElement}
+                >
+                  {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
+                    <Select.Option value={loct.location_services_id} key={loct.location_services_id}>
+                      {loct.location_services_name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Col>
+            </Row>
+
+          </Col>
+        </Row>
       </div>
 
       <Row gutter={[20,20]}>
-        {stats_list.map((data, i) => (
+        {stats_list(totalData).map((data, i) => (
           <Col xxl={6} xl={6} lg={6} md={12} sm={12} xs={24} key={i}>
             <Card className="border-0 shadow-1">
               <Card.Body>
@@ -199,74 +287,58 @@ const Dashboard = () => {
           </Col>
         ))}
 
-        <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
-          <Card className="border-0 shadow-1">
-            <Card.Body>
-              <p className="mb-0">pie chart antigen</p>
-              <ul>
-                <li>positif</li>
-                <li>negatif</li>
-                <li>belum ditangani</li>
-              </ul>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+        <Col xxl={10} xl={24} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
-                  <Card.Title>Hasil Tes Rapid Antigen</Card.Title>
-                </Col>
-                <Col xl={8} lg={8}>
-                  <Select 
-                    value={instansi}
-                    className="w-100"
-                    placeholder="Pilih Instansi"
-                    onChange={onChangeInstansiHandler}
-                  >
-                    <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
-                    <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
-                    <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
-                    <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
-                  </Select>
+                  <Card.Title>Pasien</Card.Title>
                 </Col>
               </Row>
-
-              <Chart options={chart.options} series={series} type="bar" height={350} />
-
+              <Chart options={pieGender.options} series={pieGender.series} type="pie" width={535} />
             </Card.Body>
           </Card>
         </Col>
 
-        <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
+        <Col xxl={14} xl={24} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
-                  <Card.Title>Hasil Tes GeNose</Card.Title>
-                </Col>
-                <Col xl={8} lg={8}>
-                  <Select 
-                    // value={instansi}
-                    className="w-100"
-                    placeholder="Pilih Instansi"
-                    // onChange={onChangeInstansiHandler}
-                  >
-                    <Select.Option value="denpasar">Bhakti Rahayu Denpasar</Select.Option>
-                    <Select.Option value="tabanan">Bhakti Rahayu Tabanan</Select.Option>
-                    <Select.Option value="bypass">Bhaksena Bypass Ngurah Rai</Select.Option>
-                    <Select.Option value="gilimanuk">Bhaksena Pelabuhan Gilimanuk</Select.Option>
-                  </Select>
+                  <Card.Title>Terdaftar / Selesai</Card.Title>
                 </Col>
               </Row>
-
-              <Chart options={chart.options} series={series} type="bar" height={350} />
-
+              <Chart options={optionDoneWaiting} series={seriesDoneWaiting} type="bar" height={350} />
             </Card.Body>
           </Card>
         </Col>
+
+        <Col xxl={12} xl={24} lg={24} md={24} sm={24} xs={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title>Antigen</Card.Title>
+                </Col>
+              </Row>
+              <Chart options={optionAntigen} series={seriesAntigen} type="bar" height={350} />
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xxl={12} xl={24} lg={24} md={24} sm={24} xs={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title>GeNose</Card.Title>
+                </Col>
+              </Row>
+              <Chart options={optionGenose} series={seriesGenose} type="bar" height={350} />
+            </Card.Body>
+          </Card>
+        </Col>
+
       </Row>
 
       <style jsx>{`

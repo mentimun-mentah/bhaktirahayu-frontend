@@ -4,38 +4,53 @@ import { EyeOutlined } from '@ant-design/icons'
 export const columns_instansi = [
   {
     title: 'Nama',
-    dataIndex: 'name',
-    key: 'name',
+    dataIndex: 'institutions_name',
+    key: 'institutions_name',
     width: 250,
   },
   {
     title: 'Antigen',
-    dataIndex: 'antigen',
-    key: 'antigen',
+    dataIndex: 'institutions_antigen',
+    key: 'institutions_antigen',
     align: 'center',
     width: 200,
-    render: (item) => item ? <Image className="bor-rad-5px" height={40} src={item} /> : <i className="far fa-times"></i>,
+    render: (item) => item ? (
+      <Image 
+        className="bor-rad-5px"
+        height={40}
+        src={`${process.env.NEXT_PUBLIC_API_URL}/static/institution/${item}`}
+        alt="kop-antigen" 
+      />
+    ) : <i className="far fa-times"></i>,
   },
   {
     title: 'GeNose',
-    dataIndex: 'genose',
-    key: 'genose',
+    dataIndex: 'institutions_genose',
+    key: 'institutions_genose',
     align: 'center',
     width: 200,
-    render: (item) => item ? <Image className="bor-rad-5px" height={40} src={item} /> : <i className="far fa-times"></i>,
+    render: (item) => item ? (
+      <Image
+        className="bor-rad-5px"
+        height={40}
+        src={`${process.env.NEXT_PUBLIC_API_URL}/static/institution/${item}`}
+        alt="kop-genose" 
+      />
+    ) : <i className="far fa-times"></i>,
   },
   {
     title: 'Cap',
-    dataIndex: 'stamp',
-    key: 'stamp',
+    dataIndex: 'institutions_stamp',
+    key: 'institutions_stamp',
     align: 'center',
     width: 100,
     render: (item) => item ? (
       <Image 
-        src={item} 
         height={40} 
         preview={{ mask: <EyeOutlined /> }}
+        src={`${process.env.NEXT_PUBLIC_API_URL}/static/institution/${item}`}
         className="bor-rad-5px" 
+        alt="kop-stamp"
       />
     ) : <i className="far fa-times"></i>,
   },
@@ -46,38 +61,7 @@ export const columns_instansi = [
     type: 'action',
     align: 'center',
     fixed: 'right',
-    width: 100,
+    width: 110,
     editable: true
-  },
-];
-
-export const data_instansi = [
-  {
-    key: '1',
-    name: 'Bhakti Rahayu Denpasar',
-    genose: null,
-    antigen: 'https://bit.ly/3xiX7hi',
-    stamp: 'https://bit.ly/3iipOqt'
-  },
-  {
-    key: '4',
-    name: 'Bhakti Rahayu Tabanan',
-    genose: null,
-    antigen: 'https://bit.ly/3C8AmAw',
-    stamp: 'https://bit.ly/3iipOqt'
-  },
-  {
-    key: '5',
-    name: 'Bhaksena Bypass Ngurah Rai',
-    genose: null,
-    antigen: 'https://bit.ly/3linoKx',
-    stamp: 'https://bit.ly/3iipOqt'
-  },
-  {
-    key: '6',
-    name: 'Bhaksena Pelabuhan Gilimanuk',
-    genose: 'https://bit.ly/3xgVdhq',
-    antigen: 'https://bit.ly/3yiTSYN',
-    stamp: 'https://bit.ly/3iipOqt'
   },
 ];

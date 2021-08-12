@@ -1,5 +1,5 @@
-import { useState, useEffect, memo } from 'react'
 import { Form, Input, Modal } from 'antd'
+import { useState, useEffect, memo } from 'react'
 
 import { enterPressHandler } from 'lib/utility'
 import { formLocation, formLocationIsValid } from 'formdata/locationService'
@@ -12,7 +12,6 @@ import axios from 'lib/axios'
 import ErrorMessage from 'components/ErrorMessage'
 
 const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, dataLocation, getLocationService }) => {
-
   const [loading, setLoading] = useState(false)
   const [locationService, setLocationService] = useState(formLocation)
 
@@ -42,13 +41,13 @@ const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
     e.preventDefault()
     if(formLocationIsValid(locationService, setLocationService)) {
       let config = {
-        url: 'location-services/create',
+        url: '/location-services/create',
         method: 'post'
       }
       if(isUpdate) {
         const { id } = locationService
         config = {
-          url: `location-services/update/${id.value}`,
+          url: `/location-services/update/${id.value}`,
           method: 'put'
         }
       }
@@ -59,7 +58,7 @@ const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
       axios[config.method](config.url, data, jsonHeaderHandler())
         .then(res => {
           getLocationService()
-          formErrorMessage('success', res.data?.detail)
+          formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
           setLoading(false)
           onCloseModalHandler()
         })
@@ -68,10 +67,10 @@ const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
           const state = _.cloneDeep(locationService)
           const errDetail = err.response?.data.detail
 
-          if(errDetail == signature_exp) {
+          if(errDetail === signature_exp) {
             getLocationService()
             onCloseModalHandler()
-            formErrorMessage("success", "Successfully add a new location-service.")
+            formErrorMessage(err.response.status === 404 ? 'error' : 'success', isUpdate ? 'Successfully update the location-service.' : 'Successfully add a new location-service.')
             if(isUpdate) setIsUpdate(false)
           }
           else if(typeof errDetail === "string" && isIn(errDetail, errName)) {
@@ -122,6 +121,7 @@ const ModalLocation = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, 
             validateStatus={!name.isValid && name.message && "error"}
           >
             <Input
+              autoFocus
               name="name"
               value={name.value}
               onChange={onChangeHandler}

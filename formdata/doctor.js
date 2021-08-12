@@ -13,13 +13,13 @@ export const formDoctorIsValid = (state, setState) => {
 
   let isGood = true
 
-  if(isEmpty(username?.value)) {
+  if(isEmpty(username?.value || "")) {
     isGood = false
     username.isValid = false
     username.message = "Value can't be empty"
   }
 
-  if(!isEmail(email.value)){
+  if(!isEmail(email.value || "")){
     isGood = false
     email.isValid = false
     email.message = "Value is not a valid email address"

@@ -50,7 +50,7 @@ const NameEmailComponent = ({ username, email, onChangeHandler }) => (
   </>
 )
 
-const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChangeHandler, onRemoveImageHandler, setShowModalSignature }) => (
+const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChangeHandler, onRemoveImageHandler, setShowModalSignature, config }) => (
   <>
     <Form.Item 
       label="Tanda tangan" 
@@ -81,7 +81,7 @@ const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChan
                               onClick={() => setShowModalSignature(true)} 
                             />
             }}
-            beforeUpload={(f) => imageValidation(f, "image", "/users/create-doctor", "post", setLoading, () => {}, "")}
+            beforeUpload={(f) => imageValidation(f, "image", config.url, config.method, setLoading, () => {}, "")}
           >
             {file.value.length >= 1 ? null : uploadButton(loading)}
           </Upload>
@@ -124,7 +124,7 @@ const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChan
                 onChange={imageChangeHandler}
                 onRemove={onRemoveImageHandler}
                 fileList={file.value}
-                beforeUpload={(f) => imageValidation(f, "image", "/users/create-doctor", "post", setLoading, () => {}, "")}
+                beforeUpload={(f) => imageValidation(f, "image", config.url, config.method, setLoading, () => {}, "")}
               >
                 {file.value.length >= 1 ? null : uploadButton(loading)}
               </Upload>
@@ -148,6 +148,18 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
 
   const { file } = imageList
   const { username, email } = doctor
+
+  let config = {
+    url: '/users/create-doctor',
+    method: 'post'
+  }
+  if(isUpdate) {
+    const { id } = doctor
+    config = {
+      url: `/users/update-doctor/${id.value}`,
+      method: 'put'
+    }
+  }
 
   /* IMAGE CHANGE FUNCTION */
   const imageChangeHandler = ({ fileList: newFileList }) => {
@@ -222,22 +234,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
 
   const onSubmitHandler = e => {
     e.preventDefault()
-    if(
-      formDoctorIsValid(doctor, setDoctor) && 
-      formImageIsValid(imageList, setImageList, "Pastikan value tidak kosong")
-    ) {
-      let config = {
-        url: 'users/create-doctor',
-        method: 'post'
-      }
-      if(isUpdate) {
-        const { id } = doctor
-        config = {
-          url: `users/update-doctor/${id.value}`,
-          method: 'put'
-        }
-      }
-
+    if( formDoctorIsValid(doctor, setDoctor) && formImageIsValid(imageList, setImageList)) {
       setLoading(true)
       const formData = new FormData()
       formData.append("username", "dr. " + username.value)
@@ -251,7 +248,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
       axios[config.method](config.url, formData, formHeaderHandler())
         .then(res => {
           getDoctor()
-          formErrorMessage('success', res.data?.detail)
+          formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
           setLoading(false)
           onCloseModalHandler()
         })
@@ -262,10 +259,10 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
           const stateImage = _.cloneDeep(imageList)
           const errDetail = err.response?.data.detail
 
-          if(errDetail == signature_exp) {
+          if(errDetail === signature_exp) {
             getDoctor()
             onCloseModalHandler()
-            formErrorMessage("success", "Successfully add a new doctor.")
+            formErrorMessage(err.response.status === 404 ? 'error' : 'success', isUpdate ? "Successfully update the doctor." : "Successfully add a new doctor.")
             if(isUpdate) setIsUpdate(false)
           }
           else if(typeof errDetail === "string" && isIn(errDetail, errEmail)) {
@@ -343,6 +340,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
         visible={visible}
         onOk={onSubmitHandler}
         onCancel={onCloseModalHandler}
+        okButtonProps={{ disabled: loading, loading: loading }}
         okText="Simpan"
         cancelText="Batal"
         closeIcon={<i className="far fa-times" />}
@@ -359,6 +357,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
 
                 <SignatureComponent 
                   file={file}
+                  config={config}
                   loading={loading}
                   setLoading={setLoading}
                   imagePreview={imagePreview}
@@ -389,9 +388,9 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
 
                 <h2 className="fs-14 bold m-b-0">Note:</h2>
                 <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
-                  <li>Password lama akan di ubah menjadi <mark>asdasd</mark></li>
+                  <li>Password lama akan di ubah menjadi <mark>bhaktirahayu</mark></li>
                   <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password 
-                      <mark>asdasd</mark> dan mengubah passwordnya pada halaman profile
+                      <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
                   </li>
                 </ul>
               </Form>
@@ -417,9 +416,9 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
             <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
               <li>Ukuran file: maks. 5MB</li>
               <li>Ukuran gambar: 500 × 500 px</li>
-              <li>Password default adalah <mark>asdasd</mark></li>
+              <li>Password default adalah <mark>bhaktirahayu</mark></li>
               <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password 
-                  <mark>asdasd</mark> dan mengubah passwordnya pada halaman profile
+                  <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
               </li>
             </ul>
           </Form>

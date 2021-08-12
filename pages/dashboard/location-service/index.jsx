@@ -44,7 +44,7 @@ const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, o
   return <td {...restProps}>{childNode}</td>
 }
 
-const per_page = 10
+const per_page = 20
 const addTitle = "Tambah Lokasi"
 const editTitle = "Edit Lokasi"
 message.config({ maxCount: 1 });
@@ -108,7 +108,7 @@ const LocationServiceContainer = () => {
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
-        if(errDetail == signature_exp){
+        if(errDetail === signature_exp){
           dispatch(actions.getLocationService({ ...queryString }))
           formErrorMessage('success', "Successfully delete the location-service.")
         } else if(typeof(errDetail) === "string") {
@@ -177,6 +177,7 @@ const LocationServiceContainer = () => {
           <Form layout="vertical" className="mb-3">
             <Form.Item className="mb-0">
               <Input 
+                value={q}
                 placeholder="Cari lokasi pelayanan" 
                 prefix={<SearchOutlined />} 
                 onChange={e => setQ(e.target.value)}

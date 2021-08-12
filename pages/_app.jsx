@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
 import { Provider } from 'react-redux'
+import { useRouter } from 'next/router'
 
 import Head from 'next/head'
+import nookies from 'nookies'
 import withReduxStore from 'lib/with-redux-store'
 
 import '/styles/global.css'
@@ -10,6 +13,21 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import Layout from 'components/Layout'
 
 const App = ({ Component, pageProps, store }) => {
+  const router = useRouter()
+
+  useEffect(() => {
+    const handleRouteChange = url => {
+      if(!url.startsWith('/dashboard/clients')) {
+        nookies.destroy(null, 'institution_id_delete', { path: '/' })
+        nookies.destroy(null, 'location_service_id_delete', { path: '/' })
+      }
+    }
+    router.events.on('routeChangeComplete', handleRouteChange)
+    return () => {
+      router.events.off('routeChangeComplete', handleRouteChange)
+    };
+  }, [router.events])
+
   return (
     <>
       <Head>
@@ -26,6 +44,16 @@ const App = ({ Component, pageProps, store }) => {
           <Component {...pageProps} />
         </Layout>
       </Provider>
+
+      <style jsx>{`
+      :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
+        height: 40px!important;
+      }
+
+      :global(.select-py-2.with-input .ant-select-selector .ant-select-selection-placeholder) {
+        line-height: 38px;
+      }
+      `}</style>
     </>
   )
 }
