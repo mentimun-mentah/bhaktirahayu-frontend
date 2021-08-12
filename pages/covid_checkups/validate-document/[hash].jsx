@@ -40,7 +40,7 @@ const ValidDocument = ({ data }) => {
         <Col xxl={16} xl={16} lg={18} md={22} sm={24} xs={24} className="card border-0 shadow bg-certificate">
           <div className="p-lg-5 p-md-4 p-3 py-lg-5 py-md-5 py-sm-4 py-4">
             <div className="mx-auto pb-3 text-dark">
-              <p className="text-center font-weight-bold size-instansi">{data?.checkups_institution_name}</p>
+              <p className="text-center font-weight-bold size-instansi">{data?.covid_checkups_institution_name}</p>
               <p className="text-center mb-4">Hasil Pemeriksaan Covid-19</p>
             </div>
             <div className="box-client">
@@ -67,10 +67,10 @@ const ValidDocument = ({ data }) => {
             </div>
 
             <div className="text-center text-dark size-isi" style={{ opacity: .8 }}>
-              <p className="mb-3 fw-500 font-id">Test ID: {data?.checkups_check_hash}</p>
-              <p>Pasien telah melakukan test <b className="text-uppercase">{data?.checkups_checking_type}</b> Covid-19,</p> 
-              <p>pada tanggal {moment(data?.checkups_check_date).format('DD MMMM YYYY')} pukul {moment(data?.checkups_check_date).format('HH:mm')}, dan hasil</p>
-              <p>pemeriksaan pasien dinyatakan <b className="text-uppercase">{data?.checkups_check_result}</b> dari Covid-19.</p>
+              <p className="mb-3 fw-500 font-id">Test ID: {data?.covid_checkups_check_hash}</p>
+              <p>Pasien telah melakukan test <b className="text-uppercase">{data?.covid_checkups_checking_type}</b> Covid-19,</p> 
+              <p>pada tanggal {moment(data?.covid_checkups_check_date).format('DD MMMM YYYY')} pukul {moment(data?.covid_checkups_check_date).format('HH:mm')}, dan hasil</p>
+              <p>pemeriksaan pasien dinyatakan <b className="text-uppercase">{data?.covid_checkups_check_result}</b> dari Covid-19.</p>
             </div>
             
             <div className="text-center text-muted size-isi mt-4">
@@ -185,7 +185,7 @@ ValidateDocument.getInitialProps = async ctx => {
   const { hash } = ctx?.query
 
   try {
-    const documentData = await axios.get(`/checkups/validate-document/${hash}`)
+    const documentData = await axios.get(`/covid_checkups/validate-document/${hash}`)
     return {
       doc: documentData.data
     }
