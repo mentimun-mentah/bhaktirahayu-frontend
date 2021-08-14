@@ -1,4 +1,5 @@
 import { parseCookies } from 'nookies'
+import { createLogs } from 'lib/logsCreator'
 import { createStore, applyMiddleware } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension'
 
@@ -13,8 +14,10 @@ import * as actions from 'store/actions'
 
 const installInterceptors = (store) => {
   instance.interceptors.response.use((response) => {
+    createLogs({ url: response?.config?.url, ...response?.data })
     return response;
   }, async error => {
+    createLogs({ url: error?.response?.config?.url, ...error?.response?.data })
     const cookies = parseCookies();
     const { csrf_refresh_token } = cookies;
 

@@ -226,12 +226,12 @@ const ProfileContainer = () => {
 
   useEffect(() => {
     if(user){
-      const realName = user.username.split(" ")
-      realName.shift()
+      const realName = user.username?.split(" ")
+      realName?.shift()
 
       const dataDoctor = {
         ...doctor,
-        username: { value: isAdmin ? user.username : realName.join(" "), isValid: true, message: null },
+        username: { value: isAdmin ? user.username : realName?.join(" "), isValid: true, message: null },
         email: { value: user.email, isValid: true, message: null },
       };
       setDoctor(dataDoctor)

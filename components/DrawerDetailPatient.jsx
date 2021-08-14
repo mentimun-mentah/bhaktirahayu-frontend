@@ -198,6 +198,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
   }
 
   useEffect(() => {
+    console.log(dataPatient)
     setPatient(dataPatient)
   }, [dataPatient])
 
@@ -223,7 +224,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
             </tr>
             <tr>
               <th scope="row">Tempat Tanggal Lahir</th>
-              <td>{birth_place.value}, {moment(birth_date.value).format('DD MMMM YYYY')}</td>
+              <td>{birth_place.value}, {moment(birth_date.value, DATE_FORMAT).format('DD MMMM YYYY')}</td>
             </tr>
             <tr>
               <th scope="row">Jenis Kelamin</th>

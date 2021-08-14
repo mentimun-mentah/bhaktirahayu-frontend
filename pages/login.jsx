@@ -258,52 +258,6 @@ const LoginPage = () => {
           </Row>
         </section>
       </Container>
-
-      <style jsx>{`
-      :global(.check-item-step .ant-steps-item-icon .ant-steps-finish-icon) {
-        vertical-align: 0;
-      }
-      :global(.ktp-kis-uploader .ant-upload.ant-upload-select-picture-card, .ant-upload-list-picture-card-container, .ktp-kis-uploader) {
-        width: 323px;
-        height: 204px;
-      }
-      :global(.ktp-kis-uploader .ant-upload-list-picture-card .ant-upload-list-item-thumbnail, .ant-upload-list-picture-card .ant-upload-list-item-thumbnail img) {
-        object-fit: cover;
-      }
-
-      :global(.cropper-container) {
-        justify-content: space-between;
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        height: calc(100vh - 48px - 32px - 130px);
-      }
-      :global(.cropper-container.cropper-loading) {
-        justify-content: center;
-      }
-
-      :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
-        height: 40px!important;
-      }
-
-      :global(.select-py-2.with-input .ant-select-selector .ant-select-selection-placeholder) {
-        line-height: 38px;
-      }
-
-      /* LOGIN & REGISTER */
-      :global(.modal-login > .ant-modal-content, .modal-login
-          > .ant-modal-content
-          > .ant-modal-header) {
-        border-radius: 10px;
-        border: unset;
-      }
-
-      :global(#scrollable-intitution-id) {
-        height: 100px;
-      }
-
-      `}</style>
     </>
   )
 }
