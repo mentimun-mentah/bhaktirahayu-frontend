@@ -46,6 +46,16 @@ const App = ({ Component, pageProps, store }) => {
       </Provider>
 
       <style jsx>{`
+      :global(.d-flex) {
+        display: flex!important;
+      }
+      :global(.flex-column) {
+        flex-direction: column!important;
+      }
+      :global(.justify-content-between) {
+        justify-content: space-between!important;
+      }
+
       :global(.select-py-2 .ant-select-selector, .select-py-2 .ant-select-selector .ant-select-selection-search-input) {
         height: 40px!important;
       }

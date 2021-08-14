@@ -5,6 +5,7 @@ import { Container } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
 import { Row, Col, Input, Select, Button, Form, Image as AntImage } from 'antd'
 
+import { createLogs } from 'lib/logsCreator'
 import { enterPressHandler } from 'lib/utility'
 import { resNotification, signature_exp } from 'lib/axios'
 import { formLogin, formLoginIsValid } from 'formdata/login'
@@ -77,6 +78,8 @@ const LoginPage = () => {
         password: password.value,
       }
 
+      createLogs({ req: 'login.jsx', data: { ...data } })
+
       axios.post("/users/login", data)
         .then(res => {
           setCookieHandler(location_service_id.value, institution_id.value)
@@ -117,6 +120,7 @@ const LoginPage = () => {
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
+    createLogs({ req: 'onSearchInstitutionServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
@@ -124,6 +128,7 @@ const LoginPage = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
+    createLogs({ req: 'onFocusInstitutionServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
@@ -134,6 +139,7 @@ const LoginPage = () => {
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
+    createLogs({ req: 'onSearchLocationServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getLocationService({ ...queryString }))
   }
 
@@ -141,6 +147,7 @@ const LoginPage = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
+    createLogs({ req: 'onFocusLocationServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getLocationService({ ...queryString }))
   }
 

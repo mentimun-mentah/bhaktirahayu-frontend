@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
-import { useState, useEffect, memo } from 'react'
 import { MenuUnfoldOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
+import { useState, useEffect, useCallback, memo } from 'react'
 
 import { dashboard_routes, DASHBOARD, LOGOUT } from './routes'
 
@@ -22,7 +22,6 @@ const DashboardLayout = ({ children }) => {
 
   const users = useSelector(state => state.auth.user)
 
-  const [user, setUser] = useState(users)
   const [isMobile, setIsMobile] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [selected, setSelected] = useState(DASHBOARD)
@@ -46,9 +45,6 @@ const DashboardLayout = ({ children }) => {
     setSelected(data)
   }, [router])
 
-  useEffect(() => {
-    setUser(users)
-  }, [])
 
   const onLogoutHandler = () => {
     if(typeof window !== 'undefined') window.location.replace('/')
@@ -56,9 +52,9 @@ const DashboardLayout = ({ children }) => {
     dispatch(actions.logout())
   }
 
-  const renderSidemenu = () => {
+  const renderSidemenu = useCallback(() => {
     return dashboard_routes.map(route => {
-      if(isIn(user?.role || "", route.role)) {
+      if(isIn(users?.role || "", route.role)) {
         return (
           <Menu.Item 
             key={route.key} 
@@ -70,7 +66,7 @@ const DashboardLayout = ({ children }) => {
         )
       }
     })
-  }
+  }, [users])
 
   return (
     <>
@@ -93,7 +89,7 @@ const DashboardLayout = ({ children }) => {
           >
             <div className="sidebar-inner">
               <div className="logo text-center bold">
-                <Image width="90" height="90" src="/static/images/bhaktirahayu_logo_transparent.png" alt="bhaktirahayu_logo" />
+                <Image width="100" height="90" src="/static/images/bhaktirahayu_logo.png" alt="bhaktirahayu_logo" />
               </div>
               <Menu 
                 mode="inline" 
@@ -131,7 +127,7 @@ const DashboardLayout = ({ children }) => {
       >
         <div className="sidebar-inner">
           <div className="logo text-center bold">
-            <Image width="66" height="65" src="/static/images/bhaktirahayu_logo_transparent.png" alt="bhaktirahayu_logo" />
+            <Image width="80" height="73" src="/static/images/bhaktirahayu_logo.png" alt="bhaktirahayu_logo" />
           </div>
           <Menu 
             mode="inline" 

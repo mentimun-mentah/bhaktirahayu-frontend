@@ -2,6 +2,7 @@ import { memo, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { DatePicker, Select, Input, Row, Col, Form } from 'antd'
 
+import { createLogs } from 'lib/logsCreator'
 import { genderList, checkTypeList } from 'data/all'
 import { disabledTomorrow, DATE_FORMAT } from 'lib/disabledDate'
 
@@ -145,6 +146,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
 
+    createLogs({ req: 'onSearchInstitution()', queryString: { ...queryString }, ...error?.response?.data })
     dispatch(actions.getInstitution({ ...queryString }))
   }, [checking_type.value])
 
@@ -154,6 +156,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     queryString["per_page"] = per_page
     queryString["checking_type"] = checking_type?.value
 
+    createLogs({ req: 'onFocusInstitution()', queryString: { ...queryString }, ...error?.response?.data })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
@@ -230,7 +233,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
           </Col>
         </Row>
         
-        <Row gutter={[10,10]}>
+        <Row gutter={[10,0]}>
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
             <Form.Item
               label="Jenis Kelamin"
@@ -285,7 +288,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
           <ErrorMessage item={address} />
         </Form.Item>
 
-        <Row gutter={[10,10]}>
+        <Row gutter={[10,0]}>
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
             <Form.Item 
               label="Jenis Pemeriksaan"
