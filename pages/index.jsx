@@ -249,10 +249,18 @@ const Home = () => {
     axios.get('/clients/get-data-by-nik', { params: query })
       .then(res => {
         if(res?.data) {
+          console.log(res.data)
           const state = _.cloneDeep(register)
           for (const [key, value] of Object.entries(res.data)) {
             if(state[key] && key !== "nik") {
               state[key].value = value
+              state[key].isValid = true
+              state[key].message = null
+            }
+            if(state[key] && key === "phone") {
+              const realPhone = value.split(' ')
+              realPhone.shift()
+              state[key].value = realPhone.join("")
               state[key].isValid = true
               state[key].message = null
             }
