@@ -146,7 +146,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
 
-    createLogs({ req: 'onSearchInstitution()', queryString: { ...queryString }, ...error?.response?.data })
+    createLogs({ req: 'onSearchInstitution()', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }, [checking_type.value])
 
@@ -156,7 +156,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     queryString["per_page"] = per_page
     queryString["checking_type"] = checking_type?.value
 
-    createLogs({ req: 'onFocusInstitution()', queryString: { ...queryString }, ...error?.response?.data })
+    createLogs({ req: 'onFocusInstitution()', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
