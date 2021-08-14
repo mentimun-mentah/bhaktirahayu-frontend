@@ -230,7 +230,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
           </Col>
         </Row>
         
-        <Row gutter={[10,10]}>
+        <Row gutter={[10,0]}>
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
             <Form.Item
               label="Jenis Kelamin"
@@ -285,7 +285,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
           <ErrorMessage item={address} />
         </Form.Item>
 
-        <Row gutter={[10,10]}>
+        <Row gutter={[10,0]}>
           <Col xxl={12} xl={12} lg={12} md={24} sm={24} xs={24}>
             <Form.Item 
               label="Jenis Pemeriksaan"

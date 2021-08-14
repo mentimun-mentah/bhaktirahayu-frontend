@@ -167,7 +167,7 @@ const Home = () => {
 
   return (
     <>
-      <Container style={{ height: '100vh', maxHeight: '100vh' }}>
+      <Container className="container-height">
         <section className="h-100">
           <Row gutter={[16,16]} className="h-100">
 
@@ -259,15 +259,13 @@ const Home = () => {
                       <>
                         <div className="d-flex flex-column w-100">
                           <h5 className="mb-3">Cek dulu data KTP / KIS kamu yuk 👌</h5>
-
                           <FormRegisterContainer 
                             register={register}
                             setRegister={setRegister}
                           />
-
                         </div>
 
-                        <Row gutter={[10,10]} className="mb-3">
+                        <Row gutter={[10,10]} className="mb-3 mt-4">
                           <Col span={12}>
                             <ButtonAction 
                               type="text" 
@@ -318,6 +316,17 @@ const Home = () => {
       }
       :global(.ktp-kis-uploader .ant-upload-list-picture-card .ant-upload-list-item-thumbnail, .ant-upload-list-picture-card .ant-upload-list-item-thumbnail img) {
         object-fit: cover;
+      }
+
+      :global(.container-height) {
+        height: 100vh;
+        max-height: 100vh;
+      }
+
+      @media only screen and (max-device-width: 667px) and (-webkit-device-pixel-ratio: 2) {
+        :global(.container-height) {
+          height: 100%!important;
+        }
       }
       `}</style>
     </>
