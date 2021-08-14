@@ -25,6 +25,10 @@ const installInterceptors = (store) => {
     const status = error && error.response && error.response.status;
     const config = error && error.response && error.response.config;
 
+    if (typeof error.response === 'undefined') {
+      createLogs({ req: 'store/index.js axios', msg: 'CORS DETECTED', err: { ...error } })
+    }
+
     if(status == 422 && data.detail == signature_exp && csrf_refresh_token && config.url === "/users/refresh-token"){
       instance.delete("/users/delete-cookies")
       store.dispatch(actions.logout());
