@@ -1,11 +1,12 @@
 import { appendFile } from 'fs'
+import moment from 'moment'
 
 export default function handler(req, res) {
   if (req.method === 'POST') {
 
 const data = 
 `
-${'='.repeat(30)} ${new Date()} ${'='.repeat(30)}
+${'='.repeat(30)} ${moment().format('LLLL')} ${'='.repeat(30)}
 \n\n
 ${req.body.message}
 \n\n
