@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
-import { Row, Col, Select, Grid } from 'antd'
+import { Row, Col, Select } from 'antd'
+import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 
 import _ from 'lodash'
@@ -13,7 +13,6 @@ import { antigenGenoseOption } from 'lib/chartConfig'
 
 import * as actions from 'store/actions'
 
-const useBreakpoint = Grid.useBreakpoint
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const stats_list = (data) => [
@@ -57,7 +56,6 @@ const per_page = 30
 
 const Dashboard = () => {
   const dispatch = useDispatch()
-  const screens = useBreakpoint()
 
   const totalData = useSelector(state => state.dashboard.totalData)
   const chartData = useSelector(state => state.dashboard.chartData)
@@ -133,7 +131,8 @@ const Dashboard = () => {
   const pieGender = {
     series: [+totalData?.total_male, +totalData?.total_female],
     options: {
-      chart: { width: 380, type: 'pie', },
+      chart: { width: '100%', type: 'pie', },
+      legend: { position: 'bottom' },
       labels: [
         `Laki-laki`, 
         `Perempuan`, 
@@ -142,7 +141,7 @@ const Dashboard = () => {
       responsive: [{
         breakpoint: 480,
         options: {
-          chart: { width: 200 },
+          chart: { width: '100%' },
           legend: { position: 'bottom' }
         }
       }]
@@ -187,20 +186,20 @@ const Dashboard = () => {
     <>
       <div className="header-dashboard">
         <Row gutter={[20,20]} justify="space-between" align="middle">
-          <Col span={6}>
-            <h1 className="h1 bold mb-0">Dashboard</h1>
-            <span className="header-date">
+          <Col xxl={6} xl={6} lg={24} md={24} sm={24} xs={24}>
+            <h1 className="h1 fs-24-s bold mb-0">Dashboard</h1>
+            <span className="header-date fs-14-s">
               {moment().format("dddd, DD MMMM YYYY")}
             </span>
           </Col>
 
           <Col xxl={18} xl={18} lg={24} md={24} sm={24} xs={24}>
             <Row gutter={[10,10]} align="middle">
-              <Col span={3}>
+              <Col span={3} sm={24} xs={24}>
                 <b>Filter:</b>
               </Col>
 
-              <Col span={7}>
+              <Col span={7} sm={8} xs={8}>
                 <Select
                   value={period}
                   className="w-100"
@@ -215,7 +214,7 @@ const Dashboard = () => {
                 </Select>
               </Col>
 
-              <Col span={7}>
+              <Col span={7} sm={8} xs={8}>
                 <Select
                   allowClear
                   showSearch
@@ -238,7 +237,7 @@ const Dashboard = () => {
                 </Select>
               </Col>
 
-              <Col span={7}>
+              <Col span={7} sm={8} xs={8}>
                 <Select
                   allowClear
                   showSearch
@@ -287,7 +286,7 @@ const Dashboard = () => {
           </Col>
         ))}
 
-        <Col xxl={10} xl={24} lg={24} md={24} sm={24} xs={24}>
+        <Col xxl={10} xl={10} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
@@ -295,12 +294,12 @@ const Dashboard = () => {
                   <Card.Title>Pasien</Card.Title>
                 </Col>
               </Row>
-              <Chart options={pieGender.options} series={pieGender.series} type="pie" width={535} />
+              <Chart options={pieGender.options} series={pieGender.series} type="pie" width={475} />
             </Card.Body>
           </Card>
         </Col>
 
-        <Col xxl={14} xl={24} lg={24} md={24} sm={24} xs={24}>
+        <Col xxl={14} xl={14} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
@@ -313,7 +312,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        <Col xxl={12} xl={24} lg={24} md={24} sm={24} xs={24}>
+        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
@@ -326,7 +325,7 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        <Col xxl={12} xl={24} lg={24} md={24} sm={24} xs={24}>
+        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
