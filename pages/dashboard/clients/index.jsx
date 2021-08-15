@@ -248,7 +248,7 @@ const ClientsContainer = ({ searchQuery }) => {
         <Card.Body>
           
           <Row gutter={[10, 10]} justify="space-between" className="mb-3">
-            <Col xl={5} lg={8} md={10} sm={12} xs={12}>
+            <Col xl={6} lg={12} md={12} sm={10} xs={10}>
               <Form.Item className="mb-0">
                 <Input 
                   value={q}
@@ -261,7 +261,7 @@ const ClientsContainer = ({ searchQuery }) => {
                 />
               </Form.Item>
             </Col>
-            <Col xl={6} lg={12} md={12} sm={12} xs={12}>
+            <Col xl={5} lg={8} md={10} sm={14} xs={14}>
               <Space className="float-right">
                 <Button 
                   type="text" 
