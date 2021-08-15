@@ -49,7 +49,7 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
   return (
     <>
       {loading ? (
-        <motion.div className="text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div className="text-center my-5-ip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <Image width={100} height={100} src={Loader} alt="loader" />
           <div className="fs-14 m-b-10">Sedang mengekstrak data...</div>
         </motion.div>

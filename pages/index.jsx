@@ -141,8 +141,13 @@ const Home = () => {
         const state = _.cloneDeep(identityCard)
         const stateImage = _.cloneDeep(imageList)
         const errDetail = err.response?.data.detail
+        console.log(err.response)
 
         if(typeof errDetail === "string" && isIn("image", errDetail.split(" "))) {
+          stateImage.file.isValid = false
+          stateImage.file.message = errDetail
+        }
+        else if(typeof errDetail === "string" && !isIn("image", errDetail.split(" "))) {
           stateImage.file.isValid = false
           stateImage.file.message = errDetail
         }
@@ -208,9 +213,12 @@ const Home = () => {
                       </Steps>
                     </div>
 
+                    <br />
+
                     {step == 0 && (
                       <>
                         <PreparationContainer />
+                        <br />
                         <Row gutter={[10,10]} className="mb-3">
                           <Col span={24}>
                             <ButtonAction 
@@ -236,6 +244,7 @@ const Home = () => {
                           />
                         </div>
 
+                        <br />
                         <Row gutter={[10,10]}>
                           <Col span={12}>
                             <ButtonAction 
@@ -267,7 +276,8 @@ const Home = () => {
                           />
                         </div>
 
-                        <Row gutter={[10,10]} className="mb-3 mt-4">
+                        <br />
+                        <Row gutter={[10,10]} className="mb-3">
                           <Col span={12}>
                             <ButtonAction 
                               type="text" 
@@ -327,7 +337,11 @@ const Home = () => {
 
       @media only screen and (max-device-width: 667px) and (-webkit-device-pixel-ratio: 2) {
         :global(.container-height) {
-          height: 100%!important;
+          height: 100%;
+        }
+        :global(.my-5-ip) {
+          margin-top: 6rem!important;
+          margin-bottom: 6rem!important;
         }
       }
       `}</style>
