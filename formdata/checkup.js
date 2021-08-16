@@ -7,7 +7,8 @@ export const formCheckup = {
   doctor_id: { value: [], isValid: true, message: null },
   guardian_id: { value: [], isValid: true, message: null },
   location_service_id: { value: [], isValid: true, message: null },
-  institution_id: { value: [], isValid: true, message: null }
+  institution_id: { value: [], isValid: true, message: null },
+  checking_type: { value: "", isValid: true, message: null }
 }
 
 export const formCheckupIsValid = (state, setState) => {

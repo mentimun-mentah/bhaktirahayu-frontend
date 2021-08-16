@@ -1,8 +1,8 @@
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { Row, Col, Select } from 'antd'
-import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import _ from 'lodash'
 import moment from 'moment'
@@ -12,6 +12,7 @@ import { periodList } from 'data/all'
 import { antigenGenoseOption } from 'lib/chartConfig'
 
 import * as actions from 'store/actions'
+import NotFoundSelect from 'components/NotFoundSelect'
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -52,15 +53,27 @@ const formDoneWaiting = [
   { name: 'Selesai', data: [0, 0, 0, 0, 0, 0, 0] }
 ]
 
-const per_page = 30
+const selectProps = {
+  allowClear: true,
+  showSearch: true,
+  className: "w-100",
+  filterOption: (input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0,
+  getPopupContainer: triggerNode => triggerNode.parentElement
+}
+
+const per_page = 10
 
 const Dashboard = () => {
   const dispatch = useDispatch()
 
   const totalData = useSelector(state => state.dashboard.totalData)
   const chartData = useSelector(state => state.dashboard.chartData)
+
   const institutions = useSelector(state => state.institution.institution)
+  const loadingInstitutions = useSelector(state => state.institution.loading)
+
   const locationServices = useSelector(state => state.locationService.locationService)
+  const loadingLocationServices = useSelector(state => state.locationService.loading)
 
   const [period, setPeriod] = useState("week")
   const [institution, setInstitution] = useState([])
@@ -148,24 +161,33 @@ const Dashboard = () => {
     },
   };
 
-  const onSearchInstitutionServices = val => {
+  const fetchInstitution = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
-    dispatch(actions.getInstitution({ ...queryString }))
-  }
 
-  const onFocusInstitutionServices = () => {
+    dispatch(actions.getInstitution({ ...queryString }))
+  }, [])
+
+  const onSearchInstitution = useMemo(() => {
+    const loadOptions = val => {
+      fetchInstitution(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchInstitution])
+
+  const onFocusInstitution = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
-  const onSearchLocationServices = val => {
+
+  const fetchLocationService = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
@@ -173,9 +195,16 @@ const Dashboard = () => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
     dispatch(actions.getLocationService({ ...queryString }))
-  }
+  }, [])
 
-  const onFocusLocationServices = () => {
+  const onSearchLocationService = useMemo(() => {
+    const loadOptions = val => {
+      fetchLocationService(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchLocationService])
+
+  const onFocusLocationService = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
@@ -216,18 +245,16 @@ const Dashboard = () => {
 
               <Col span={7} sm={8} xs={8}>
                 <Select
-                  allowClear
-                  showSearch
-                  className="w-100"
+                  {...selectProps}
                   value={institution}
                   placeholder="Pilih Instansi"
-                  onFocus={onFocusInstitutionServices}
-                  onSearch={onSearchInstitutionServices}
+                  onFocus={onFocusInstitution}
+                  onSearch={val => {
+                    onSearchInstitution(val)
+                    dispatch(actions.getInstitutionStart())
+                  }}
                   onChange={val => setInstitution(val)}
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }
-                  getPopupContainer={triggerNode => triggerNode.parentElement}
+                  notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
                 >
                   {institutions?.data?.length > 0 && institutions?.data.map(institution => (
                     <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
@@ -239,18 +266,16 @@ const Dashboard = () => {
 
               <Col span={7} sm={8} xs={8}>
                 <Select
-                  allowClear
-                  showSearch
-                  className="w-100"
+                  {...selectProps}
                   value={locationService}
                   placeholder="Pilih Lokasi Pelayanan"
-                  onFocus={onFocusLocationServices}
-                  onSearch={onSearchLocationServices}
+                  onFocus={onFocusLocationService}
+                  onSearch={val => {
+                    onSearchLocationService(val)
+                    dispatch(actions.getLocationServiceStart())
+                  }}
                   onChange={val => setLocationService(val)}
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }
-                  getPopupContainer={triggerNode => triggerNode.parentElement}
+                  notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
                 >
                   {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
                     <Select.Option value={loct.location_services_id} key={loct.location_services_id}>

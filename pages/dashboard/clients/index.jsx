@@ -27,7 +27,7 @@ import DrawerPatient from 'components/DrawerPatient'
 import DrawerDetailPatient from 'components/DrawerDetailPatient'
 
 moment.locale('id')
-const per_page = 20
+const per_page = 10
 const useBreakpoint = Grid.useBreakpoint
 
 const ProductCellEditable = (
@@ -161,6 +161,7 @@ const ClientsContainer = ({ searchQuery }) => {
   const onCloseDetailPatientDrawerHandler = () => {
     setShowDetailPatient(false)
     setPatient(formPatient)
+    dispatch(actions.getClient({ ...router.query }))
   }
 
   const onExportHandler = () => {
@@ -226,19 +227,17 @@ const ClientsContainer = ({ searchQuery }) => {
 
     if(searchQuery.q) setQ(searchQuery.q)
 
-    if(searchQuery.page) setPage(+searchQuery.page)
+    if(searchQuery.page && clients?.data?.length > 1) setPage(+searchQuery.page)
 
   }, [searchQuery])
 
   useEffect(() => {
-    if(clients && clients.data && clients.data.length < 1 && clients.page > 1 && clients.total > 1){
-      setPage(clients.page - 1)
+    if(clients && clients?.data && clients?.data?.length < 1 && clients?.page > 1 && clients?.total > 1) {
+      const newPage = clients?.iter_pages
+      setPage(newPage[newPage?.length - 1 || 0])
     }
-    if(clients && clients.data && !router.query.hasOwnProperty("page")){
-      setPage(clients.page)
-    }
-    if(clients && router.query.hasOwnProperty("page")){
-      setPage(+router.query.page)
+    else if(clients && clients?.data && !router?.query.hasOwnProperty("page")) {
+      setPage(1)
     }
   }, [clients])
 

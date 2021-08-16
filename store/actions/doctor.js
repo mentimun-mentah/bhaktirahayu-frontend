@@ -1,8 +1,10 @@
+import { jsonHeaderHandler, signature_exp } from 'lib/axios'
+
 import axios from 'lib/axios'
 import * as actionType from './actionTypes'
 
 /* GET DOCTOR ACTIONS */
-const getDoctorStart = () => {
+export const getDoctorStart = () => {
   return {
     type: actionType.GET_DOCTOR_START,
   }
@@ -38,6 +40,36 @@ export const getDoctor = ({ page = 1, per_page = 10, q }) => {
       })
       .catch(err => {
         dispatch(getDoctorFail(err.response))
+      })
+  }
+}
+
+export const getMultipleDoctors = ({ list_id = [], state }) => {
+  const data = { list_id: list_id }
+
+  return dispatch => {
+    dispatch(getDoctorStart())
+
+    axios.post('/users/get-multiple-doctors', data, jsonHeaderHandler())
+      .then(res => {
+        const data = { ...state, data: res.data }
+        dispatch(getDoctorSuccess(data))
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp) {
+          axios.post('/users/get-multiple-doctors', data, jsonHeaderHandler())
+            .then(res => {
+              const data = { ...state, data: res.data }
+              dispatch(getDoctorSuccess(data))
+            })
+            .catch(err => {
+              dispatch(getDoctorFail(err.response))
+            })
+        }
+        else {
+          dispatch(getDoctorFail(err.response))
+        }
       })
   }
 }

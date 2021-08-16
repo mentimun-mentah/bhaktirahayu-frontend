@@ -7,14 +7,17 @@ import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { formDoctor } from 'formdata/doctor'
+import { useDebounce } from 'lib/useDebounce'
 import { columns_doctor } from 'data/tableDoctor'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
+import _ from 'lodash'
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import ModalDoctor from 'components/Doctor/ModalDoctor'
+
 
 const ProductCellEditable = ({ index, record, editable, type, children, onEditHandler, onDeleteHandler, ...restProps }) => {
   let childNode = children
@@ -61,6 +64,8 @@ const DoctorsContainer = () => {
   const [showModal, setShowModal] = useState(false)
   const [imageList, setImageList] = useState(formImage)
   const [modalTitle, setModalTitle] = useState(addTitle)
+
+  const debouncedSearchDoctor = useDebounce(q, 500)
 
   const columnsDoctors = columns_doctor.map(col => {
     if (!col.editable) return col;
@@ -149,17 +154,22 @@ const DoctorsContainer = () => {
     dispatch(actions.getDoctor({...queryString}))
   }, [page])
 
-  useEffect(() => {
+
+  const fetchDoctor = val => {
     setPage(1)
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(q) queryString["q"] = q
+    if(val) queryString["q"] = val
     else delete queryString["q"]
+    dispatch(actions.getDoctor({ ...queryString }))
+  }
 
-    dispatch(actions.getDoctor({...queryString}))
-  }, [q])
+  useEffect(() => {
+    fetchDoctor(debouncedSearchDoctor)
+  }, [debouncedSearchDoctor])
+
 
   useEffect(() => {
     if(doctors && doctors.data && doctors.data.length < 1 && doctors.page > 1 && doctors.total > 1){

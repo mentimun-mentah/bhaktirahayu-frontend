@@ -1,8 +1,10 @@
+import { jsonHeaderHandler, signature_exp } from 'lib/axios'
+
 import axios from 'lib/axios'
 import * as actionType from './actionTypes'
 
 /* GET GUARDIAN ACTIONS */
-const getGuardianStart = () => {
+export const getGuardianStart = () => {
   return {
     type: actionType.GET_GUARDIAN_START,
   }
@@ -38,6 +40,37 @@ export const getGuardian = ({ page = 1, per_page = 10, q }) => {
       })
       .catch(err => {
         dispatch(getGuardianFail(err.response))
+      })
+  }
+}
+
+
+export const getMultipleGuardians = ({ list_id = [], state }) => {
+  const data = { list_id: list_id }
+
+  return dispatch => {
+    dispatch(getGuardianStart())
+
+    axios.post('/guardians/get-multiple-guardians', data, jsonHeaderHandler())
+      .then(res => {
+        const data = { ...state, data: res.data }
+        dispatch(getGuardianSuccess(data))
+      })
+      .catch(err => {
+        const errDetail = err.response?.data.detail
+        if(errDetail === signature_exp) {
+          axios.post('/guardians/get-multiple-guardians', data, jsonHeaderHandler())
+            .then(res => {
+              const data = { ...state, data: res.data }
+              dispatch(getGuardianSuccess(data))
+            })
+            .catch(err => {
+              dispatch(getGuardianFail(err.response))
+            })
+        }
+        else {
+          dispatch(getGuardianFail(err.response))
+        }
       })
   }
 }

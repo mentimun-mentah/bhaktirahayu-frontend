@@ -191,14 +191,14 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
       },
       guardian_id: { value: record.covid_checkups_guardian_id, isValid: true, message: null },
       location_service_id: { value: record.covid_checkups_location_service_id, isValid: true, message: null },
-      institution_id: { value: record.covid_checkups_institution_id, isValid: true, message: null }
+      institution_id: { value: record.covid_checkups_institution_id, isValid: true, message: null },
+      checking_type: { value: record.covid_checkups_checking_type, isValid: true, message: null }
     }
     setCheckup(data)
     setShowCheckupDrawer(true)
   }
 
   useEffect(() => {
-    console.log(dataPatient)
     setPatient(dataPatient)
   }, [dataPatient])
 
@@ -243,13 +243,15 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
           pagination={false} 
           columns={columnsPatient}
           dataSource={covid_checkups.value} 
-          scroll={{ y: 485, x: 1180 }} 
+          scroll={{ y: 300, x: 1180 }} 
           rowKey={record => record.covid_checkups_id}
           components={{ body: { cell: ProductCellEditable } }}
         />
 
         <DrawerResultPatient
           dataCheckup={checkup}
+          patient={patient}
+          setPatient={setPatient}
           visible={showCheckupDrawer}
           onCloseHandler={onCloseCheckupDrawerHandler}
         />

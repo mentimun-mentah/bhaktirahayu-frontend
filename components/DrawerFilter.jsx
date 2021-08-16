@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router'
-import { memo, useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import { memo, useState, useEffect, useCallback, useMemo } from 'react'
 import { Drawer, Form, Select, Grid, DatePicker, Button, Space, Tag, message } from 'antd'
 
 import _ from 'lodash'
@@ -17,12 +17,35 @@ import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
+import NotFoundSelect from 'components/NotFoundSelect'
 
 moment.locale('id')
 message.config({ maxCount: 1 })
 
-const per_page = 30
+const per_page = 10
 const useBreakpoint = Grid.useBreakpoint;
+
+const selectProps = {
+  showSearch: true,
+  allowClear: true,
+  labelInValue: true,
+  mode: "multiple",
+  className: "w-100",
+  filterOption: (input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0,
+  getPopupContainer: triggerNode => triggerNode.parentElement
+}
+
+const datePickerProps = {
+  inputReadOnly: true,
+  locale: id_ID,
+  className: "w-100",
+  disabledDate: disabledTomorrow,
+  getPopupContainer: triggerNode => triggerNode.parentElement,
+  ranges: {
+    'Hari ini': [moment(), moment()],
+    'Bulan ini': [moment().startOf('month'), moment()],
+  },
+}
 
 const DrawerFilter = ({ visible, onClose }) => {
   const router = useRouter()
@@ -30,9 +53,16 @@ const DrawerFilter = ({ visible, onClose }) => {
   const screens = useBreakpoint()
 
   const doctors = useSelector(state => state.doctor.doctor)
+  const loadingDoctors = useSelector(state => state.doctor.loading)
+
   const guardians = useSelector(state => state.guardian.guardian)
+  const loadingGuardians = useSelector(state => state.guardian.loading)
+
   const institutions = useSelector(state => state.institution.institution)
+  const loadingInstitutions = useSelector(state => state.institution.loading)
+
   const locationServices = useSelector(state => state.locationService.locationService)
+  const loadingLocationServices = useSelector(state => state.locationService.loading)
 
   const [filter, setFilter] = useState(formFilter)
 
@@ -187,27 +217,40 @@ const DrawerFilter = ({ visible, onClose }) => {
     onClose()
   }
 
-  const onSearchGuardian = val => {
+
+  const fetchInstitution = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
-    dispatch(actions.getGuardian({ ...queryString }))
-  } 
 
-  const onFocusGuardian = () => {
+    if(checking_type[0]) queryString["checking_type"] = checking_type[0]
+    else delete queryString["checking_type"]
+
+    dispatch(actions.getInstitution({ ...queryString }))
+  }, [checking_type])
+
+  const onSearchInstitution = useMemo(() => {
+    const loadOptions = val => {
+      fetchInstitution(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchInstitution])
+
+  const onFocusInstitution = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(!isIn('guardian_id', Object.keys(router.query))){
-      dispatch(actions.getGuardian({ ...queryString }))
+    if(!isIn('institution_id', Object.keys(router.query))){
+      dispatch(actions.getInstitution({ ...queryString }))
     }
   }
 
-  const onSearchDoctor = val => {
+
+  const fetchDoctor = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
@@ -215,7 +258,14 @@ const DrawerFilter = ({ visible, onClose }) => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
     dispatch(actions.getDoctor({ ...queryString }))
-  } 
+  }, [])
+
+  const onSearchDoctor = useMemo(() => {
+    const loadOptions = val => {
+      fetchDoctor(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchDoctor])
 
   const onFocusDoctor = () => {
     let queryString = {}
@@ -227,7 +277,36 @@ const DrawerFilter = ({ visible, onClose }) => {
     }
   }
 
-  const onSearchLocationServices = val => {
+
+  const fetchGuardian = useCallback(val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+    dispatch(actions.getGuardian({ ...queryString }))
+  }, [])
+
+  const onSearchGuardian = useMemo(() => {
+    const loadOptions = val => {
+      fetchGuardian(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchGuardian])
+
+  const onFocusGuardian = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(!isIn('guardian_id', Object.keys(router.query))){
+      dispatch(actions.getGuardian({ ...queryString }))
+    }
+  }
+
+
+  const fetchLocationService = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
@@ -235,7 +314,14 @@ const DrawerFilter = ({ visible, onClose }) => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
     dispatch(actions.getLocationService({ ...queryString }))
-  } 
+  }, [])
+
+  const onSearchLocationService = useMemo(() => {
+    const loadOptions = val => {
+      fetchLocationService(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchLocationService])
 
   const onFocusLocationServices = () => {
     let queryString = {}
@@ -247,25 +333,6 @@ const DrawerFilter = ({ visible, onClose }) => {
     }
   }
 
-  const onSearchInstitution = val => {
-    let queryString = {}
-    queryString["page"] = 1
-    queryString["per_page"] = per_page
-
-    if(val) queryString["q"] = val
-    else delete queryString["q"]
-    dispatch(actions.getInstitution({ ...queryString }))
-  }
-
-  const onFocusInstitution = () => {
-    let queryString = {}
-    queryString["page"] = 1
-    queryString["per_page"] = per_page
-
-    if(!isIn('institution_id', Object.keys(router.query))){
-      dispatch(actions.getInstitution({ ...queryString }))
-    }
-  }
 
   const getMultipleInstitutions = (list_id, state) => {
     const data = { list_id: list_id }
@@ -499,6 +566,13 @@ const DrawerFilter = ({ visible, onClose }) => {
       query['location_service_id'] = cookies['location_service_id']
     }
 
+    if(!isIn('register_start_date', Object.keys(query)) &&
+       !isIn('register_end_date', Object.keys(query))
+    ) {
+      query['register_start_date'] = state?.register_start_date
+      query['register_end_date'] = state?.register_end_date
+    }
+
     router.replace({
       pathname: "/dashboard/clients",
       query: query
@@ -533,9 +607,7 @@ const DrawerFilter = ({ visible, onClose }) => {
 
         <Form layout="vertical" className="mb-3">
           <div className="p-3">
-            <Form.Item 
-              label={<span className="filter-title">Jenis Pemeriksaan</span>}
-            >
+            <Form.Item label={<span className="filter-title">Jenis Pemeriksaan</span>}>
               {checkTypeList.map(tag => (
                 <Tag.CheckableTag
                   key={tag.value}
@@ -548,9 +620,7 @@ const DrawerFilter = ({ visible, onClose }) => {
               ))}
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Jenis Kelamin</span>}
-            >
+            <Form.Item label={<span className="filter-title">Jenis Kelamin</span>}>
               {genderList.map(tag => (
                 <Tag.CheckableTag
                   key={tag.value}
@@ -563,9 +633,7 @@ const DrawerFilter = ({ visible, onClose }) => {
               ))}
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Hasil Pemeriksaan</span>}
-            >
+            <Form.Item label={<span className="filter-title">Hasil Pemeriksaan</span>}>
               {checkResultList.map(tag => (
                 <Tag.CheckableTag
                   key={tag.value}
@@ -578,24 +646,18 @@ const DrawerFilter = ({ visible, onClose }) => {
               ))}
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Instansi</span>}
-            >
+            <Form.Item label={<span className="filter-title">Instansi</span>}>
               <Select 
-                showSearch 
-                allowClear
-                labelInValue
-                mode="multiple"
-                className="w-100"
+                {...selectProps}
                 value={institution_id}
                 placeholder="Cari instansi"
                 onFocus={onFocusInstitution}
-                onSearch={onSearchInstitution}
+                onSearch={val => {
+                  onSearchInstitution(val)
+                  dispatch(actions.getInstitutionStart())
+                }}
                 onChange={(val) => onFilterChange(val, "institution_id")}
-                getPopupContainer={triggerNode => triggerNode.parentElement}
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+                notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
               >
                 {institutions?.data?.length > 0 && institutions?.data.map(institution => (
                   <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
@@ -605,24 +667,18 @@ const DrawerFilter = ({ visible, onClose }) => {
               </Select>
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Dokter</span>}
-            >
+            <Form.Item label={<span className="filter-title">Dokter</span>}>
               <Select 
-                showSearch 
-                allowClear
-                labelInValue
-                mode="multiple"
-                className="w-100"
+                {...selectProps}
                 value={doctor_id}
                 placeholder="Cari dokter"
                 onFocus={onFocusDoctor}
-                onSearch={onSearchDoctor}
+                onSearch={val => {
+                  onSearchDoctor(val)
+                  dispatch(actions.getDoctorStart())
+                }}
                 onChange={(val) => onFilterChange(val, "doctor_id")}
-                getPopupContainer={triggerNode => triggerNode.parentElement}
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+                notFoundContent={<NotFoundSelect loading={loadingDoctors} />}
               >
                 {doctors?.data?.length > 0 && doctors?.data.map(doctor => (
                   <Select.Option value={doctor.users_id} key={doctor.users_id}>
@@ -632,24 +688,18 @@ const DrawerFilter = ({ visible, onClose }) => {
               </Select>
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Penjamin</span>}
-            >
+            <Form.Item label={<span className="filter-title">Penjamin</span>}>
               <Select 
-                showSearch 
-                allowClear
-                labelInValue
-                mode="multiple"
-                className="w-100"
+                {...selectProps}
                 value={guardian_id}
                 placeholder="Cari penjamin"
                 onFocus={onFocusGuardian}
-                onSearch={onSearchGuardian}
+                onSearch={val => {
+                  onSearchGuardian(val)
+                  dispatch(actions.getGuardianStart())
+                }}
                 onChange={(val) => onFilterChange(val, "guardian_id")}
-                getPopupContainer={triggerNode => triggerNode.parentElement}
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+                notFoundContent={<NotFoundSelect loading={loadingGuardians} />}
               >
                 {guardians?.data?.length > 0 && guardians?.data.map(guardian => (
                   <Select.Option value={guardian.guardians_id} key={guardian.guardians_name}>
@@ -659,24 +709,18 @@ const DrawerFilter = ({ visible, onClose }) => {
               </Select>
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Lokasi pelayanan</span>}
-            >
+            <Form.Item label={<span className="filter-title">Lokasi pelayanan</span>}>
               <Select 
-                showSearch 
-                allowClear
-                labelInValue
-                mode="multiple"
-                className="w-100"
+                {...selectProps}
                 value={location_service_id}
                 placeholder="Cari lokasi pelayanan"
                 onFocus={onFocusLocationServices}
-                onSearch={onSearchLocationServices}
+                onSearch={val => {
+                  onSearchLocationService(val)
+                  dispatch(actions.getLocationServiceStart())
+                }}
                 onChange={(val) => onFilterChange(val, "location_service_id")}
-                getPopupContainer={triggerNode => triggerNode.parentElement}
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }
+                notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
               >
                 {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
                   <Select.Option value={loct.location_services_id} key={loct.location_services_id}>
@@ -686,14 +730,9 @@ const DrawerFilter = ({ visible, onClose }) => {
               </Select>
             </Form.Item>
 
-            <Form.Item 
-              label={<span className="filter-title">Tanggal</span>}
-              className="mb-0"
-            >
+            <Form.Item label={<span className="filter-title">Tanggal</span>} className="mb-0">
               <DatePicker.RangePicker
-                inputReadOnly
-                locale={id_ID}
-                className="w-100"
+                {...datePickerProps}
                 format="DD MMM YYYY HH:mm"
                 showTime={{ format: 'HH:mm' }}
                 onChange={onChangeCheckDate}
@@ -701,29 +740,17 @@ const DrawerFilter = ({ visible, onClose }) => {
                   moment(check_start_date, `${DATE_FORMAT} HH:mm`).isValid() ? moment(check_start_date, `${DATE_FORMAT} HH:mm`) : "", 
                   moment(check_end_date, `${DATE_FORMAT} HH:mm`).isValid() ? moment(check_end_date, `${DATE_FORMAT} HH:mm`) : ""
                 ]}
-                disabledDate={disabledTomorrow}
-                ranges={{
-                  'Hari ini': [moment(), moment()],
-                  'Bulan ini': [moment().startOf('month'), moment()],
-                }}
               />
               <p className="small font-italic text-muted">untuk pasien yang sudah diperiksa</p>
 
               <DatePicker.RangePicker
-                inputReadOnly
-                locale={id_ID}
-                className="w-100"
+                {...datePickerProps}
                 format="DD MMM YYYY"
-                disabledDate={disabledTomorrow}
                 onChange={onChangeRegisterDate}
                 value={[
                   moment(register_start_date, `${DATE_FORMAT}`).isValid() ? moment(register_start_date, `${DATE_FORMAT}`) : "", 
                   moment(register_end_date, `${DATE_FORMAT}`).isValid() ? moment(register_end_date, `${DATE_FORMAT}`) : ""
                 ]}
-                ranges={{
-                  'Hari ini': [moment(), moment()],
-                  'Bulan ini': [moment().startOf('month'), moment()],
-                }}
               />
               <p className="small font-italic text-muted mb-0">untuk pasien yang belum diperiksa</p>
             </Form.Item>

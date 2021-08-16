@@ -14,10 +14,15 @@ import * as actions from 'store/actions'
 
 const installInterceptors = (store) => {
   instance.interceptors.response.use((response) => {
-    createLogs({ url: response?.config?.url, ...response?.data })
+    if(response?.config?.url !== '/utils/encoding-image-base64') {
+      createLogs({ url: response?.config?.url, ...response?.data })
+    }
     return response;
   }, async error => {
-    createLogs({ url: error?.response?.config?.url, ...error?.response?.data })
+    if(error?.response?.config?.url !== '/utils/encoding-image-base64') {
+      createLogs({ url: error?.response?.config?.url, ...error?.response?.data })
+    }
+
     const cookies = parseCookies();
     const { csrf_refresh_token } = cookies;
 
