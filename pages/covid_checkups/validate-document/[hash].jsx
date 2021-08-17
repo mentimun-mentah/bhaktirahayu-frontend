@@ -112,12 +112,12 @@ const ValidateDocument = ({ doc }) => {
         background-color: #ffffff;
         opacity: 1;
         background: linear-gradient(135deg, #e7f6e855 25%, transparent 25%) -4px 0/ 8px 8px, linear-gradient(225deg, #e7f6e8 25%, transparent 25%) -4px 0/ 8px 8px, linear-gradient(315deg, #e7f6e855 25%, transparent 25%) 0px 0/ 8px 8px, linear-gradient(45deg, #e7f6e8 25%, #ffffff 25%) 0px 0/ 8px 8px;
-        background-image: url("/static/images/wave-10.svg");
+        background-image: url("/static/images/wave-success.svg");
         background-size: cover;
         background-repeat: no-repeat;
       }
       :global(.bg-certificate-fail) {
-        background-image: url("/static/images/wave-fail-2.svg");
+        background-image: url("/static/images/wave-fail.svg");
         background-size: cover;
         background-repeat: no-repeat;
       }
