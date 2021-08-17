@@ -3,8 +3,9 @@ import { withAuth } from 'lib/withAuth'
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, Form, Input, Badge } from 'antd'
+import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, Form, Input, Badge, message } from 'antd'
 
+import { useDebounce } from 'lib/useDebounce'
 import { reformatClients } from 'lib/utility'
 import { DATE_FORMAT } from 'lib/disabledDate'
 import { formPatient } from 'formdata/patient'
@@ -27,8 +28,9 @@ import DrawerPatient from 'components/DrawerPatient'
 import DrawerDetailPatient from 'components/DrawerDetailPatient'
 
 moment.locale('id')
-const per_page = 10
+const per_page = 20
 const useBreakpoint = Grid.useBreakpoint
+message.config({ maxCount: 1 })
 
 const ProductCellEditable = (
   { index, record, editable, type, children, onEditPatientHandler, onShowDetailPatient, onDeleteClientHandler, ...restProps }
@@ -78,6 +80,8 @@ const ClientsContainer = ({ searchQuery }) => {
   const [showFilter, setShowFilter] = useState(false)
   const [activeFilter, setActiveFilter] = useState(false)
   const [showDetailPatient, setShowDetailPatient] = useState(false)
+
+  const debouncedSearchClient = useDebounce(q, 500)
 
   const columnsPatient = columnsReports.map(col => {
     if (!col.editable) return col;
@@ -198,20 +202,41 @@ const ClientsContainer = ({ searchQuery }) => {
     })
   },[page])
 
-  useEffect(() => {
+
+  const fetchClient = val => {
+    setPage(1)
     let query = { ...searchQuery }
 
     query["page"] = 1
-    if(q) query["q"] = q
+    if(q) query["q"] = val
     else if(!q) delete query["q"]
     else if(query?.q) query["q"] = query?.q
     else delete query["q"]
-
+    
     router.replace({
       pathname: "/dashboard/clients",
       query: query
     })
-  },[q])
+  }
+
+  useEffect(() => {
+    fetchClient(debouncedSearchClient)
+  }, [debouncedSearchClient])
+
+  // useEffect(() => {
+  //   let query = { ...searchQuery }
+
+  //   query["page"] = 1
+  //   if(q) query["q"] = q
+  //   else if(!q) delete query["q"]
+  //   else if(query?.q) query["q"] = query?.q
+  //   else delete query["q"]
+
+  //   router.replace({
+  //     pathname: "/dashboard/clients",
+  //     query: query
+  //   })
+  // },[q])
 
   useEffect(() => {
     if(!searchQuery) return
@@ -232,14 +257,30 @@ const ClientsContainer = ({ searchQuery }) => {
   }, [searchQuery])
 
   useEffect(() => {
-    if(clients && clients?.data && clients?.data?.length < 1 && clients?.page > 1 && clients?.total > 1) {
+    const emptyClient = clients && clients?.data && clients?.data?.length < 1 && clients?.page > 1 && clients?.total > 1
+    if(emptyClient){
       const newPage = clients?.iter_pages
-      setPage(newPage[newPage?.length - 1 || 0])
+      setPage(+newPage[newPage?.length - 1 || 0])
     }
-    else if(clients && clients?.data && !router?.query.hasOwnProperty("page")) {
+    else if(clients && clients?.data && clients?.data?.length && router?.query?.hasOwnProperty("page")){
+      setPage(+router.query.page)
+    }
+    else if(!router?.query?.hasOwnProperty("page")){
       setPage(1)
     }
   }, [clients])
+
+  let scrollY = 'calc(100vh - 246px)'
+  if(clients?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(100vh - 156px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 215px)'
+    else scrollY = 'calc(100vh - 215px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(100vh - 180px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 246px)'
+    else scrollY = 'calc(100vh - 246px)'
+  } 
 
   return (
     <>
@@ -289,7 +330,7 @@ const ClientsContainer = ({ searchQuery }) => {
             columns={columnsPatient}
             dataSource={reformatClients(clients?.data)} 
             rowKey={record => record.clients_id}
-            scroll={{ y: `${screens.xs ? 'calc(100vh - 180px)' : (screens.sm && !screens.md) ? 'calc(100vh - 246px)' : 'calc(100vh - 246px)'}`, x: 1180 }} 
+            scroll={{ y: scrollY, x: 1180 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 

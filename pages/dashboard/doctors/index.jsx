@@ -3,7 +3,7 @@ import { withAuth } from 'lib/withAuth'
 import { useState, useEffect } from 'react'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message, Grid } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { formDoctor } from 'formdata/doctor'
@@ -17,7 +17,6 @@ import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
 import Pagination from 'components/Pagination'
 import ModalDoctor from 'components/Doctor/ModalDoctor'
-
 
 const ProductCellEditable = ({ index, record, editable, type, children, onEditHandler, onDeleteHandler, ...restProps }) => {
   let childNode = children
@@ -51,9 +50,12 @@ const ProductCellEditable = ({ index, record, editable, type, children, onEditHa
 const per_page = 20
 const addTitle = "Tambah Dokter"
 const editTitle = "Edit Dokter"
+const useBreakpoint = Grid.useBreakpoint
+message.config({ maxCount: 1 })
 
 const DoctorsContainer = () => {
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const doctors = useSelector(state => state.doctor.doctor)
 
@@ -132,7 +134,6 @@ const DoctorsContainer = () => {
           formErrorMessage('error', errDetail[0].msg)
         }
       })
-
   }
   
   const onCloseModalHandler = () => {
@@ -151,7 +152,7 @@ const DoctorsContainer = () => {
     if(q) queryString["q"] = q
     else delete queryString["q"]
 
-    dispatch(actions.getDoctor({...queryString}))
+    dispatch(actions.getDoctor({ ...queryString }))
   }, [page])
 
 
@@ -176,6 +177,19 @@ const DoctorsContainer = () => {
       setPage(doctors.page - 1)
     }
   }, [doctors])
+
+
+  let scrollY = 'calc(100vh - 300px)'
+  if(doctors?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(100vh - 195px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
+    else scrollY = 'calc(100vh - 255px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(100vh - 234px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
+    else scrollY = 'calc(100vh - 300px)'
+  } 
 
   return (
     <>
@@ -219,7 +233,7 @@ const DoctorsContainer = () => {
             columns={columnsDoctors}
             dataSource={doctors?.data} 
             rowKey={record => record.users_id}
-            scroll={{ y: 485, x: 800 }} 
+            scroll={{ y: scrollY, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -248,7 +262,7 @@ const DoctorsContainer = () => {
         dataDoctor={doctor}
         imageDoctor={imageList}
         setIsUpdate={setIsUpdate}
-        getDoctor={() => dispatch(actions.getDoctor({ page: 1, per_page: per_page, q: '' }))}
+        getDoctor={() => dispatch(actions.getDoctor({ page: page, per_page: per_page, q: q }))}
         onCloseHandler={onCloseModalHandler}
       />
     </>

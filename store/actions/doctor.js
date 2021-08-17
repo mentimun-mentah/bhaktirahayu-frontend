@@ -23,7 +23,7 @@ const getDoctorFail = (error) => {
 }
 
 
-export const getDoctor = ({ page = 1, per_page = 10, q }) => {
+export const getDoctor = ({ page = 1, per_page = 20, q }) => {
   let query = {}
   if(page) query["page"] = page
   if(per_page) query["per_page"] = per_page

@@ -24,7 +24,7 @@ const getClientFail = (error) => {
 }
 
 
-export const getClient = ({ page = 1, per_page = 10, ...rest }) => {
+export const getClient = ({ page = 1, per_page = 20, ...rest }) => {
   let query = {}
   if(page) query["page"] = page
   if(per_page) query["per_page"] = per_page

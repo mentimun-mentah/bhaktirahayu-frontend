@@ -64,5 +64,5 @@ export const dashboard_routes = [
     route: '/',
     label: 'Log Out',
     role: ['admin','doctor']
-  },
+  }
 ]

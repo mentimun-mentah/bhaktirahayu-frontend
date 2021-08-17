@@ -24,7 +24,7 @@ const getInstitutionFail = (error) => {
 }
 
 
-export const getInstitution = ({ page = 1, per_page = 10, q, checking_type }) => {
+export const getInstitution = ({ page = 1, per_page = 20, q, checking_type }) => {
   let query = {}
   if(page) query["page"] = page
   if(per_page) query["per_page"] = per_page

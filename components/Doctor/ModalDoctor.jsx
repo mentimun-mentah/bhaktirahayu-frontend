@@ -405,6 +405,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
             />
             <SignatureComponent 
               file={file}
+              config={config}
               loading={loading}
               setLoading={setLoading}
               imagePreview={imagePreview}
