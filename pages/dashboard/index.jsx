@@ -1,12 +1,13 @@
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
-import { Row, Col, Select } from 'antd'
+import { Row, Col, Select, Progress } from 'antd'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import _ from 'lodash'
 import moment from 'moment'
 import dynamic from 'next/dynamic'
+import WebsocketHeartbeatJs from 'websocket-heartbeat-js'
 
 import { periodList } from 'data/all'
 import { antigenGenoseOption } from 'lib/chartConfig'
@@ -15,6 +16,7 @@ import * as actions from 'store/actions'
 import NotFoundSelect from 'components/NotFoundSelect'
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+// const Gauge = dynamic(() => import("@ant-design/charts").then(mod => mod.Gauge), { ssr: false });
 
 const stats_list = (data) => [
   {
@@ -53,6 +55,27 @@ const formDoneWaiting = [
   { name: 'Selesai', data: [0, 0, 0, 0, 0, 0, 0] }
 ]
 
+const config = {
+  range: { color: '#30BF78' },
+  indicator: {
+    pointer: { style: { stroke: '#D0D0D0' } },
+    pin: { style: { stroke: '#D0D0D0' } },
+  },
+  statistic: {
+    content: {
+      formatter: function formatter(_ref) {
+        const percent = _ref.percent;
+        return percent + '%';
+      },
+      style: {
+        color: 'rgba(0,0,0,0.65)',
+        fontSize: 14,
+      },
+    },
+  },
+  gaugeStyle: { lineCap: 'round' }
+}
+
 const selectProps = {
   allowClear: true,
   showSearch: true,
@@ -62,6 +85,16 @@ const selectProps = {
 }
 
 const per_page = 10
+
+const wsOptions = {
+  url: 'ws://192.168.1.59:8000/dashboards/ws-server-info',
+  pingTimeout: 10000, 
+  pongTimeout: 10000, 
+  reconnectTimeout: 2000,
+  pingMsg: "ping"
+}
+
+let ws = {}
 
 const Dashboard = () => {
   const dispatch = useDispatch()
@@ -77,6 +110,7 @@ const Dashboard = () => {
 
   const [period, setPeriod] = useState("week")
   const [institution, setInstitution] = useState([])
+  const [serverUsage, setServerUsage] = useState({})
   const [locationService, setLocationService] = useState([])
   const [seriesGenose, setSeriesGenose] = useState(formAntigenGenose)
   const [seriesAntigen, setSeriesAntigen] = useState(formAntigenGenose)
@@ -210,6 +244,20 @@ const Dashboard = () => {
     queryString["per_page"] = per_page
     dispatch(actions.getLocationService({ ...queryString }))
   }
+
+  useEffect(() => {
+    ws = new WebsocketHeartbeatJs(wsOptions)
+    ws.onmessage = (e) => {
+      setServerUsage(JSON.parse(e.data))
+    }
+
+    return () => {
+      ws.close()
+      ws.onclose = () => {
+        console.log('closing connection')
+      }
+    }
+  }, [])
 
   return (
     <>
@@ -363,6 +411,102 @@ const Dashboard = () => {
           </Card>
         </Col>
 
+        <Col span={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title className="mb-3">Server Info</Card.Title>
+                </Col>
+              </Row>
+              <Row gutter={[10,20]}>
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={serverUsage?.cpu_info?.cpu_usage?.value}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-microchip"></i></small>
+                        <p className="mb-0 mt-2">{percent}{serverUsage?.cpu_info?.cpu_usage?.format}</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">CPU</p>
+                    {serverUsage?.cpu_info?.cpu_core?.value} {serverUsage?.cpu_info?.cpu_core?.format} {serverUsage?.cpu_info?.cpu_frequency?.value} {serverUsage?.cpu_info?.cpu_frequency?.format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={((serverUsage?.ram_info?.ram_usage?.value/serverUsage?.ram_info?.ram_total?.value)*100).toFixed(1)}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-memory"></i></small>
+                        <p className="mb-0 mt-2">{percent}%</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">RAM</p>
+                Free {((serverUsage?.ram_info?.ram_available?.value/serverUsage?.ram_info?.ram_total?.value)*100).toFixed(1)}% of {serverUsage?.ram_info?.ram_total?.value}{serverUsage?.ram_info?.ram_total?.format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={((serverUsage?.disk_info?.disk_usage?.value/serverUsage?.disk_info?.disk_total?.value)*100).toFixed(1)}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-hdd"></i></small>
+                        <p className="mb-0 mt-2">{percent}%</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">DISK</p>
+                Free {((serverUsage?.disk_info?.disk_available?.value/serverUsage?.disk_info?.disk_total?.value)*100).toFixed(1)}% of {serverUsage?.disk_info?.disk_total?.value}{serverUsage?.disk_info?.disk_total?.format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24}>
+                  <Row gutter={[10,20]} className="h-100">
+                    <Col span={24}>
+                      <Card className="shadow-sm border-0 p-2 h-100">
+                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">VPS Expired</p>
+                        <div className="text-center">
+                          <p className="mb-0 fw-500 text-dark fs-18">{serverUsage?.expired_info?.vps_expired?.remaining} <small>days left</small></p>
+                          <p className="mb-0 text-dark fs-12">{serverUsage?.expired_info?.vps_expired?.date ? moment(serverUsage?.expired_info?.vps_expired?.date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
+                        </div>
+                      </Card>
+                    </Col>
+                    <Col span={24}>
+                      <Card className="shadow-sm border-0 p-2 h-100">
+                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">Domain Expired</p>
+                        <div className="text-center">
+                          <p className="mb-0 fw-500 text-dark fs-18">{serverUsage?.expired_info?.domain_expired?.remaining} <small>days left</small></p>
+                          <p className="mb-0 text-dark fs-12">{serverUsage?.expired_info?.domain_expired?.date ? moment(serverUsage?.expired_info?.domain_expired?.date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
+                        </div>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+
       </Row>
 
       <style jsx>{`
@@ -391,6 +535,13 @@ const Dashboard = () => {
       }
       :global(.header-date) {
         color: #93999E!important;
+      }
+
+      :global(.ant-progress-circle .ant-progress-text) {
+        font-size: .65em;
+      }
+      :global(.server-dashboard-text-success.ant-progress-circle.ant-progress-status-success .ant-progress-text) {
+        color: #dc3545;
       }
       `}</style>
     </>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/charts": "^1.2.8",
     "antd": "^4.16.9",
     "apexcharts": "^3.27.3",
     "axios": "^0.21.1",
@@ -38,6 +39,7 @@
     "redux-devtools-extension": "^2.13.9",
     "redux-thunk": "^2.3.0",
     "validator": "^13.6.0",
+    "websocket-heartbeat-js": "^1.0.13",
     "xlsx": "^0.17.0"
   },
   "devDependencies": {
