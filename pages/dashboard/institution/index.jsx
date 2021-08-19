@@ -35,8 +35,9 @@ const ProductCellEditable = (
 
   if(editable){
     let availableCheckType = []
-    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
     if(record?.institutions_antigen) availableCheckType.push({label: 'Antigen', value: 'antigen'})
+    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
+    if(record?.institutions_pcr) availableCheckType.push({label: 'PCR', value: 'pcr'})
 
     childNode = (
       type === "action" && (
@@ -84,6 +85,7 @@ const InstitutionContainer = () => {
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState(addTitle)
+  const [imagePcr, setImagePcr] = useState(formImage)
   const [imageStamp, setImageStamp] = useState(formImage)
   const [imageGenose, setImageGenose] = useState(formImage)
   const [imageAntigen, setImageAntigen] = useState(formImage)
@@ -139,6 +141,21 @@ const InstitutionContainer = () => {
       checking_type.push('genose')
     }
 
+    if(record.institutions_pcr !== null) {
+      const dataPcr = {
+        file: { 
+          value: [{
+            uid: -Math.abs(Math.random()),
+            url: `${process.env.NEXT_PUBLIC_API_URL}/static/institution/${record.institutions_pcr}`
+          }], 
+          isValid: true, 
+          message: null 
+        }
+      }
+      setImagePcr(dataPcr)
+      checking_type.push('pcr')
+    }
+
     const dataStamp = {
       file: { 
         value: [{
@@ -167,7 +184,6 @@ const InstitutionContainer = () => {
     const params = { checking_type: checking_type }
     axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
       .then(res => {
-        console.log(res.data)
         pdfGenerator(res.data)
       })
       .catch(err => {
@@ -175,7 +191,6 @@ const InstitutionContainer = () => {
         if(errDetail === signature_exp){
           axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
             .then(res => {
-              console.log(res.data)
               pdfGenerator(res.data)
             })
         } else if(typeof(errDetail) === "string") {
@@ -215,6 +230,7 @@ const InstitutionContainer = () => {
   const onCloseModalHandler = () => {
     setShowModal(false)
     setModalTitle(addTitle)
+    setImagePcr(formImage)
     setImageStamp(formImage)
     setImageGenose(formImage)
     setImageAntigen(formImage)
@@ -337,6 +353,7 @@ const InstitutionContainer = () => {
         visible={showModal}
         isUpdate={isUpdate}
         setIsUpdate={setIsUpdate}
+        dataPcr={imagePcr}
         dataStamp={imageStamp}
         dataGenose={imageGenose}
         dataAntigen={imageAntigen}

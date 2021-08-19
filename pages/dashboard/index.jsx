@@ -16,7 +16,6 @@ import * as actions from 'store/actions'
 import NotFoundSelect from 'components/NotFoundSelect'
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
-// const Gauge = dynamic(() => import("@ant-design/charts").then(mod => mod.Gauge), { ssr: false });
 
 const stats_list = (data) => [
   {
@@ -55,27 +54,6 @@ const formDoneWaiting = [
   { name: 'Selesai', data: [0, 0, 0, 0, 0, 0, 0] }
 ]
 
-const config = {
-  range: { color: '#30BF78' },
-  indicator: {
-    pointer: { style: { stroke: '#D0D0D0' } },
-    pin: { style: { stroke: '#D0D0D0' } },
-  },
-  statistic: {
-    content: {
-      formatter: function formatter(_ref) {
-        const percent = _ref.percent;
-        return percent + '%';
-      },
-      style: {
-        color: 'rgba(0,0,0,0.65)',
-        fontSize: 14,
-      },
-    },
-  },
-  gaugeStyle: { lineCap: 'round' }
-}
-
 const selectProps = {
   allowClear: true,
   showSearch: true,
@@ -112,10 +90,13 @@ const Dashboard = () => {
   const [institution, setInstitution] = useState([])
   const [serverUsage, setServerUsage] = useState({})
   const [locationService, setLocationService] = useState([])
+
+  const [seriesPcr, setSeriesPcr] = useState(formAntigenGenose)
   const [seriesGenose, setSeriesGenose] = useState(formAntigenGenose)
   const [seriesAntigen, setSeriesAntigen] = useState(formAntigenGenose)
   const [seriesDoneWaiting, setSeriesDoneWaiting] = useState(formDoneWaiting)
 
+  const [optionPcr, setOptionPcr] = useState(antigenGenoseOption)
   const [optionGenose, setOptionGenose] = useState(antigenGenoseOption)
   const [optionAntigen, setOptionAntigen] = useState(antigenGenoseOption)
   const [optionDoneWaiting, setOptionDoneWaiting] = useState({ ...antigenGenoseOption, colors: ['#fd9644', '#4b7bec']})
@@ -137,9 +118,18 @@ const Dashboard = () => {
   }, [period, institution, locationService])
 
   useEffect(() => {
+    let copyOptionPcr = _.cloneDeep(optionPcr)
     let copyOptionGenose = _.cloneDeep(optionGenose)
     let copyOptionAntigen = _.cloneDeep(optionAntigen)
     let copyOptionDoneWaiting = _.cloneDeep(optionDoneWaiting)
+
+    copyOptionPcr = {
+      ...copyOptionPcr,
+      xaxis: {
+        ...copyOptionPcr['xaxis'],
+        categories: chartData?.pcr_p_n?.date,
+      }
+    }
 
     copyOptionGenose = {
       ...copyOptionGenose,
@@ -165,10 +155,12 @@ const Dashboard = () => {
       }
     }
 
+    setOptionPcr(copyOptionPcr)
     setOptionGenose(copyOptionGenose)
     setOptionAntigen(copyOptionAntigen)
     setOptionDoneWaiting(copyOptionDoneWaiting)
 
+    setSeriesPcr(chartData?.pcr_p_n?.series)
     setSeriesGenose(chartData?.genose_p_n?.series)
     setSeriesAntigen(chartData?.antigen_p_n?.series)
     setSeriesDoneWaiting(chartData?.done_waiting?.series)
@@ -253,11 +245,37 @@ const Dashboard = () => {
 
     return () => {
       ws.close()
-      ws.onclose = () => {
-        console.log('closing connection')
-      }
+      ws.onclose = () => { console.log('ws closing connection') }
     }
   }, [])
+
+
+  const cpu_core_value = serverUsage?.cpu_info?.cpu_core?.value || 0
+  const cpu_core_format = serverUsage?.cpu_info?.cpu_core?.format || "core"
+  const cpu_usage_value = serverUsage?.cpu_info?.cpu_usage?.value || 0
+  const cpu_usage_format = serverUsage?.cpu_info?.cpu_usage?.format
+  const cpu_frequency_value = serverUsage?.cpu_info?.cpu_frequency?.value || 0
+  const cpu_frequency_format = serverUsage?.cpu_info?.cpu_frequency?.format || "MHz"
+
+  const ram_available_value = serverUsage?.ram_info?.ram_available?.value || 0
+  const ram_usage_value = serverUsage?.ram_info?.ram_usage?.value || 0
+  const ram_total_value = serverUsage?.ram_info?.ram_total?.value || 0
+  const ram_total_format = serverUsage?.ram_info?.ram_total?.format || "MB"
+  const ram_usage_value_percent = !isNaN(((ram_usage_value/ram_total_value)*100).toFixed(1)) ? ((ram_usage_value/ram_total_value)*100).toFixed(1) : 0
+  const ram_available_value_percent = !isNaN(((ram_available_value/ram_total_value)*100).toFixed(1)) ? ((ram_available_value/ram_total_value)*100).toFixed(1) : 0
+
+  const disk_usage_value = serverUsage?.disk_info?.disk_usage?.value || 0
+  const disk_total_value = serverUsage?.disk_info?.disk_total?.value || 0
+  const disk_total_format = serverUsage?.disk_info?.disk_total?.format || "GB"
+  const disk_available_value = serverUsage?.disk_info?.disk_available?.value || 0
+  const disk_usage_value_percent = !isNaN(((disk_usage_value/disk_total_value)*100).toFixed(1)) ? ((disk_usage_value/disk_total_value)*100).toFixed(1) : 0
+  const disk_available_value_percent = !isNaN(((disk_available_value/disk_total_value)*100).toFixed(1)) ? ((disk_available_value/disk_total_value)*100).toFixed(1) : 0
+
+  const vps_expired_date = serverUsage?.expired_info?.vps_expired?.date
+  const vps_expired_remaining = serverUsage?.expired_info?.vps_expired?.remaining || 0
+
+  const domain_expired_date = serverUsage?.expired_info?.domain_expired?.date
+  const domain_expired_remaining = serverUsage?.expired_info?.domain_expired?.remaining || 0
 
   return (
     <>
@@ -359,6 +377,102 @@ const Dashboard = () => {
           </Col>
         ))}
 
+        <Col span={24}>
+          <Card className="border-0 shadow-1">
+            <Card.Body>
+              <Row gutter={[10,10]} justify="space-between">
+                <Col xl={12} lg={12}>
+                  <Card.Title className="mb-3">Server Info</Card.Title>
+                </Col>
+              </Row>
+              <Row gutter={[10,20]}>
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={cpu_usage_value}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-microchip"></i></small>
+                        <p className="mb-0 mt-2">{percent}{cpu_usage_format}</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">CPU</p>
+                    {cpu_core_value} {cpu_core_format} {cpu_frequency_value} {cpu_frequency_format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={ram_usage_value_percent}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-memory"></i></small>
+                        <p className="mb-0 mt-2">{percent}%</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">RAM</p>
+                    Free {ram_available_value_percent}% of {ram_total_value}{ram_total_format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
+                  <Progress
+                    width={150}
+                    type="dashboard"
+                    className="server-dashboard-text-success"
+                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
+                    percent={disk_usage_value_percent}
+                    format={percent => (
+                      <>
+                        <small className="mb-1"><i className="far fa-hdd"></i></small>
+                        <p className="mb-0 mt-2">{percent}%</p>
+                      </>
+                    )}
+                  />
+                  <div className="text-center text-muted mt-n2 fs-14">
+                    <p className="mb-0 fw-500 text-dark">DISK</p>
+                    Free {disk_available_value_percent}% of {disk_total_value}{disk_total_format}
+                  </div>
+                </Col>
+
+                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24}>
+                  <Row gutter={[10,20]} className="h-100">
+                    <Col span={24}>
+                      <Card className="shadow-sm border-0 p-2 h-100">
+                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">VPS Expired</p>
+                        <div className="text-center">
+                          <p className="mb-0 fw-500 text-dark fs-18">{vps_expired_remaining} <small>day{vps_expired_remaining > 1 && 's'} left</small></p>
+                          <p className="mb-0 text-dark fs-12">{vps_expired_date ? moment(vps_expired_date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
+                        </div>
+                      </Card>
+                    </Col>
+                    <Col span={24}>
+                      <Card className="shadow-sm border-0 p-2 h-100">
+                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">Domain Expired</p>
+                        <div className="text-center">
+                          <p className="mb-0 fw-500 text-dark fs-18">{domain_expired_remaining} <small>day{domain_expired_remaining > 1 && 's'} left</small></p>
+                          <p className="mb-0 text-dark fs-12">{domain_expired_date ? moment(domain_expired_date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
+                        </div>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
+        </Col>
+
         <Col xxl={10} xl={10} lg={24} md={24} sm={24} xs={24}>
           <Card className="border-0 shadow-1">
             <Card.Body>
@@ -385,127 +499,51 @@ const Dashboard = () => {
           </Card>
         </Col>
 
-        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
-          <Card className="border-0 shadow-1">
-            <Card.Body>
-              <Row gutter={[10,10]} justify="space-between">
-                <Col xl={12} lg={12}>
-                  <Card.Title>Antigen</Card.Title>
-                </Col>
-              </Row>
-              <Chart options={optionAntigen} series={seriesAntigen} type="bar" height={350} />
-            </Card.Body>
-          </Card>
-        </Col>
+        {seriesAntigen && (
+          <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
+            <Card className="border-0 shadow-1">
+              <Card.Body>
+                <Row gutter={[10,10]} justify="space-between">
+                  <Col xl={12} lg={12}>
+                    <Card.Title>Antigen</Card.Title>
+                  </Col>
+                </Row>
+                <Chart options={optionAntigen} series={seriesAntigen} type="bar" height={350} />
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
 
-        <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
-          <Card className="border-0 shadow-1">
-            <Card.Body>
-              <Row gutter={[10,10]} justify="space-between">
-                <Col xl={12} lg={12}>
-                  <Card.Title>GeNose</Card.Title>
-                </Col>
-              </Row>
-              <Chart options={optionGenose} series={seriesGenose} type="bar" height={350} />
-            </Card.Body>
-          </Card>
-        </Col>
+        {seriesGenose && (
+          <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
+            <Card className="border-0 shadow-1">
+              <Card.Body>
+                <Row gutter={[10,10]} justify="space-between">
+                  <Col xl={12} lg={12}>
+                    <Card.Title>GeNose</Card.Title>
+                  </Col>
+                </Row>
+                <Chart options={optionGenose} series={seriesGenose} type="bar" height={350} />
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
 
-        <Col span={24}>
-          <Card className="border-0 shadow-1">
-            <Card.Body>
-              <Row gutter={[10,10]} justify="space-between">
-                <Col xl={12} lg={12}>
-                  <Card.Title className="mb-3">Server Info</Card.Title>
-                </Col>
-              </Row>
-              <Row gutter={[10,20]}>
-                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
-                  <Progress
-                    width={150}
-                    type="dashboard"
-                    className="server-dashboard-text-success"
-                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
-                    percent={serverUsage?.cpu_info?.cpu_usage?.value}
-                    format={percent => (
-                      <>
-                        <small className="mb-1"><i className="far fa-microchip"></i></small>
-                        <p className="mb-0 mt-2">{percent}{serverUsage?.cpu_info?.cpu_usage?.format}</p>
-                      </>
-                    )}
-                  />
-                  <div className="text-center text-muted mt-n2 fs-14">
-                    <p className="mb-0 fw-500 text-dark">CPU</p>
-                    {serverUsage?.cpu_info?.cpu_core?.value} {serverUsage?.cpu_info?.cpu_core?.format} {serverUsage?.cpu_info?.cpu_frequency?.value} {serverUsage?.cpu_info?.cpu_frequency?.format}
-                  </div>
-                </Col>
+        {seriesPcr && (
+          <Col span={24}>
+            <Card className="border-0 shadow-1">
+              <Card.Body>
+                <Row gutter={[10,10]} justify="space-between">
+                  <Col xl={12} lg={12}>
+                    <Card.Title>PCR</Card.Title>
+                  </Col>
+                </Row>
+                <Chart options={optionPcr} series={seriesPcr} type="bar" height={350} />
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
 
-                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
-                  <Progress
-                    width={150}
-                    type="dashboard"
-                    className="server-dashboard-text-success"
-                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
-                    percent={((serverUsage?.ram_info?.ram_usage?.value/serverUsage?.ram_info?.ram_total?.value)*100).toFixed(1)}
-                    format={percent => (
-                      <>
-                        <small className="mb-1"><i className="far fa-memory"></i></small>
-                        <p className="mb-0 mt-2">{percent}%</p>
-                      </>
-                    )}
-                  />
-                  <div className="text-center text-muted mt-n2 fs-14">
-                    <p className="mb-0 fw-500 text-dark">RAM</p>
-                Free {((serverUsage?.ram_info?.ram_available?.value/serverUsage?.ram_info?.ram_total?.value)*100).toFixed(1)}% of {serverUsage?.ram_info?.ram_total?.value}{serverUsage?.ram_info?.ram_total?.format}
-                  </div>
-                </Col>
-
-                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24} className="text-center">
-                  <Progress
-                    width={150}
-                    type="dashboard"
-                    className="server-dashboard-text-success"
-                    strokeColor={{ '0%': '#dc3545', '30%': '#f0932b', '50%': '#f0932b', '100%': '#00e395' }}
-                    percent={((serverUsage?.disk_info?.disk_usage?.value/serverUsage?.disk_info?.disk_total?.value)*100).toFixed(1)}
-                    format={percent => (
-                      <>
-                        <small className="mb-1"><i className="far fa-hdd"></i></small>
-                        <p className="mb-0 mt-2">{percent}%</p>
-                      </>
-                    )}
-                  />
-                  <div className="text-center text-muted mt-n2 fs-14">
-                    <p className="mb-0 fw-500 text-dark">DISK</p>
-                Free {((serverUsage?.disk_info?.disk_available?.value/serverUsage?.disk_info?.disk_total?.value)*100).toFixed(1)}% of {serverUsage?.disk_info?.disk_total?.value}{serverUsage?.disk_info?.disk_total?.format}
-                  </div>
-                </Col>
-
-                <Col xxl={6} xl={6} lg={6} md={6} sm={12} xs={24}>
-                  <Row gutter={[10,20]} className="h-100">
-                    <Col span={24}>
-                      <Card className="shadow-sm border-0 p-2 h-100">
-                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">VPS Expired</p>
-                        <div className="text-center">
-                          <p className="mb-0 fw-500 text-dark fs-18">{serverUsage?.expired_info?.vps_expired?.remaining} <small>days left</small></p>
-                          <p className="mb-0 text-dark fs-12">{serverUsage?.expired_info?.vps_expired?.date ? moment(serverUsage?.expired_info?.vps_expired?.date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
-                        </div>
-                      </Card>
-                    </Col>
-                    <Col span={24}>
-                      <Card className="shadow-sm border-0 p-2 h-100">
-                        <p className="mb-2 fw-500 text-muted fs-14 border-bottom">Domain Expired</p>
-                        <div className="text-center">
-                          <p className="mb-0 fw-500 text-dark fs-18">{serverUsage?.expired_info?.domain_expired?.remaining} <small>days left</small></p>
-                          <p className="mb-0 text-dark fs-12">{serverUsage?.expired_info?.domain_expired?.date ? moment(serverUsage?.expired_info?.domain_expired?.date, 'DD-MM-YYYY').format('D MMMM YYYY') : ''}</p>
-                        </div>
-                      </Card>
-                    </Col>
-                  </Row>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
 
       </Row>
 

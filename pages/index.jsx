@@ -307,7 +307,7 @@ const Home = () => {
                       preview={false}
                       alt="RSU Bhakti Rahayu"
                       className="text-center px-3"
-                      src="/static/images/write.gif"
+                      src="/static/images/write1.gif"
                     />
                   </section>
                 </Col>

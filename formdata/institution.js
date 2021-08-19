@@ -28,15 +28,16 @@ export const formInstitutionIsValid = (state, setState) => {
   return isGood
 }
 
-export const formImageAntigenGenoseIsValid = (state, setState, state2) => {
+export const formImageAntigenGenoseIsValid = (state, setState, state2, state3) => {
   const file = { ...state.file }
   const file2 = { ...state2.file }
+  const file3 = { ...state3.file }
   let isGood = true
 
-  if(file?.value?.length < 1 && file2?.value?.length < 1) {
+  if(file?.value?.length < 1 && file2?.value?.length < 1 && file3?.value?.length < 1) {
     isGood = false
     file.isValid = false
-    file.message = "Upps, at least upload one of antigen or genose."
+    file.message = "Upps, at least upload one of antigen, genose or pcr."
   }
 
   if(!isGood) setState({ ...state, file })

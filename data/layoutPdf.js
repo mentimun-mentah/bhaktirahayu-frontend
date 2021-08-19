@@ -28,8 +28,8 @@ export const footerPdf = (doc, h, doctor_name, doctor_signature, qrcode, stamp) 
   doc.text(doctor_name, 270, hi+60, null, null, "center")
   doc.addImage(doctor_signature, 'png', 250, hi+12, 40, 40, "center")
  
-  doc.addImage(stamp, 'png', 220, hi+8, 50, 50)
-  doc.addImage(qrcode, 'png', 45, hi, 60, 60)
+  doc.addImage(stamp, 'png', 220, hi+12, 40, 40)
+  doc.addImage(qrcode, 'png', 45, hi, 65, 65)
   /* FOOTER SIGNATURE */
 
   return doc

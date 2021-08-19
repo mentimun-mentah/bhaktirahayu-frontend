@@ -17,6 +17,10 @@ export const checkTypeList = [
   {
     label: 'Antigen',
     value: 'antigen'
+  },
+  {
+    label: 'PCR',
+    value: 'pcr'
   }
 ];
 

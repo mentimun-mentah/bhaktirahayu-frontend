@@ -3,6 +3,7 @@ import { useState, useEffect, memo } from 'react'
 import { DeleteOutlined } from '@ant-design/icons'
 import { Form, Input, Row, Col, Modal, Select, Upload } from 'antd'
 
+import { checkTypeList } from 'data/all'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { imagePreview, uploadButton, imageValidation } from 'lib/imageUploader'
 import { formHeaderHandler, formErrorMessage, errName, signature_exp } from 'lib/axios'
@@ -14,15 +15,16 @@ import isIn from 'validator/lib/isIn'
 import axios from 'lib/axios'
 import ErrorMessage from 'components/ErrorMessage'
 
-const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, getInstitution, dataInstitution, dataStamp, dataGenose, dataAntigen }) => {
-  const [isOpen, setIsOpen] = useState(false)
+const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, getInstitution, dataInstitution, dataStamp, dataPcr, dataGenose, dataAntigen }) => {
   const [loading, setLoading] = useState(false)
+  const [imagePcr, setImagePcr] = useState(formImage)
   const [removedImage, setRemovedImage] = useState([])
   const [imageStamp, setImageStamp] = useState(formImage)
   const [imageGenose, setImageGenose] = useState(formImage)
   const [imageAntigen, setImageAntigen] = useState(formImage)
   const [institution, setInstitution] = useState(formInstitution)
 
+  const { file: filePcr } = imagePcr
   const { file: fileStamp } = imageStamp
   const { file: fileGenose } = imageGenose
   const { file: fileAntigen } = imageAntigen
@@ -48,7 +50,8 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
     }
     setState(data)
 
-    if(type === "genose") {
+    /* for deleting invalid message from other type of antigen */
+    if(type === "genose" || type === "pcr") {
       const dataAntigen = {
         ...imageAntigen,
         file: { ...imageAntigen['file'], isValid: true, message: null }
@@ -100,22 +103,30 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
       file: { ...imageGenose['file'], isValid: true, message: null }
     }
     setImageGenose(dataGenose)
+
+    const dataPcr = {
+      ...imagePcr,
+      file: { ...imagePcr['file'], isValid: true, message: null }
+    }
+    setImagePcr(dataPcr)
   }
 
   const onDeselectCheckingTypeHandler = value => {
+    const element = document.getElementById(`id-kop-image-${value}`)
+    element?.parentNode?.click()
     if(value === "antigen") {
-      const element = document.getElementById('id-kop-image-antigen')
-      element?.parentNode?.click()
       setImageAntigen(formImage)
     }
     else if (value === "genose") {
-      const element = document.getElementById('id-kop-image-genose')
-      element?.parentNode?.click()
       setImageGenose(formImage)
+    } 
+    else if (value === "pcr") {
+      setImagePcr(formImage)
     } 
     else {
       setImageAntigen(formImage)
       setImageGenose(formImage)
+      setImagePcr(formImage)
     }
   }
   /* CHECKING TYPE CHANGE FUNCTION*/
@@ -123,9 +134,9 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
   const onCloseModalHandler = e => {
     e?.preventDefault()
     onCloseHandler()
-    setIsOpen(false)
     setIsUpdate(false)
     setRemovedImage([])
+    setImagePcr(formImage)
     setImageStamp(formImage)
     setImageGenose(formImage)
     setImageAntigen(formImage)
@@ -136,7 +147,7 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
     e.preventDefault()
     if(formInstitutionIsValid(institution, setInstitution) && 
        formImageIsValid(imageStamp, setImageStamp) && 
-       formImageAntigenGenoseIsValid (imageAntigen, setImageAntigen, imageGenose)
+       formImageAntigenGenoseIsValid (imageAntigen, setImageAntigen, imageGenose, imagePcr)
     ) {
       setLoading(true)
       const formData = new FormData()
@@ -157,6 +168,12 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
       _.forEach(fileAntigen.value, f => {
         if(!f.hasOwnProperty('url')){
           formData.append('antigen', f.originFileObj)
+        }
+      })
+
+      _.forEach(filePcr.value, f => {
+        if(!f.hasOwnProperty('url')){
+          formData.append('pcr', f.originFileObj)
         }
       })
 
@@ -182,7 +199,7 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
           if(errDetail === signature_exp) {
             getInstitution()
             onCloseModalHandler()
-            formErrorMessage(err.response.status === 404 ? 'error' : 'success', isUpdate ? 'Successfully update the institution.' : 'Successfully add a new institution.')
+            formErrorMessage(err?.response?.status === 404 ? 'error' : 'success', isUpdate ? 'Successfully update the institution.' : 'Successfully add a new institution.')
             if(isUpdate) setIsUpdate(false)
           }
           else if(typeof errDetail === "string" && isIn(errDetail, errName)) {
@@ -214,10 +231,11 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
 
   useEffect(() => {
     if(isUpdate) {
-      setInstitution(dataInstitution)
+      setImagePcr(dataPcr)
       setImageStamp(dataStamp)
       setImageGenose(dataGenose)
       setImageAntigen(dataAntigen)
+      setInstitution(dataInstitution)
     }
   }, [isUpdate])
 
@@ -263,16 +281,70 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
               placeholder="Pilih jenis pemeriksaan"
               removeIcon={<i className="fal fa-times" />}
               onDeselect={onDeselectCheckingTypeHandler}
-              onDropdownVisibleChange={val => setIsOpen(val)}
+              getPopupContainer={triggerNode => triggerNode.parentElement}
             >
-              <Select.Option value="antigen">Antigen</Select.Option>
-              <Select.Option value="genose">GeNose</Select.Option>
+              {checkTypeList.map(data => (
+                <Select.Option value={data.value} key={data.value}>
+                  {data.label}
+                </Select.Option>
+              ))}
             </Select>
             <ErrorMessage item={checking_type} />
           </Form.Item>
 
           <Row gutter={[10,0]} className="mb-1">
-            {isIn('antigen', checking_type.value) && !isOpen && (
+            {checking_type?.value?.map(checkType => {
+              let uploadProps = {
+                accept: "image/jpeg,image/png",
+                listType: "picture-card",
+                onPreview: imagePreview,
+                onRemove: onRemoveImageHandler,
+                beforeUpload: (f) => imageValidation(f, checkType, config.url, config.method, setLoading, () => {}, ""),
+                showUploadList: { removeIcon: <DeleteOutlined id={`id-kop-image-${checkType}`} /> }
+              }
+              let child = fileAntigen.value.length >= 1 ? null : uploadButton(loading)
+              if(checkType === "antigen") {
+                uploadProps = {
+                  ...uploadProps,
+                  fileList: fileAntigen.value,
+                  onChange: e => imageChangeHandler(e, imageAntigen, setImageAntigen, "antigen"),
+                }
+                child = fileAntigen.value.length >= 1 ? null : uploadButton(loading)
+              }
+              else if(checkType === "genose") {
+                uploadProps = {
+                  ...uploadProps,
+                  fileList: fileGenose.value,
+                  onChange: e => imageChangeHandler(e, imageGenose, setImageGenose, "genose"),
+                }
+                child = fileGenose.value.length >= 1 ? null : uploadButton(loading)
+              }
+              else if(checkType === "pcr") {
+                uploadProps = {
+                  ...uploadProps,
+                  fileList: filePcr.value,
+                  onChange: e => imageChangeHandler(e, imagePcr, setImagePcr, "pcr"),
+                }
+                child = filePcr.value.length >= 1 ? null : uploadButton(loading)
+              }
+
+              return (
+                <Col key={checkType}>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <Form.Item 
+                      label={`Kop ${checkType}`}
+                      className="m-b-0 text-capitalize"
+                    >
+                      <Upload {...uploadProps}>
+                        {child}
+                      </Upload>
+                    </Form.Item>
+                  </motion.div>
+                </Col>
+              )
+            })}
+
+            {isIn('antigen', checking_type.value) && false && (
               <Col>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <Form.Item 
@@ -287,9 +359,7 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
                       onRemove={onRemoveImageHandler}
                       onChange={e => imageChangeHandler(e, imageAntigen, setImageAntigen)}
                       beforeUpload={(f) => imageValidation(f, "antigen", config.url, config.method, setLoading, () => {}, "")}
-                      showUploadList={{
-                        removeIcon: <DeleteOutlined id="id-kop-image-antigen" />
-                      }}
+                      showUploadList={{ removeIcon: <DeleteOutlined id="id-kop-image-antigen" /> }}
                     >
                       {fileAntigen.value.length >= 1 ? null : uploadButton(loading)}
                     </Upload>
@@ -297,7 +367,7 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
                 </motion.div>
               </Col>
             )}
-            {isIn('genose', checking_type.value) && !isOpen && (
+            {isIn('genose', checking_type.value) && false && (
               <Col>
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   <Form.Item 
@@ -312,9 +382,7 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
                       onRemove={onRemoveImageHandler}
                       onChange={e => imageChangeHandler(e, imageGenose, setImageGenose, "genose")}
                       beforeUpload={(f) => imageValidation(f, "genose", config.url, config.method, setLoading, () => {}, "")}
-                      showUploadList={{
-                        removeIcon: <DeleteOutlined id="id-kop-image-genose" />
-                      }}
+                      showUploadList={{ removeIcon: <DeleteOutlined id="id-kop-image-genose" /> }}
                     >
                       {fileGenose.value.length >= 1 ? null : uploadButton(loading)}
                     </Upload>

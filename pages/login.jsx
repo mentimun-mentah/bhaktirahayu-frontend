@@ -1,11 +1,10 @@
-import { useState } from 'react'
 import { setCookie } from 'nookies'
 import { useRouter } from 'next/router'
 import { Container } from 'react-bootstrap'
 import { useSelector, useDispatch } from 'react-redux'
-import { Row, Col, Input, Select, Button, Form, Image as AntImage } from 'antd'
+import { useState, useCallback, useMemo } from 'react'
+import { Row, Col, Input, Select, Button, Form, Image as AntImage, Grid } from 'antd'
 
-import { createLogs } from 'lib/logsCreator'
 import { enterPressHandler } from 'lib/utility'
 import { resNotification, signature_exp } from 'lib/axios'
 import { formLogin, formLoginIsValid } from 'formdata/login'
@@ -16,15 +15,29 @@ import isIn from 'validator/lib/isIn'
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
+import NotFoundSelect from 'components/NotFoundSelect'
 
 const per_page = 20
+const useBreakpoint = Grid.useBreakpoint;
+
+const selectProps = {
+  allowClear: true,
+  showSearch: true,
+  className: "w-100",
+  filterOption: (input, option) => option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0,
+  getPopupContainer: triggerNode => triggerNode.parentElement
+}
 
 const LoginPage = () => {
   const router = useRouter()
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const institutions = useSelector(state => state.institution.institution)
+  const loadingInstitutions = useSelector(state => state.institution.loading)
+
   const locationServices = useSelector(state => state.locationService.locationService)
+  const loadingLocationServices = useSelector(state => state.locationService.loading)
 
   const [loading, setLoading] = useState(false)
   const [login, setLogin] = useState(formLogin)
@@ -78,8 +91,6 @@ const LoginPage = () => {
         password: password.value,
       }
 
-      createLogs({ req: 'login.jsx', data: { ...data } })
-
       axios.post("/users/login", data)
         .then(res => {
           setCookieHandler(location_service_id.value, institution_id.value)
@@ -113,41 +124,52 @@ const LoginPage = () => {
   }
   /* SUBMIT FORM FUNCTION */
 
-  const onSearchInstitutionServices = val => {
+  const fetchInstitution = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
-    createLogs({ req: 'onSearchInstitutionServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
-  }
+  }, [])
 
-  const onFocusInstitutionServices = () => {
+  const onSearchInstitution = useMemo(() => {
+    const loadOptions = val => {
+      fetchInstitution(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchInstitution])
+
+  const onFocusInstitution = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
-    createLogs({ req: 'onFocusInstitutionServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
-  const onSearchLocationServices = val => {
+
+  const fetchLocationService = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
     if(val) queryString["q"] = val
     else delete queryString["q"]
-    createLogs({ req: 'onSearchLocationServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getLocationService({ ...queryString }))
-  }
+  }, [])
 
-  const onFocusLocationServices = () => {
+  const onSearchLocationService = useMemo(() => {
+    const loadOptions = val => {
+      fetchLocationService(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchLocationService])
+
+  const onFocusLocationService = () => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
-    createLogs({ req: 'onFocusLocationServices() - login.jsx', queryString: { ...queryString } })
     dispatch(actions.getLocationService({ ...queryString }))
   }
 
@@ -157,6 +179,15 @@ const LoginPage = () => {
         <section className="h-100">
           <Row gutter={[16,16]} className="h-100" align="middle">
             <Col xxl={12} xl={12} lg={11} md={24} sm={24} xs={24}>
+              <div className="text-center mb-5">
+                <AntImage
+                  preview={false}
+                  alt="RSU Bhakti Rahayu"
+                  width={screens.xl ? 300 : screens.lg ? 300 : screens.md ? 300 : screens.sm ? "80%" : screens.xs ? "90%" : "100%"}
+                  className="text-center"
+                  src="/static/images/bhaktirahayugroup.png"
+                />
+              </div>
 
               <h4 className="fs-20-s mb-4">Silahkan Masuk</h4>
 
@@ -195,18 +226,16 @@ const LoginPage = () => {
                   validateStatus={!institution_id.isValid && institution_id.message && "error"}
                 >
                   <Select 
-                    allowClear
-                    showSearch 
-                    className="w-100"
+                    {...selectProps}
                     placeholder="Pilih Instansi"
                     value={institution_id.value}
-                    onFocus={onFocusInstitutionServices}
-                    onSearch={onSearchInstitutionServices}
+                    onFocus={onFocusInstitution}
                     onChange={e => onChangeHandler(e, "institution_id")}
-                    getPopupContainer={triggerNode => triggerNode.parentElement}
-                    filterOption={(input, option) =>
-                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }
+                    onSearch={val => {
+                      onSearchInstitution(val)
+                      dispatch(actions.getInstitutionStart())
+                    }}
+                    notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
                   >
                     {institutions?.data?.length > 0 && institutions?.data.map(institution => (
                       <Select.Option value={institution.institutions_id} key={institution.institutions_id}>
@@ -222,18 +251,16 @@ const LoginPage = () => {
                   validateStatus={!location_service_id.isValid && location_service_id.message && "error"}
                 >
                   <Select 
-                    allowClear
-                    showSearch 
-                    className="w-100"
+                    {...selectProps}
                     placeholder="Pilih Lokasi Pelayanan"
                     value={location_service_id.value}
-                    onFocus={onFocusLocationServices}
-                    onSearch={onSearchLocationServices}
+                    onFocus={onFocusLocationService}
                     onChange={e => onChangeHandler(e, "location_service_id")}
-                    getPopupContainer={triggerNode => triggerNode.parentElement}
-                    filterOption={(input, option) =>
-                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }
+                    onSearch={val => {
+                      onSearchLocationService(val)
+                      dispatch(actions.getLocationServiceStart())
+                    }}
+                    notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
                   >
                     {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
                       <Select.Option value={loct.location_services_id} key={loct.location_services_id}>
