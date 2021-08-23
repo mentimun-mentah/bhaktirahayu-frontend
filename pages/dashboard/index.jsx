@@ -2,6 +2,7 @@ import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { useRouter } from 'next/router'
 import { Row, Col, Select, Progress } from 'antd'
+import { CloseCircleFilled } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
@@ -111,7 +112,6 @@ const Dashboard = ({ searchQuery }) => {
   useEffect(() => {
     dispatch(actions.getDashboardTotalData())
   }, [])
-
 
   useEffect(() => {
     if(!searchQuery) return
@@ -229,6 +229,10 @@ const Dashboard = ({ searchQuery }) => {
   const onChangeLocationServiceHandler = value => {
     setLocationService(value)
     nookies.set(null, 'location_service_id_dashboard_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+  }
+
+  const onClearSelectHandler = (setState) => {
+    setState([])
   }
 
   const fetchInstitution = useCallback(val => {
@@ -409,6 +413,8 @@ const Dashboard = ({ searchQuery }) => {
                     dispatch(actions.getInstitutionStart())
                   }}
                   onChange={onChangeInstitutionHandler}
+                  onClear={() => onClearSelectHandler(setInstitution)}
+                  clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler(setInstitution)} />}
                   notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
                 >
                   {institutions?.data?.length > 0 && institutions?.data.map(institution => (
@@ -430,6 +436,8 @@ const Dashboard = ({ searchQuery }) => {
                     dispatch(actions.getLocationServiceStart())
                   }}
                   onChange={onChangeLocationServiceHandler}
+                  onClear={() => onClearSelectHandler(setLocationService)}
+                  clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler(setLocationService)} />}
                   notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
                 >
                   {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
