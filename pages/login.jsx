@@ -1,6 +1,7 @@
 import { setCookie } from 'nookies'
 import { useRouter } from 'next/router'
 import { Container } from 'react-bootstrap'
+import { CloseCircleFilled } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useCallback, useMemo } from 'react'
 import { Row, Col, Input, Select, Button, Form, Image as AntImage, Grid } from 'antd'
@@ -173,6 +174,14 @@ const LoginPage = () => {
     dispatch(actions.getLocationService({ ...queryString }))
   }
 
+  const onClearSelectHandler = (item) => {
+    const data = {
+      ...login,
+      [item]: { ...login[item], value: [], isValid: true, message: null }
+    }
+    setLogin(data)
+  }
+
   return (
     <>
       <Container className="py-5" style={{ height: '100vh', maxHeight: '100vh' }}>
@@ -231,6 +240,8 @@ const LoginPage = () => {
                     value={institution_id.value}
                     onFocus={onFocusInstitution}
                     onChange={e => onChangeHandler(e, "institution_id")}
+                    onClear={() => onClearSelectHandler("institution_id")}
+                    clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler("institution_id")} />}
                     onSearch={val => {
                       onSearchInstitution(val)
                       dispatch(actions.getInstitutionStart())
@@ -256,6 +267,8 @@ const LoginPage = () => {
                     value={location_service_id.value}
                     onFocus={onFocusLocationService}
                     onChange={e => onChangeHandler(e, "location_service_id")}
+                    onClear={() => onClearSelectHandler("location_service_id")}
+                    clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler("location_service_id")} />}
                     onSearch={val => {
                       onSearchLocationService(val)
                       dispatch(actions.getLocationServiceStart())
