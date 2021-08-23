@@ -7,7 +7,7 @@ import { Form, Input, Row, Col, Button, Modal, Space, message } from 'antd'
 import { urltoFile } from 'lib/utility'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
-import { imagePreview } from 'lib/imageUploader'
+import { imagePreview, fixRotationOfFile } from 'lib/imageUploader'
 import { formConfigPassword, formConfigPasswordIsValid } from 'formdata/password'
 import { jsonHeaderHandler, formHeaderHandler, formErrorMessage, errEmail, signature_exp } from 'lib/axios'
 
@@ -39,12 +39,24 @@ const ProfileContainer = () => {
   const { password, old_password, confirm_password } = formPassword
 
   /* IMAGE CHANGE FUNCTION */
-  const imageChangeHandler = ({ fileList: newFileList }) => {
-    const data = {
-      ...imageList,
-      file: { value: newFileList, isValid: true, message: null }
+  const imageChangeHandler = async ({ fileList: newFileList }) => {
+    if(newFileList.length > 0) {
+      const imageWithRotation = await fixRotationOfFile(newFileList[0]?.originFileObj)
+      const dataNewFileList = {
+        ...newFileList[0],
+        status: "done",
+        originFileObj: imageWithRotation,
+      }
+      const data = {
+        ...imageList,
+        file: { value: [dataNewFileList], isValid: true, message: null }
+      }
+
+      setImageList(data)
     }
-    setImageList(data)
+    else {
+      setImageList(formImage)
+    }
   };
   /* IMAGE CHANGE FUNCTION */
 

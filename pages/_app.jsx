@@ -20,6 +20,11 @@ const App = ({ Component, pageProps, store }) => {
       if(!url.startsWith('/dashboard/clients')) {
         nookies.destroy(null, 'institution_id_delete', { path: '/' })
         nookies.destroy(null, 'location_service_id_delete', { path: '/' })
+        nookies.destroy(null, 'register_start_end_date_delete', { path: '/' })
+      }
+      if(url?.split("?")[0] !== '/dashboard') {
+        nookies.destroy(null, 'institution_id_dashboard_delete', { path: '/' })
+        nookies.destroy(null, 'location_service_id_dashboard_delete', { path: '/' })
       }
     }
     router.events.on('routeChangeComplete', handleRouteChange)
@@ -63,6 +68,11 @@ const App = ({ Component, pageProps, store }) => {
       :global(.select-py-2.with-input .ant-select-selector .ant-select-selection-placeholder) {
         line-height: 38px;
       }
+
+      :global(.ant-upload-list-picture-card .ant-upload-list-item-thumbnail, .ant-upload-list-picture-card .ant-upload-list-item-thumbnail img) {
+        image-orientation: none;
+      }
+
       `}</style>
     </>
   )

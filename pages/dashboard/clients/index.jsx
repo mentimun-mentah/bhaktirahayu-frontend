@@ -74,6 +74,7 @@ const ClientsContainer = ({ searchQuery }) => {
   const clients = useSelector(state => state.client.client)
 
   const [q, setQ] = useState("")
+  const [mounted, setMounted] = useState(false)
   const [page, setPage] = useState(clients?.page)
   const [patient, setPatient] = useState(formPatient)
   const [showDrawer, setShowDrawer] = useState(false)
@@ -190,29 +191,28 @@ const ClientsContainer = ({ searchQuery }) => {
       })
   }
 
-  useEffect(() => {
-    let query = { ...searchQuery }
-    if(!query) return
-
-    if(page) query["page"] = page
+  const onPageChangeHandler = val => {
+    setPage(val)
+    let query = { ...router.query }
+    query["page"] = val
 
     router.replace({
       pathname: "/dashboard/clients",
       query: query
     })
-  },[page])
+  }
 
 
   const fetchClient = val => {
     setPage(1)
     let query = { ...searchQuery }
 
-    query["page"] = 1
+    query["page"] = page || 1
     if(q) query["q"] = val
     else if(!q) delete query["q"]
     else if(query?.q) query["q"] = query?.q
     else delete query["q"]
-    
+
     router.replace({
       pathname: "/dashboard/clients",
       query: query
@@ -220,28 +220,11 @@ const ClientsContainer = ({ searchQuery }) => {
   }
 
   useEffect(() => {
-    fetchClient(debouncedSearchClient)
+    if(mounted) fetchClient(debouncedSearchClient)
   }, [debouncedSearchClient])
 
-  // useEffect(() => {
-  //   let query = { ...searchQuery }
-
-  //   query["page"] = 1
-  //   if(q) query["q"] = q
-  //   else if(!q) delete query["q"]
-  //   else if(query?.q) query["q"] = query?.q
-  //   else delete query["q"]
-
-  //   router.replace({
-  //     pathname: "/dashboard/clients",
-  //     query: query
-  //   })
-  // },[q])
-
   useEffect(() => {
-    if(!searchQuery) return
-
-    const copySearchQuery = { ...searchQuery }
+    const copySearchQuery = { ...router.query }
     for(let [key, _] of Object.entries(copySearchQuery)) {
       if(isIn(key, ['q', 'page', 'per_page', 'register_end_date', 'check_end_date'])) {
         delete copySearchQuery[key]
@@ -250,11 +233,9 @@ const ClientsContainer = ({ searchQuery }) => {
 
     setActiveFilter(Object.keys(copySearchQuery).length)
 
-    if(searchQuery.q) setQ(searchQuery.q)
+    if(router?.query?.q) setQ(router?.query?.q)
+  }, [router.query])
 
-    if(searchQuery.page && clients?.data?.length > 1) setPage(+searchQuery.page)
-
-  }, [searchQuery])
 
   useEffect(() => {
     const emptyClient = clients && clients?.data && clients?.data?.length < 1 && clients?.page > 1 && clients?.total > 1
@@ -269,6 +250,13 @@ const ClientsContainer = ({ searchQuery }) => {
       setPage(1)
     }
   }, [clients])
+
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      dispatch(actions.getClientSuccess([]))
+    }
+  }, [])
 
   let scrollY = 'calc(100vh - 246px)'
   if(clients?.iter_pages?.length === 1) { // if pagination is hidden
@@ -341,7 +329,7 @@ const ClientsContainer = ({ searchQuery }) => {
                 hideOnSinglePage 
                 pageSize={per_page}
                 total={clients?.total} 
-                goTo={val => setPage(val)} 
+                goTo={onPageChangeHandler} 
               />
             </div>
           </Card.Body>

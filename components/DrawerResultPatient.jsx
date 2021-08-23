@@ -85,7 +85,7 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
       const copyPatient = _.cloneDeep(patient)
       const copyCovidCheckups = _.cloneDeep(patient?.covid_checkups?.value)
 
-      await axios.get(`/covid_checkups/get-covid-checkup/${id?.value}`)
+      await axios.get(`/covid-checkups/get-covid-checkup/${id?.value}`)
         .then(res => {
           setLoading(false)
           copyCovidCheckups[covidCheckupsIndex] = res.data
@@ -94,7 +94,7 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
           setLoading(false)
           const errDetail = err.response?.data.detail
           if(errDetail === signature_exp){
-            await axios.get(`/covid_checkups/get-covid-checkup/${id?.value}`)
+            await axios.get(`/covid-checkups/get-covid-checkup/${id?.value}`)
               .then(res => {
                 copyCovidCheckups[covidCheckupsIndex] = res.data
               })
@@ -137,7 +137,7 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
         institution_id: institution_id.value
       }
 
-      axios.put(`/covid_checkups/update/${id.value}`, data, jsonHeaderHandler())
+      axios.put(`/covid-checkups/update/${id.value}`, data, jsonHeaderHandler())
         .then(res => {
           formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
           onUpdateCovidCheckupHandler()
@@ -289,6 +289,7 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item label="Tanggal & Waktu Periksa">
                 <DatePicker 
+                  inputReadOnly
                   locale={id_ID}
                   className="w-100"
                   format="DD MMMM YYYY HH:mm"

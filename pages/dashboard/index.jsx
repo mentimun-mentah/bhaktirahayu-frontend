@@ -1,17 +1,23 @@
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
+import { useRouter } from 'next/router'
 import { Row, Col, Select, Progress } from 'antd'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
 import _ from 'lodash'
 import moment from 'moment'
+import nookies from 'nookies'
 import dynamic from 'next/dynamic'
+import isIn from 'validator/lib/isIn'
 import WebsocketHeartbeatJs from 'websocket-heartbeat-js'
 
+import { uuidv4 } from 'lib/utility'
 import { periodList } from 'data/all'
 import { antigenGenoseOption } from 'lib/chartConfig'
+import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
+import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import NotFoundSelect from 'components/NotFoundSelect'
 
@@ -63,18 +69,19 @@ const selectProps = {
 }
 
 const per_page = 10
-
+const user_hash = uuidv4()
 const wsOptions = {
-  url: 'ws://192.168.1.59:8000/dashboards/ws-server-info',
-  pingTimeout: 10000, 
-  pongTimeout: 10000, 
+  url: `${process.env.NEXT_PUBLIC_WS_URL}/dashboards/ws-server-info?user_hash=${user_hash}`,
+  pingTimeout: 2000, 
+  pongTimeout: 2000, 
   reconnectTimeout: 2000,
-  pingMsg: "ping"
+  pingMsg: `send~${user_hash}`
 }
 
 let ws = {}
 
-const Dashboard = () => {
+const Dashboard = ({ searchQuery }) => {
+  const router = useRouter()
   const dispatch = useDispatch()
 
   const totalData = useSelector(state => state.dashboard.totalData)
@@ -105,8 +112,27 @@ const Dashboard = () => {
     dispatch(actions.getDashboardTotalData())
   }, [])
 
+
   useEffect(() => {
-    const query = {}
+    if(!searchQuery) return
+
+    for(let [key, value] of Object.entries(searchQuery)) {
+      if(isIn(key, ['period'])) {
+        setPeriod(value)
+      }
+      else if(isIn(key, ['institution_id'])) {
+        getMultipleInstitutions(value.split(','))
+        setInstitution(value)
+      }
+      else if(isIn(key, ['location_service_id'])) {
+        setLocationService(value)
+        getMultipleLocationService(value.split(','))
+      }
+    }
+  }, [searchQuery])
+
+  useEffect(() => {
+    const query = { ...searchQuery }
     query['period'] = period
     if(institution?.length > 0) query['institution_id'] = institution
     else delete query['institution_id']
@@ -114,7 +140,16 @@ const Dashboard = () => {
     if(locationService?.length > 0) query['location_service_id'] = locationService
     else delete query['location_service_id']
 
-    dispatch(actions.getDashboardChart({ ...query }))
+    const timer = setTimeout(() => {
+      router.replace({
+        pathname: "/dashboard",
+        query: query
+      })
+    }, 500)
+
+    return () => {
+      clearTimeout(timer)
+    }
   }, [period, institution, locationService])
 
   useEffect(() => {
@@ -164,7 +199,6 @@ const Dashboard = () => {
     setSeriesGenose(chartData?.genose_p_n?.series)
     setSeriesAntigen(chartData?.antigen_p_n?.series)
     setSeriesDoneWaiting(chartData?.done_waiting?.series)
-
   }, [chartData])
 
   const pieGender = {
@@ -186,6 +220,16 @@ const Dashboard = () => {
       }]
     },
   };
+
+  const onChangeInstitutionHandler = value => {
+    setInstitution(value)
+    nookies.set(null, 'institution_id_dashboard_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+  }
+
+  const onChangeLocationServiceHandler = value => {
+    setLocationService(value)
+    nookies.set(null, 'location_service_id_dashboard_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+  }
 
   const fetchInstitution = useCallback(val => {
     let queryString = {}
@@ -250,6 +294,51 @@ const Dashboard = () => {
   }, [])
 
 
+  const getMultipleInstitutions = (list_id) => {
+    const data = { list_id: list_id }
+    axios.post('/institutions/get-multiple-institutions', data, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getInstitutionSuccess({ data: res.data }))
+      })
+      .catch(err => {
+        const errDetail = err?.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.post('/institutions/get-multiple-institutions', data, jsonHeaderHandler())
+            .then(res => {
+              dispatch(actions.getInstitutionSuccess({ data: res.data }))
+            })
+            .catch(() => {})
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+  const getMultipleLocationService = (list_id) => {
+    const data = { list_id: list_id }
+    axios.post('/location-services/get-multiple-location-services', data, jsonHeaderHandler())
+      .then(res => {
+        dispatch(actions.getLocationServiceSuccess({ data: res.data }))
+      })
+      .catch(err => {
+        const errDetail = err?.response?.data.detail
+        if(errDetail === signature_exp){
+          axios.post('/location-services/get-multiple-location-services', data, jsonHeaderHandler())
+            .then(res => {
+              dispatch(actions.getLocationServiceSuccess({ data: res.data }))
+            })
+            .catch(() => {})
+        } else if(typeof(errDetail) === "string") {
+          formErrorMessage('error', errDetail)
+        } else {
+          formErrorMessage('error', errDetail[0].msg)
+        }
+      })
+  }
+
+
   const cpu_core_value = serverUsage?.cpu_info?.cpu_core?.value || 0
   const cpu_core_format = serverUsage?.cpu_info?.cpu_core?.format || "core"
   const cpu_usage_value = serverUsage?.cpu_info?.cpu_usage?.value || 0
@@ -294,7 +383,7 @@ const Dashboard = () => {
                 <b>Filter:</b>
               </Col>
 
-              <Col span={7} sm={8} xs={8}>
+              <Col span={7} sm={8} xs={24}>
                 <Select
                   value={period}
                   className="w-100"
@@ -309,7 +398,7 @@ const Dashboard = () => {
                 </Select>
               </Col>
 
-              <Col span={7} sm={8} xs={8}>
+              <Col span={7} sm={8} xs={24}>
                 <Select
                   {...selectProps}
                   value={institution}
@@ -319,7 +408,7 @@ const Dashboard = () => {
                     onSearchInstitution(val)
                     dispatch(actions.getInstitutionStart())
                   }}
-                  onChange={val => setInstitution(val)}
+                  onChange={onChangeInstitutionHandler}
                   notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
                 >
                   {institutions?.data?.length > 0 && institutions?.data.map(institution => (
@@ -330,7 +419,7 @@ const Dashboard = () => {
                 </Select>
               </Col>
 
-              <Col span={7} sm={8} xs={8}>
+              <Col span={7} sm={8} xs={24}>
                 <Select
                   {...selectProps}
                   value={locationService}
@@ -340,7 +429,7 @@ const Dashboard = () => {
                     onSearchLocationService(val)
                     dispatch(actions.getLocationServiceStart())
                   }}
-                  onChange={val => setLocationService(val)}
+                  onChange={onChangeLocationServiceHandler}
                   notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
                 >
                   {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
@@ -382,7 +471,7 @@ const Dashboard = () => {
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
-                  <Card.Title className="mb-3">Server Info</Card.Title>
+                  <Card.Title className="mb-3">Informasi Server</Card.Title>
                 </Col>
               </Row>
               <Row gutter={[10,20]}>
@@ -584,6 +673,39 @@ const Dashboard = () => {
       `}</style>
     </>
   )
+}
+
+Dashboard.getInitialProps = async ctx => {
+  if(ctx?.req) axios.defaults.headers.get.Cookie = ctx?.req.headers.cookie
+  const searchQuery = { ...ctx.query }
+  const cookies = nookies.get(ctx)
+
+  if(isIn('institution_id', Object.keys(cookies)) &&
+    !isIn('institution_id_dashboard_delete', Object.keys(cookies)) &&
+    !isIn('institution_id', Object.keys(searchQuery))
+  ) {
+    if(cookies?.institution_id) {
+      searchQuery['institution_id'] = cookies?.institution_id
+    }
+    else {
+      delete searchQuery['institution_id']
+    }
+  }
+
+  if(isIn('location_service_id', Object.keys(cookies)) &&
+    !isIn('location_service_id_dashboard_delete', Object.keys(cookies)) &&
+    !isIn('location_service_id', Object.keys(searchQuery))
+  ) {
+    if(cookies?.location_service_id) {
+      searchQuery['location_service_id'] = cookies?.location_service_id
+    }
+    else {
+      delete searchQuery['location_service_id']
+    }
+  }
+
+  await ctx.store.dispatch(actions.getDashboardChart({ ...searchQuery }))
+  return { searchQuery: searchQuery }
 }
 
 export default withAuth(Dashboard)

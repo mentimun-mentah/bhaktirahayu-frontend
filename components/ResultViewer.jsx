@@ -43,8 +43,8 @@ const ResultViewer = ({ pdf, filename }) => {
     setShowButton(false)
     Modal.error({
       centered: true,
-      title: 'The link has been expired',
-      content: 'Please close this page and try again from the client page to see the result.',
+      title: 'The link has been expired or the device is not supported',
+      content: 'Please close this page and try again from the previous page or try again on another device to see the result.',
     });
   }
 

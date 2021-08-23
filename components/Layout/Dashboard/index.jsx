@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { useState, useEffect, useCallback, memo } from 'react'
 
-import { dashboard_routes, DASHBOARD, LOGOUT } from './routes'
+import { dashboard_routes, DASHBOARD, LOGOUT, CLIENTS } from './routes'
 
 import _ from 'lodash'
 import Image from 'next/image'
@@ -58,8 +58,9 @@ const DashboardLayout = ({ children }) => {
         return (
           <Menu.Item 
             key={route.key} 
+            className="user-select-none"
             icon={<i className={route.icon} />}
-            onClick={route.key === LOGOUT ? () => onLogoutHandler() : () => router.push(route.route)}
+            onClick={route.key === LOGOUT ? () => onLogoutHandler() : (router.pathname === "/dashboard/clients" && route.key === CLIENTS) ? () => {} : () => router.push(route.route)}
           >
             {route.label}
           </Menu.Item>
@@ -174,6 +175,11 @@ const DashboardLayout = ({ children }) => {
           height: 50px;
           width: 50px;
           z-index; 1;
+          color: #fff!important;
+          border-radius: 50%!important;
+          background: #38ab6b!important;
+          border-color: #38ab6b!important;
+          text-shadow: 0 -1px 0 rgb(0 0 0 / 12%);
         }
 
         :global(.count-check-tag) {

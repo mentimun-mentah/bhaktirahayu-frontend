@@ -182,14 +182,14 @@ const InstitutionContainer = () => {
 
   const onPreviewDocument = (institution_id, checking_type) => {
     const params = { checking_type: checking_type }
-    axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+    axios.get(`/covid-checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
       .then(res => {
         pdfGenerator(res.data)
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
         if(errDetail === signature_exp){
-          axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+          axios.get(`/covid-checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
             .then(res => {
               pdfGenerator(res.data)
             })

@@ -6,7 +6,7 @@ import { Form, Input, Row, Col, Upload, Button, Modal, Space, message, Tabs } fr
 import { urltoFile } from 'lib/utility'
 import { formImage, formImageIsValid } from 'formdata/image'
 import { formDoctor, formDoctorIsValid } from 'formdata/doctor'
-import { imagePreview, uploadButton, imageValidation } from 'lib/imageUploader'
+import { imagePreview, uploadButton, imageValidation, fixRotationOfFile } from 'lib/imageUploader'
 import { jsonHeaderHandler, formHeaderHandler, formErrorMessage, errEmail, signature_exp } from 'lib/axios'
 
 import _ from 'lodash'
@@ -162,12 +162,25 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
   }
 
   /* IMAGE CHANGE FUNCTION */
-  const imageChangeHandler = ({ fileList: newFileList }) => {
-    const data = {
-      ...imageList,
-      file: { value: newFileList, isValid: true, message: null }
+  const imageChangeHandler = async ({ fileList: newFileList }) => {
+    if(newFileList.length > 0) {
+      const imageWithRotation = await fixRotationOfFile(newFileList[0]?.originFileObj)
+      const dataNewFileList = {
+        ...newFileList[0],
+        status: "done",
+        originFileObj: imageWithRotation,
+      }
+
+      const data = {
+        ...imageList,
+        file: { value: [dataNewFileList], isValid: true, message: null }
+      }
+
+      setImageList(data)
     }
-    setImageList(data)
+    else {
+      setImageList(formImage)
+    }
   };
   /* IMAGE CHANGE FUNCTION */
 
@@ -418,8 +431,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
               <li>Ukuran file: maks. 5MB</li>
               <li>Ukuran gambar: 500 × 500 px</li>
               <li>Password default adalah <mark>bhaktirahayu</mark></li>
-              <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password 
-                  <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
+              <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
               </li>
             </ul>
           </Form>

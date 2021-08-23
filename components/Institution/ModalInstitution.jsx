@@ -5,8 +5,8 @@ import { Form, Input, Row, Col, Modal, Select, Upload } from 'antd'
 
 import { checkTypeList } from 'data/all'
 import { formImage, formImageIsValid } from 'formdata/image'
-import { imagePreview, uploadButton, imageValidation } from 'lib/imageUploader'
 import { formHeaderHandler, formErrorMessage, errName, signature_exp } from 'lib/axios'
+import { imagePreview, uploadButton, imageValidation, fixRotationOfFile } from 'lib/imageUploader'
 import { formInstitution, formInstitutionIsValid, formImageAntigenGenoseIsValid } from 'formdata/institution'
 
 import _ from 'lodash'
@@ -43,12 +43,25 @@ const ModalInstitution = ({ title, visible, onCloseHandler, isUpdate, setIsUpdat
   }
 
   /* IMAGE CHANGE FUNCTION */
-  const imageChangeHandler = ({ fileList: newFileList }, state, setState, type) => {
-    const data = {
-      ...state,
-      file: { value: newFileList, isValid: true, message: null }
+  const imageChangeHandler = async ({ fileList: newFileList }, state, setState, type) => {
+    if(newFileList.length > 0) {
+      const imageWithRotation = await fixRotationOfFile(newFileList[0]?.originFileObj)
+
+      const dataNewFileList = {
+        ...newFileList[0],
+        status: "done",
+        originFileObj: imageWithRotation,
+      }
+
+      const data = {
+        ...state,
+        file: { value: [dataNewFileList], isValid: true, message: null }
+      }
+      setState(data)
     }
-    setState(data)
+    else {
+      setState(formImage)
+    }
 
     /* for deleting invalid message from other type of antigen */
     if(type === "genose" || type === "pcr") {

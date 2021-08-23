@@ -118,7 +118,6 @@ const Home = () => {
     createLogs({ req: 'onUploadPhotoHandler()', image: { size: file?.value[0]?.originFileObj?.size, name: file?.value[0]?.originFileObj?.name}, kind: kind.value })
     axios.post('/clients/identity-card-ocr', formData)
       .then(res => {
-        console.log("CARD OCR => ", res.data)
         setLoading(false)
         const state = _.cloneDeep(register)
         for (const [key, value] of Object.entries(res.data)) {
@@ -141,7 +140,6 @@ const Home = () => {
         const state = _.cloneDeep(identityCard)
         const stateImage = _.cloneDeep(imageList)
         const errDetail = err.response?.data.detail
-        console.log(err.response)
 
         if(typeof errDetail === "string" && isIn("image", errDetail.split(" "))) {
           stateImage.file.isValid = false

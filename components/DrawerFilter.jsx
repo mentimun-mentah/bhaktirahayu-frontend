@@ -117,6 +117,7 @@ const DrawerFilter = ({ visible, onClose }) => {
         register_end_date: ""
       }
       setFilter(data)
+      nookies.set(null, 'register_start_end_date_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
     }
   }
 
@@ -141,6 +142,13 @@ const DrawerFilter = ({ visible, onClose }) => {
   const onFilterChange = (value, item) => {
     const data = { ...filter, [item]: value }
     setFilter(data)
+
+    if(item === "institution_id") {
+      nookies.set(null, 'institution_id_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+    }
+    if(item === "location_service_id") {
+      nookies.set(null, 'location_service_id_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+    }
   }
 
   const onClearFilterHandler = e => {
@@ -167,6 +175,7 @@ const DrawerFilter = ({ visible, onClose }) => {
 
     nookies.set(null, 'institution_id_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
     nookies.set(null, 'location_service_id_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
+    nookies.set(null, 'register_start_end_date_delete', true, { maxAge: 30 * 24 * 60 * 60, path: '/' })
 
     onClose()
   }
@@ -213,6 +222,8 @@ const DrawerFilter = ({ visible, onClose }) => {
       pathname: "/dashboard/clients",
       query: query
     })
+
+    dispatch(actions.getClient({ ...query, per_page: 20 }))
     
     onClose()
   }
@@ -566,17 +577,21 @@ const DrawerFilter = ({ visible, onClose }) => {
       query['location_service_id'] = cookies['location_service_id']
     }
 
-    if(!isIn('register_start_date', Object.keys(query)) &&
-       !isIn('register_end_date', Object.keys(query))
-    ) {
-      query['register_start_date'] = state?.register_start_date
-      query['register_end_date'] = state?.register_end_date
+    if(!isIn('register_start_end_date_delete', Object.keys(cookies))) {
+      query['register_start_date'] = moment().format(DATE_FORMAT)
+      query['register_end_date'] = moment().format(DATE_FORMAT)
     }
 
-    router.replace({
-      pathname: "/dashboard/clients",
-      query: query
-    })
+    const timer = setTimeout(() => {
+      router.replace({
+        pathname: "/dashboard/clients",
+        query: query
+      })
+    }, 500)
+
+    return () => {
+      clearTimeout(timer)
+    }
   }, [])
 
 

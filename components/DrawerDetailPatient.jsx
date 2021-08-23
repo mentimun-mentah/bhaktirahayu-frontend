@@ -9,6 +9,7 @@ import { DATE_FORMAT } from 'lib/disabledDate'
 import { columnsRiwayatPatient } from 'data/table'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
+import _ from 'lodash'
 import 'moment/locale/id'
 import moment from 'moment'
 
@@ -104,17 +105,29 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
     }
   })
 
+  const onRefetchCovidCheckup = id => {
+    const state = _.cloneDeep(patient)
+    const resultCovidCheckup = state.covid_checkups.value.filter(item => item.covid_checkups_id !== id)
+    const data = {
+      ...patient,
+      covid_checkups: { value: resultCovidCheckup, isValid: true, message: null }
+    }
+    setPatient(data)
+  }
+
   const onDeleteCovidCheckupHandler = id => {
-    axios.delete(`/covid_checkups/delete/${id}`, jsonHeaderHandler())
+    axios.delete(`/covid-checkups/delete/${id}`, jsonHeaderHandler())
       .then(res => {
         dispatch(actions.getClient({ ...router.query }))
         formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
+        onRefetchCovidCheckup(id)
       })
       .catch(err => {
-        const errDetail = err.response?.data.detail
+        const errDetail = err?.response?.data?.detail
         if(errDetail === signature_exp){
           dispatch(actions.getClient({ ...router.query }))
           formErrorMessage('success', "Successfully delete the covid-checkup.")
+          onRefetchCovidCheckup(id)
         } else if(typeof(errDetail) === "string") {
           formErrorMessage('error', errDetail)
         } else {
@@ -124,14 +137,14 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
   }
 
   const onSeeDocument = async id => {
-    await axios.get(`/covid_checkups/see-document/${id}`)
+    await axios.get(`/covid-checkups/see-document/${id}`)
       .then(async res => {
         pdfGenerator(res.data)
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
         if(errDetail === signature_exp){
-          axios.get(`/covid_checkups/see-document/${id}`)
+          axios.get(`/covid-checkups/see-document/${id}`)
             .then(res => {
               pdfGenerator(res.data)
             })

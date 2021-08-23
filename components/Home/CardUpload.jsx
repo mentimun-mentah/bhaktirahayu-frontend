@@ -4,7 +4,8 @@ import { Form, Upload, Radio } from 'antd'
 
 import Image from 'next/image'
 
-import { imagePreview, uploadButton, imageValidationNoHeader, getBase64 } from 'lib/imageUploader'
+import { formImage } from 'formdata/image'
+import { imagePreview, uploadButton, imageValidationNoHeader, getBase64, fixRotationOfFile } from 'lib/imageUploader'
 
 import ErrorMessage from 'components/ErrorMessage'
 
@@ -18,19 +19,32 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
 
   /* IMAGE CHANGE FUNCTION */
   const imageChangeHandler = async ({ fileList: newFileList }) => {
-    setLoadingImage(true)
+    if(newFileList.length > 0) {
+      setLoadingImage(true)
 
-    const data = {
-      ...imageList,
-      file: { value: newFileList, isValid: true, message: null }
-    }
+      const imageWithRotation = await fixRotationOfFile(newFileList[0]?.originFileObj)
+      const dataNewFileList = {
+        ...newFileList[0],
+        status: "done",
+        originFileObj: imageWithRotation,
+      }
 
-    if(newFileList[0]?.originFileObj) {
-      let imageDataUrl = await getBase64(newFileList[0]?.originFileObj)
-      setImageSrc(imageDataUrl)
+      const data = {
+        ...imageList,
+        file: { value: [dataNewFileList], isValid: true, message: null }
+      }
+
+      if(imageWithRotation) {
+        let imageDataUrl = await getBase64(imageWithRotation)
+        setImageSrc(imageDataUrl)
+      }
+      setLoadingImage(false)
+      setImageList(data)
     }
-    setLoadingImage(false)
-    setImageList(data)
+    else {
+      setImageSrc(null)
+      setImageList(formImage)
+    }
   };
   /* IMAGE CHANGE FUNCTION */
 
@@ -45,7 +59,6 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
   }
   /* CARD KIND CHANGE FUNCTION */
 
-
   return (
     <>
       {loading ? (
@@ -59,9 +72,9 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
             accept="image/jpeg,image/png"
             listType="picture-card"
             className="ktp-kis-uploader text-center user-select-none"
+            fileList={file.value}
             onPreview={imagePreview}
             onChange={imageChangeHandler}
-            fileList={file.value}
             beforeUpload={f => imageValidationNoHeader(f, "image", "/clients/identity-card-ocr", "post", setLoadingImage)}
           >
             {file.value.length >= 1 ? null : uploadButton(loadingImage)}
