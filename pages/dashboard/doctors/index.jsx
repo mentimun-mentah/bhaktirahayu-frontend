@@ -181,12 +181,12 @@ const DoctorsContainer = () => {
 
   let scrollY = 'calc(100vh - 300px)'
   if(doctors?.iter_pages?.length === 1) { // if pagination is hidden
-    if(screens.xs) scrollY = 'calc(100vh - 195px)'
+    if(screens.xs) scrollY = 'calc(88vh - 195px)'
     else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
     else scrollY = 'calc(100vh - 255px)'
   }
   else { // when pagination is shown
-    if(screens.xs) scrollY = 'calc(100vh - 234px)'
+    if(screens.xs) scrollY = 'calc(88vh - 234px)'
     else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
     else scrollY = 'calc(100vh - 300px)'
   } 

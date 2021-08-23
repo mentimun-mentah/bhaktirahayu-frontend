@@ -260,12 +260,12 @@ const ClientsContainer = ({ searchQuery }) => {
 
   let scrollY = 'calc(100vh - 246px)'
   if(clients?.iter_pages?.length === 1) { // if pagination is hidden
-    if(screens.xs) scrollY = 'calc(100vh - 156px)'
+    if(screens.xs) scrollY = 'calc(88vh - 156px)'
     else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 215px)'
     else scrollY = 'calc(100vh - 215px)'
   }
   else { // when pagination is shown
-    if(screens.xs) scrollY = 'calc(100vh - 180px)'
+    if(screens.xs) scrollY = 'calc(88vh - 180px)'
     else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 246px)'
     else scrollY = 'calc(100vh - 246px)'
   } 
