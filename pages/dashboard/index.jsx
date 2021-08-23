@@ -1,7 +1,7 @@
 import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { useRouter } from 'next/router'
-import { Row, Col, Select, Progress } from 'antd'
+import { Row, Col, Select, Progress, Grid } from 'antd'
 import { CloseCircleFilled } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useEffect, useCallback, useMemo } from 'react'
@@ -22,6 +22,7 @@ import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import NotFoundSelect from 'components/NotFoundSelect'
 
+const useBreakpoint = Grid.useBreakpoint;
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 const stats_list = (data) => [
@@ -84,6 +85,7 @@ let ws = {}
 const Dashboard = ({ searchQuery }) => {
   const router = useRouter()
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const totalData = useSelector(state => state.dashboard.totalData)
   const chartData = useSelector(state => state.dashboard.chartData)
@@ -453,10 +455,10 @@ const Dashboard = ({ searchQuery }) => {
         </Row>
       </div>
 
-      <Row gutter={[20,20]}>
+      <Row gutter={[screens?.xs ? 0 : 20,screens?.xs ? 0 : 20]} className="m-b-20">
         {stats_list(totalData).map((data, i) => (
           <Col xxl={6} xl={6} lg={6} md={12} sm={12} xs={24} key={i}>
-            <Card className="border-0 shadow-1">
+            <Card className="border-0 shadow-1 dashboard-card">
               <Card.Body>
                 <div className="media text-truncate">
                   <div className={`rounded-circle align-self-center icon-stats mr-3 ${data.bg}`}>
@@ -473,9 +475,11 @@ const Dashboard = ({ searchQuery }) => {
             </Card>
           </Col>
         ))}
+      </Row>
 
+      <Row gutter={[screens?.xs ? 0 : 20,20]}>
         <Col span={24}>
-          <Card className="border-0 shadow-1">
+          <Card className="border-0 shadow-1 dashboard-card">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
@@ -571,7 +575,7 @@ const Dashboard = ({ searchQuery }) => {
         </Col>
 
         <Col xxl={10} xl={10} lg={24} md={24} sm={24} xs={24}>
-          <Card className="border-0 shadow-1">
+          <Card className="border-0 shadow-1 dashboard-card">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
@@ -584,7 +588,7 @@ const Dashboard = ({ searchQuery }) => {
         </Col>
 
         <Col xxl={14} xl={14} lg={24} md={24} sm={24} xs={24}>
-          <Card className="border-0 shadow-1">
+          <Card className="border-0 shadow-1 dashboard-card">
             <Card.Body>
               <Row gutter={[10,10]} justify="space-between">
                 <Col xl={12} lg={12}>
@@ -598,7 +602,7 @@ const Dashboard = ({ searchQuery }) => {
 
         {seriesAntigen && (
           <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
-            <Card className="border-0 shadow-1">
+            <Card className="border-0 shadow-1 dashboard-card">
               <Card.Body>
                 <Row gutter={[10,10]} justify="space-between">
                   <Col xl={12} lg={12}>
@@ -613,7 +617,7 @@ const Dashboard = ({ searchQuery }) => {
 
         {seriesGenose && (
           <Col xxl={12} xl={12} lg={24} md={24} sm={24} xs={24}>
-            <Card className="border-0 shadow-1">
+            <Card className="border-0 shadow-1 dashboard-card">
               <Card.Body>
                 <Row gutter={[10,10]} justify="space-between">
                   <Col xl={12} lg={12}>
@@ -628,7 +632,7 @@ const Dashboard = ({ searchQuery }) => {
 
         {seriesPcr && (
           <Col span={24}>
-            <Card className="border-0 shadow-1">
+            <Card className="border-0 shadow-1 dashboard-card">
               <Card.Body>
                 <Row gutter={[10,10]} justify="space-between">
                   <Col xl={12} lg={12}>
@@ -677,6 +681,14 @@ const Dashboard = ({ searchQuery }) => {
       }
       :global(.server-dashboard-text-success.ant-progress-circle.ant-progress-status-success .ant-progress-text) {
         color: #dc3545;
+      }
+      @media only screen and (max-width: 575px) {
+        :global(.header-dashboard) {
+          padding: 15px;
+        }
+        :global(.dashboard-card) {
+          border-radius: 0px!important;
+        }
       }
       `}</style>
     </>
