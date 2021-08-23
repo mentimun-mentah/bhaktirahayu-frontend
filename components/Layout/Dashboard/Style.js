@@ -81,7 +81,7 @@ const style = css`
 
 :global(.ant-menu-scroll) {
   overflow: scroll;
-  height: calc(100vh - 48px - 96px - 30px);
+  height: calc(95vh - 48px - 96px - 30px);
 }
 
 :global(.ant-menu-scroll::-webkit-scrollbar) {

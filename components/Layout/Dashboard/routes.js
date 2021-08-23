@@ -1,5 +1,6 @@
 export const HOME = "HOME", LOGOUT = "LOGOUT", DASHBOARD = "DASHBOARD", DOCTORS = "DOCTORS", 
-  GUARDIAN = "GUARDIAN", LOCATION = "LOCATION-SERVICE", ADMIN = "ADMIN", PROFILE = "PROFILE", INSTITUTION = "INSTITUTION", CLIENTS = "CLIENTS"
+  GUARDIAN = "GUARDIAN", LOCATION = "LOCATION-SERVICE", ADMIN = "ADMIN", PROFILE = "PROFILE", INSTITUTION = "INSTITUTION", 
+  CLIENTS = "CLIENTS", GUIDES = "GUIDES"
 
 export const dashboard_routes = [
   {
@@ -57,6 +58,13 @@ export const dashboard_routes = [
     route: '/dashboard/profile',
     label: 'Profile',
     role: ['admin','doctor']
+  },
+  {
+    key: GUIDES,
+    icon: 'far fa-book',
+    route: '/guides',
+    label: 'Panduan',
+    role: ['admin','doctor','']
   },
   {
     key: LOGOUT,
