@@ -178,7 +178,7 @@ export const reformatData = listData => {
     data['Dokter Penanggung Jawab'] = data?.covid_checkups_doctor_username ? data?.covid_checkups_doctor_username?.toUpperCase() : '-'
     data['Instansi'] = data?.covid_checkups_institution_name ? data?.covid_checkups_institution_name?.toUpperCase() : '-'
     data['Lokasi Pelayanan'] = data?.covid_checkups_location_service_name ? data?.covid_checkups_location_service_name?.toUpperCase() : '-'
-    data['Penanggung Jawab'] = data?.covid_checkups_guardian_name ? data?.covid_checkups_guardian_name?.toUpperCase() : '-'
+    data['Penjamin'] = data?.covid_checkups_guardian_name ? data?.covid_checkups_guardian_name?.toUpperCase() : '-'
     Object.keys(listData[0]).forEach(key => delete data[key])
   })
 
