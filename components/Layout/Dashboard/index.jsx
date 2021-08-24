@@ -47,9 +47,9 @@ const DashboardLayout = ({ children }) => {
 
 
   const onLogoutHandler = () => {
+    dispatch(actions.logout())
     if(typeof window !== 'undefined') window.location.replace('/')
     router.replace('/')
-    dispatch(actions.logout())
   }
 
   const renderSidemenu = useCallback(() => {

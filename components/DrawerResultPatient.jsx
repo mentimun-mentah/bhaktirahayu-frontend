@@ -1,4 +1,5 @@
 import { useRouter } from 'next/router'
+import { CloseCircleFilled } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { memo, useState, useEffect, useCallback, useMemo } from 'react'
 import { Drawer, Form, Row, Col, Select, Grid, DatePicker, Button } from 'antd'
@@ -58,6 +59,14 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
     const data = {
       ...checkup,
       [item]: { ...checkup[item], value: value, isValid: true, message: null }
+    }
+    setCheckup(data)
+  }
+
+  const onClearSelectHandler = (item) => {
+    const data = {
+      ...checkup,
+      [item]: { ...checkup[item], value: [], isValid: true, message: null }
     }
     setCheckup(data)
   }
@@ -377,6 +386,8 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
                     dispatch(actions.getLocationServiceStart())
                   }}
                   onChange={e => onChangeHandler(e, "location_service_id")}
+                  onClear={() => onClearSelectHandler("location_service_id")}
+                  clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler("location_service_id")} />}
                   notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
                 >
                   {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
@@ -400,6 +411,8 @@ const DrawerResultPatient = ({ visible, patient, setPatient, dataCheckup, onClos
                     dispatch(actions.getGuardianStart())
                   }}
                   onChange={e => onChangeHandler(e, "guardian_id")}
+                  onClear={() => onClearSelectHandler("guardian_id")}
+                  clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler("guardian_id")} />}
                   notFoundContent={<NotFoundSelect loading={loadingGuardians} />}
                 >
                   {guardians?.data?.length > 0 && guardians?.data.map(guardian => (

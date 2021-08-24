@@ -482,6 +482,7 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
         position: absolute;
         width: 100%;
         height: 100%;
+        z-index: 9999;
       }
 
       :global(.wh-inherit) {

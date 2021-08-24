@@ -3,7 +3,6 @@ import { Container } from 'react-bootstrap'
 import { LoadingOutlined } from '@ant-design/icons'
 import { message, Modal, Row, Col, Steps, Button, Image as AntImage } from 'antd'
 
-import { createLogs } from 'lib/logsCreator'
 import { formImage } from 'formdata/image'
 import { formErrorMessage, errPhone } from 'lib/axios'
 import { formIdentityCard } from 'formdata/identityCard'
@@ -115,7 +114,6 @@ const Home = () => {
       }
     })
 
-    createLogs({ req: 'onUploadPhotoHandler()', image: { size: file?.value[0]?.originFileObj?.size, name: file?.value[0]?.originFileObj?.name}, kind: kind.value })
     axios.post('/clients/identity-card-ocr', formData)
       .then(res => {
         setLoading(false)

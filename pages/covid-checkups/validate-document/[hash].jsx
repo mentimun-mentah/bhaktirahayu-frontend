@@ -91,23 +91,32 @@ const ValidDocument = ({ data }) => {
 
 const ValidateDocument = ({ doc, hash }) => {
   const [data, setData] = useState(doc)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
-    if(doc) return
+    if(doc) {
+      setIsMounted(true)
+      return
+    }
     if(hash) {
       axios.get(`/covid-checkups/validate-document/${hash}`)
         .then(res => {
+          setIsMounted(true)
           setData(res.data)
         })
         .catch(() => {
+          setIsMounted(true)
           setData(null)
         })
+    }
+    else {
+      setIsMounted(true)
     }
   }, [hash, doc])
 
   return (
     <>
-      {data ? (
+      {isMounted && data ? (
         <ValidDocument data={data} />
       ) : (
         <InvalidDocument />

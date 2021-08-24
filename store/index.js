@@ -1,5 +1,4 @@
 import { parseCookies } from 'nookies'
-import { createLogs } from 'lib/logsCreator'
 import { createStore, applyMiddleware } from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension'
 
@@ -14,25 +13,14 @@ import * as actions from 'store/actions'
 
 const installInterceptors = (store) => {
   instance.interceptors.response.use((response) => {
-    if(response?.config?.url !== '/utils/encoding-image-base64') {
-      createLogs({ url: response?.config?.url, ...response?.data })
-    }
     return response;
   }, async error => {
-    if(error?.response?.config?.url !== '/utils/encoding-image-base64') {
-      createLogs({ url: error?.response?.config?.url, ...error?.response?.data })
-    }
-
     const cookies = parseCookies();
     const { csrf_refresh_token } = cookies;
 
     const data = error && error.response && error.response.data;
     const status = error && error.response && error.response.status;
     const config = error && error.response && error.response.config;
-
-    if (typeof error.response === 'undefined') {
-      createLogs({ req: 'store/index.js axios', msg: 'CORS DETECTED', err: { ...error } })
-    }
 
     if(status == 422 && data?.detail == signature_exp && csrf_refresh_token && config.url === "/users/refresh-token"){
       instance.delete("/users/delete-cookies")
