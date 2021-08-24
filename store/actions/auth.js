@@ -116,6 +116,9 @@ export const logout = () => {
         })
     } 
     else {
+      axios.delete("/users/delete-cookies")
+      removeClientInstitutionId()
+      dispatch(authLogout())
       if(csrf_access_token){
         axios.delete(access_revoke, jsonHeaderHandler())
         removeClientInstitutionId()
@@ -124,11 +127,11 @@ export const logout = () => {
         axios.delete(refresh_revoke, refreshHeader())
         removeClientInstitutionId()
       }
-      axios.delete("/users/delete-cookies")
-      removeClientInstitutionId()
-      dispatch(authLogout())
     }
 
-    if(typeof window !== 'undefined') window.location.href = '/'
+    if(typeof window !== 'undefined') {
+      axios.delete("/users/delete-cookies")
+      window.location.href = '/'
+    }
   };
 };
