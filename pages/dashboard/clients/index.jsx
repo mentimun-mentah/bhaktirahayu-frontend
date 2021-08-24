@@ -3,8 +3,9 @@ import { withAuth } from 'lib/withAuth'
 import { useRouter } from 'next/router'
 import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, Form, Input, Badge } from 'antd'
+import { Row, Col, Space, Grid, Tooltip, Popconfirm, Button, Form, Input, Badge, message } from 'antd'
 
+import { useDebounce } from 'lib/useDebounce'
 import { reformatClients } from 'lib/utility'
 import { DATE_FORMAT } from 'lib/disabledDate'
 import { formPatient } from 'formdata/patient'
@@ -29,6 +30,7 @@ import DrawerDetailPatient from 'components/DrawerDetailPatient'
 moment.locale('id')
 const per_page = 20
 const useBreakpoint = Grid.useBreakpoint
+message.config({ maxCount: 1 })
 
 const ProductCellEditable = (
   { index, record, editable, type, children, onEditPatientHandler, onShowDetailPatient, onDeleteClientHandler, ...restProps }
@@ -72,12 +74,15 @@ const ClientsContainer = ({ searchQuery }) => {
   const clients = useSelector(state => state.client.client)
 
   const [q, setQ] = useState("")
+  const [mounted, setMounted] = useState(false)
   const [page, setPage] = useState(clients?.page)
   const [patient, setPatient] = useState(formPatient)
   const [showDrawer, setShowDrawer] = useState(false)
   const [showFilter, setShowFilter] = useState(false)
   const [activeFilter, setActiveFilter] = useState(false)
   const [showDetailPatient, setShowDetailPatient] = useState(false)
+
+  const debouncedSearchClient = useDebounce(q, 500)
 
   const columnsPatient = columnsReports.map(col => {
     if (!col.editable) return col;
@@ -161,6 +166,7 @@ const ClientsContainer = ({ searchQuery }) => {
   const onCloseDetailPatientDrawerHandler = () => {
     setShowDetailPatient(false)
     setPatient(formPatient)
+    dispatch(actions.getClient({ ...router.query }))
   }
 
   const onExportHandler = () => {
@@ -185,23 +191,24 @@ const ClientsContainer = ({ searchQuery }) => {
       })
   }
 
-  useEffect(() => {
-    let query = { ...searchQuery }
-    if(!query) return
-
-    if(page) query["page"] = page
+  const onPageChangeHandler = val => {
+    setPage(val)
+    let query = { ...router.query }
+    query["page"] = val
 
     router.replace({
       pathname: "/dashboard/clients",
       query: query
     })
-  },[page])
+  }
 
-  useEffect(() => {
+
+  const fetchClient = val => {
+    setPage(1)
     let query = { ...searchQuery }
 
-    query["page"] = 1
-    if(q) query["q"] = q
+    query["page"] = page || 1
+    if(q) query["q"] = val
     else if(!q) delete query["q"]
     else if(query?.q) query["q"] = query?.q
     else delete query["q"]
@@ -210,12 +217,14 @@ const ClientsContainer = ({ searchQuery }) => {
       pathname: "/dashboard/clients",
       query: query
     })
-  },[q])
+  }
 
   useEffect(() => {
-    if(!searchQuery) return
+    if(mounted) fetchClient(debouncedSearchClient)
+  }, [debouncedSearchClient])
 
-    const copySearchQuery = { ...searchQuery }
+  useEffect(() => {
+    const copySearchQuery = { ...router.query }
     for(let [key, _] of Object.entries(copySearchQuery)) {
       if(isIn(key, ['q', 'page', 'per_page', 'register_end_date', 'check_end_date'])) {
         delete copySearchQuery[key]
@@ -224,23 +233,42 @@ const ClientsContainer = ({ searchQuery }) => {
 
     setActiveFilter(Object.keys(copySearchQuery).length)
 
-    if(searchQuery.q) setQ(searchQuery.q)
+    if(router?.query?.q) setQ(router?.query?.q)
+  }, [router.query])
 
-    if(searchQuery.page) setPage(+searchQuery.page)
-
-  }, [searchQuery])
 
   useEffect(() => {
-    if(clients && clients.data && clients.data.length < 1 && clients.page > 1 && clients.total > 1){
-      setPage(clients.page - 1)
+    const emptyClient = clients && clients?.data && clients?.data?.length < 1 && clients?.page > 1 && clients?.total > 1
+    if(emptyClient){
+      const newPage = clients?.iter_pages
+      setPage(+newPage[newPage?.length - 1 || 0])
     }
-    if(clients && clients.data && !router.query.hasOwnProperty("page")){
-      setPage(clients.page)
-    }
-    if(clients && router.query.hasOwnProperty("page")){
+    else if(clients && clients?.data && clients?.data?.length && router?.query?.hasOwnProperty("page")){
       setPage(+router.query.page)
     }
+    else if(!router?.query?.hasOwnProperty("page")){
+      setPage(1)
+    }
   }, [clients])
+
+  useEffect(() => {
+    setMounted(true)
+    return () => {
+      dispatch(actions.getClientSuccess([]))
+    }
+  }, [])
+
+  let scrollY = 'calc(100vh - 246px)'
+  if(clients?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(88vh - 156px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 215px)'
+    else scrollY = 'calc(100vh - 215px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(88vh - 180px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 246px)'
+    else scrollY = 'calc(100vh - 246px)'
+  } 
 
   return (
     <>
@@ -248,7 +276,7 @@ const ClientsContainer = ({ searchQuery }) => {
         <Card.Body>
           
           <Row gutter={[10, 10]} justify="space-between" className="mb-3">
-            <Col xl={5} lg={8} md={10} sm={12} xs={12}>
+            <Col xl={6} lg={12} md={12} sm={10} xs={10}>
               <Form.Item className="mb-0">
                 <Input 
                   value={q}
@@ -261,7 +289,7 @@ const ClientsContainer = ({ searchQuery }) => {
                 />
               </Form.Item>
             </Col>
-            <Col xl={6} lg={12} md={12} sm={12} xs={12}>
+            <Col xl={5} lg={8} md={10} sm={14} xs={14}>
               <Space className="float-right">
                 <Button 
                   type="text" 
@@ -290,7 +318,7 @@ const ClientsContainer = ({ searchQuery }) => {
             columns={columnsPatient}
             dataSource={reformatClients(clients?.data)} 
             rowKey={record => record.clients_id}
-            scroll={{ y: `${screens.xs ? 'calc(100vh - 180px)' : (screens.sm && !screens.md) ? 'calc(100vh - 246px)' : 'calc(100vh - 246px)'}`, x: 1180 }} 
+            scroll={{ y: scrollY, x: 1180 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -301,7 +329,7 @@ const ClientsContainer = ({ searchQuery }) => {
                 hideOnSinglePage 
                 pageSize={per_page}
                 total={clients?.total} 
-                goTo={val => setPage(val)} 
+                goTo={onPageChangeHandler} 
               />
             </div>
           </Card.Body>

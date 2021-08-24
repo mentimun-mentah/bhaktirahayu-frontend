@@ -3,8 +3,9 @@ import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message, Grid } from 'antd'
 
+import { useDebounce } from 'lib/useDebounce'
 import { columns_location } from 'data/tableLocation'
 import { formLocation } from 'formdata/locationService'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
@@ -47,10 +48,12 @@ const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, o
 const per_page = 20
 const addTitle = "Tambah Lokasi"
 const editTitle = "Edit Lokasi"
+const useBreakpoint = Grid.useBreakpoint
 message.config({ maxCount: 1 });
 
 const LocationServiceContainer = () => {
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const locationServices = useSelector(state => state.locationService.locationService)
 
@@ -60,6 +63,8 @@ const LocationServiceContainer = () => {
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState(addTitle)
   const [locationService, setLocationService] = useState(formLocation)
+
+  const debouncedSearchGuardian = useDebounce(q, 500)
 
   const onCloseModalHandler = () => {
     setShowModal(false)
@@ -127,28 +132,43 @@ const LocationServiceContainer = () => {
     if(q) queryString["q"] = q
     else delete queryString["q"]
 
-    dispatch(actions.getLocationService({...queryString}))
+    dispatch(actions.getLocationService({ ...queryString }))
   }, [page])
 
-  useEffect(() => {
+
+  const fetchLocationService = val => {
     setPage(1)
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(q) queryString["q"] = q
+    if(val) queryString["q"] = val
     else delete queryString["q"]
-
-    dispatch(actions.getLocationService({...queryString}))
-  }, [q])
+    dispatch(actions.getLocationService({ ...queryString }))
+  }
 
   useEffect(() => {
-    if(locationServices && locationServices.data && 
-      locationServices.data.length < 1 && locationServices.page > 1 && locationServices.total > 1
-    ){
-      setPage(locationServices.page - 1)
+    fetchLocationService(debouncedSearchGuardian)
+  }, [debouncedSearchGuardian])
+
+
+  useEffect(() => {
+    if(locationServices && locationServices?.data && locationServices?.data?.length < 1 && locationServices?.page > 1 && locationServices?.total > 1){
+      setPage(locationServices?.page - 1)
     }
   }, [locationServices])
+
+  let scrollY = 'calc(100vh - 300px)'
+  if(locationServices?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(88vh - 195px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
+    else scrollY = 'calc(100vh - 255px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(88vh - 234px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
+    else scrollY = 'calc(100vh - 300px)'
+  } 
 
   return (
     <>
@@ -192,7 +212,7 @@ const LocationServiceContainer = () => {
             columns={columnsLocations}
             dataSource={locationServices?.data} 
             rowKey={record => record.location_services_id}
-            scroll={{ y: 485, x: 800 }} 
+            scroll={{ y: scrollY, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -221,7 +241,7 @@ const LocationServiceContainer = () => {
         isUpdate={isUpdate}
         dataLocation={locationService}
         setIsUpdate={setIsUpdate}
-        getLocationService={() => dispatch(actions.getLocationService({ page: 1, per_page: per_page, q: '' }))}
+        getLocationService={() => dispatch(actions.getLocationService({ page: page, per_page: per_page, q: q }))}
         onCloseHandler={onCloseModalHandler}
       />
     </>

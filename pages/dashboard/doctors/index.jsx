@@ -3,13 +3,15 @@ import { withAuth } from 'lib/withAuth'
 import { useState, useEffect } from 'react'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message, Grid } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { formDoctor } from 'formdata/doctor'
+import { useDebounce } from 'lib/useDebounce'
 import { columns_doctor } from 'data/tableDoctor'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
 
+import _ from 'lodash'
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import TableMemo from 'components/TableMemo'
@@ -48,9 +50,12 @@ const ProductCellEditable = ({ index, record, editable, type, children, onEditHa
 const per_page = 20
 const addTitle = "Tambah Dokter"
 const editTitle = "Edit Dokter"
+const useBreakpoint = Grid.useBreakpoint
+message.config({ maxCount: 1 })
 
 const DoctorsContainer = () => {
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const doctors = useSelector(state => state.doctor.doctor)
 
@@ -61,6 +66,8 @@ const DoctorsContainer = () => {
   const [showModal, setShowModal] = useState(false)
   const [imageList, setImageList] = useState(formImage)
   const [modalTitle, setModalTitle] = useState(addTitle)
+
+  const debouncedSearchDoctor = useDebounce(q, 500)
 
   const columnsDoctors = columns_doctor.map(col => {
     if (!col.editable) return col;
@@ -127,7 +134,6 @@ const DoctorsContainer = () => {
           formErrorMessage('error', errDetail[0].msg)
         }
       })
-
   }
   
   const onCloseModalHandler = () => {
@@ -146,26 +152,44 @@ const DoctorsContainer = () => {
     if(q) queryString["q"] = q
     else delete queryString["q"]
 
-    dispatch(actions.getDoctor({...queryString}))
+    dispatch(actions.getDoctor({ ...queryString }))
   }, [page])
 
-  useEffect(() => {
+
+  const fetchDoctor = val => {
     setPage(1)
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(q) queryString["q"] = q
+    if(val) queryString["q"] = val
     else delete queryString["q"]
+    dispatch(actions.getDoctor({ ...queryString }))
+  }
 
-    dispatch(actions.getDoctor({...queryString}))
-  }, [q])
+  useEffect(() => {
+    fetchDoctor(debouncedSearchDoctor)
+  }, [debouncedSearchDoctor])
+
 
   useEffect(() => {
     if(doctors && doctors.data && doctors.data.length < 1 && doctors.page > 1 && doctors.total > 1){
       setPage(doctors.page - 1)
     }
   }, [doctors])
+
+
+  let scrollY = 'calc(100vh - 300px)'
+  if(doctors?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(88vh - 195px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
+    else scrollY = 'calc(100vh - 255px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(88vh - 234px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
+    else scrollY = 'calc(100vh - 300px)'
+  } 
 
   return (
     <>
@@ -209,7 +233,7 @@ const DoctorsContainer = () => {
             columns={columnsDoctors}
             dataSource={doctors?.data} 
             rowKey={record => record.users_id}
-            scroll={{ y: 485, x: 800 }} 
+            scroll={{ y: scrollY, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -238,7 +262,7 @@ const DoctorsContainer = () => {
         dataDoctor={doctor}
         imageDoctor={imageList}
         setIsUpdate={setIsUpdate}
-        getDoctor={() => dispatch(actions.getDoctor({ page: 1, per_page: per_page, q: '' }))}
+        getDoctor={() => dispatch(actions.getDoctor({ page: page, per_page: per_page, q: q }))}
         onCloseHandler={onCloseModalHandler}
       />
     </>

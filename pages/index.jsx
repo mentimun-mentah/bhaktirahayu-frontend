@@ -3,7 +3,6 @@ import { Container } from 'react-bootstrap'
 import { LoadingOutlined } from '@ant-design/icons'
 import { message, Modal, Row, Col, Steps, Button, Image as AntImage } from 'antd'
 
-import { createLogs } from 'lib/logsCreator'
 import { formImage } from 'formdata/image'
 import { formErrorMessage, errPhone } from 'lib/axios'
 import { formIdentityCard } from 'formdata/identityCard'
@@ -115,10 +114,8 @@ const Home = () => {
       }
     })
 
-    createLogs({ req: 'onUploadPhotoHandler()', image: { size: file?.value[0]?.originFileObj?.size, name: file?.value[0]?.originFileObj?.name}, kind: kind.value })
     axios.post('/clients/identity-card-ocr', formData)
       .then(res => {
-        console.log("CARD OCR => ", res.data)
         setLoading(false)
         const state = _.cloneDeep(register)
         for (const [key, value] of Object.entries(res.data)) {
@@ -143,6 +140,10 @@ const Home = () => {
         const errDetail = err.response?.data.detail
 
         if(typeof errDetail === "string" && isIn("image", errDetail.split(" "))) {
+          stateImage.file.isValid = false
+          stateImage.file.message = errDetail
+        }
+        else if(typeof errDetail === "string" && !isIn("image", errDetail.split(" "))) {
           stateImage.file.isValid = false
           stateImage.file.message = errDetail
         }
@@ -208,9 +209,12 @@ const Home = () => {
                       </Steps>
                     </div>
 
+                    <br />
+
                     {step == 0 && (
                       <>
                         <PreparationContainer />
+                        <br />
                         <Row gutter={[10,10]} className="mb-3">
                           <Col span={24}>
                             <ButtonAction 
@@ -236,6 +240,7 @@ const Home = () => {
                           />
                         </div>
 
+                        <br />
                         <Row gutter={[10,10]}>
                           <Col span={12}>
                             <ButtonAction 
@@ -267,7 +272,8 @@ const Home = () => {
                           />
                         </div>
 
-                        <Row gutter={[10,10]} className="mb-3 mt-4">
+                        <br />
+                        <Row gutter={[10,10]} className="mb-3">
                           <Col span={12}>
                             <ButtonAction 
                               type="text" 
@@ -297,7 +303,7 @@ const Home = () => {
                       preview={false}
                       alt="RSU Bhakti Rahayu"
                       className="text-center px-3"
-                      src="/static/images/write2.svg"
+                      src="/static/images/write2.gif"
                     />
                   </section>
                 </Col>
@@ -327,7 +333,11 @@ const Home = () => {
 
       @media only screen and (max-device-width: 667px) and (-webkit-device-pixel-ratio: 2) {
         :global(.container-height) {
-          height: 100%!important;
+          height: 100%;
+        }
+        :global(.my-5-ip) {
+          margin-top: 6rem!important;
+          margin-bottom: 6rem!important;
         }
       }
       `}</style>

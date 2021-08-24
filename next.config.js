@@ -19,6 +19,11 @@ module.exports = withAntdLess({
     // Will be available on both server and client
     API_URL: process.env.NEXT_PUBLIC_API_URL
   },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
 
   webpack(config) {
     return config;

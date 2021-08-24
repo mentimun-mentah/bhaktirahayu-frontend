@@ -2,6 +2,8 @@ import _ from 'lodash'
 import axios from 'lib/axios'
 import * as actionType from './actionTypes'
 
+import { signature_exp } from 'lib/axios'
+
 /* GET TOTAL DATA ACTIONS */
 const getDashboardTotalDataStart = () => {
   return {
@@ -97,6 +99,7 @@ export const getDashboardChart = ({ period = "week", ...rest }) => {
           done_waiting: reformatDashboard(res.data.done_waiting, 'waiting', 'done', 'Terdaftar', 'Selesai'),
           antigen_p_n: reformatDashboard(res.data.antigen_p_n, 'positive', 'negative', 'Positive', 'Negative'),
           genose_p_n: reformatDashboard(res.data.genose_p_n, 'positive', 'negative', 'Positive', 'Negative'),
+          pcr_p_n: reformatDashboard(res.data.pcr_p_n, 'positive', 'negative', 'Positive', 'Negative'),
         }
         dispatch(getDashboardChartDataSuccess(data))
       })
@@ -109,6 +112,7 @@ export const getDashboardChart = ({ period = "week", ...rest }) => {
                 done_waiting: reformatDashboard(res.data.done_waiting, 'waiting', 'done', 'Terdaftar', 'Selesai'),
                 antigen_p_n: reformatDashboard(res.data.antigen_p_n, 'positive', 'negative', 'Positive', 'Negative'),
                 genose_p_n: reformatDashboard(res.data.genose_p_n, 'positive', 'negative', 'Positive', 'Negative'),
+                pcr_p_n: reformatDashboard(res.data.pcr_p_n, 'positive', 'negative', 'Positive', 'Negative'),
               }
               dispatch(getDashboardChartDataSuccess(data))
             })

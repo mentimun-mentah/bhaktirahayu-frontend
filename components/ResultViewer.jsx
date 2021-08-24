@@ -1,11 +1,25 @@
-import { useRef } from 'react'
-import { Affix, Button, Space, Row, Col } from 'antd'
+import { useRef, useState } from 'react'
+import { Affix, Button, Space, Row, Col, Modal } from 'antd'
 import { exportComponentAsJPEG } from 'react-component-export-image'
+import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack'
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
+import { motion } from 'framer-motion'
 
-import PDFViewer from 'mgr-pdf-viewer-react'
+import Image from 'next/image'
+
+const Loader = '/static/images/loader.gif'
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+const LoadingComponent = () => (
+  <motion.div className="text-center my-5-ip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <Image width={100} height={100} src={Loader} alt="loader" />
+    <div className="fs-14 m-b-10">Loading document...</div>
+  </motion.div>
+)
 
 const ResultViewer = ({ pdf, filename }) => {
   const pdfRef = useRef()
+  const [showButton, setShowButton] = useState(false)
 
   const downloadFile = (blob, fileName) => {
     const link = document.createElement('a');
@@ -22,66 +36,94 @@ const ResultViewer = ({ pdf, filename }) => {
 
   const exportToJpegHandler = () => {
     window && window.scrollTo(0, 0)
-    exportComponentAsJPEG(pdfRef, { fileName: `Test result for ${filename}` })
+    if(pdfRef?.current) exportComponentAsJPEG(pdfRef, { fileName: `Test result for ${filename}` })
+  }
+
+  const onDocumentLoadError = () => {
+    setShowButton(false)
+    Modal.error({
+      centered: true,
+      title: 'The link has been expired or the device is not supported',
+      content: 'Please close this page and try again from the previous page or try again on another device to see the result.',
+    });
+  }
+
+  const onDocumentLoadSuccess = () => {
+    setShowButton(true)
   }
 
   return (
     <>
-      <div className="page A5" id="some-element">
-        <PDFViewer 
-          scale={1.5}
-          ref={pdfRef}
-          document={{ url: pdf }} 
-        />
+      <div className="container-documentation-pdf">
+        <div className="container-documentation-pdf__container__document">
+        <Document
+          file={{ url: pdf }}
+          loading={<LoadingComponent />}
+          onLoadError={onDocumentLoadError}
+          onLoadSuccess={onDocumentLoadSuccess}
+        >
+          <Page 
+            scale={1.5}
+            pageNumber={1} 
+            canvasRef={pdfRef}
+          />
+        </Document>
+        </div>
       </div>
 
-      <Row justify="center">
-        <Col>
-          <Affix offsetBottom={20}>
-            <Space>
-              <Button type="primary" size="large" className="shadow-lg" onClick={exportToJpegHandler}>
-                Download JPEG
-              </Button>
+      {showButton && (
+        <Row justify="center">
+          <Col>
+            <Affix offsetBottom={20}>
+              <Space>
+                <Button type="primary" size="large" className="shadow-lg" onClick={exportToJpegHandler}>
+                  Download JPEG
+                </Button>
 
-              <Button onClick={onDownload} size="large" className="shadow-lg">
-                Download PDF
-              </Button>
-            </Space>
-          </Affix>
-        </Col>
-      </Row>
+                <Button onClick={onDownload} size="large" className="shadow-lg">
+                  Download PDF
+                </Button>
+              </Space>
+            </Affix>
+          </Col>
+        </Row>
+      )}
 
       <style global jsx>{`
       body {
         background: var(--white-smoke); 
       }
-      .page {
-        background: white;
-        display: block;
-        margin: 0 auto;
-        box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+      .container-documentation-pdf__container {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         margin: 10px 0;
+         padding: 10px;
       }
-      .page.A5 {
-        width: 629.295px;
-        height: 892.92px;
+      .container-documentation-pdf__container__load {
+         margin-top: 1em;
+         color: white;
       }
-      @media print {
-        body, page {
-          margin: 0;
-          box-shadow: 0;
-        }
+      .container-documentation-pdf__container__document {
+         margin: 1em 0;
       }
-
-
-      @media only screen and (max-width: 629.295px) {
-        canvas, .page.A5 {
-          width: 100vw!important;
-          height: auto!important;
-        }
+      .container-documentation-pdf__container__document .react-pdf__Document {
+         display: flex;
+         flex-direction: column;
+         align-items: center;
       }
-
-      .mgrpdf-navigation {
-        display: none!important;
+      .container-documentation-pdf__container__document .react-pdf__Page {
+         max-width: calc(100% - 2em);
+         box-shadow: 0 0 8px rgba(0,0,0,0.5);
+         margin: 1em;
+      }
+      .container-documentation-pdf__container__document .react-pdf__Page canvas {
+         max-width: 100%;
+         height: auto !important;
+      }
+      .container-documentation-pdf__container__document .react-pdf__message {
+         padding: 20px;
+         color: white;
       }
 
       `}</style>

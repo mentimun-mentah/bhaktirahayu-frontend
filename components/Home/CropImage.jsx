@@ -50,13 +50,13 @@ const CropImageComponent = ({
         file: { value: [imageFile], isvalid: true, message: null }
       }
 
-      setZoom(1)
-      setRotation(0)
       setImageList(data)
-      setCrop({ x: 0, y: 0 })
       setTimeout(() => {
+        setZoom(1)
+        setRotation(0)
         setImageSrc(null)
         setLoadingImage(false)
+        setCrop({ x: 0, y: 0 })
       }, 200)
     } catch (e) {
       message.error('Terjadi kesalahan saat mengunggah foto!')

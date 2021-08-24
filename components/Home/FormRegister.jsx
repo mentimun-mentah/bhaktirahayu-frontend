@@ -1,8 +1,7 @@
-import { memo, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import { memo, useEffect, useCallback, useMemo } from 'react'
 import { DatePicker, Select, Input, Row, Col, Form } from 'antd'
 
-import { createLogs } from 'lib/logsCreator'
 import { genderList, checkTypeList } from 'data/all'
 import { disabledTomorrow, DATE_FORMAT } from 'lib/disabledDate'
 
@@ -14,12 +13,14 @@ import id_ID from "antd/lib/date-picker/locale/id_ID"
 import axios from 'lib/axios'
 import * as actions from 'store/actions'
 import ErrorMessage from 'components/ErrorMessage'
+import NotFoundSelect from 'components/NotFoundSelect'
 
-const per_page = 20
+const per_page = 10
 
 const FormRegisterContainer = ({ register, setRegister }) => {
   const dispatch = useDispatch()
   const institutions = useSelector(state => state.institution.institution)
+  const loadingInstitutions = useSelector(state => state.institution.loading)
 
   const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id } = register
 
@@ -137,7 +138,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
   }
   /* REGISTER CHANGE FUNCTION */
 
-  const onSearchInstitution = useCallback(val => {
+  const fetchInstitution = useCallback(val => {
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
@@ -146,9 +147,15 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     if(val) queryString["q"] = val
     else delete queryString["q"]
 
-    createLogs({ req: 'onSearchInstitution()', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }, [checking_type.value])
+
+  const onSearchInstitution = useMemo(() => {
+    const loadOptions = val => {
+      fetchInstitution(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchInstitution])
 
   const onFocusInstitution = () => {
     let queryString = {}
@@ -156,7 +163,6 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     queryString["per_page"] = per_page
     queryString["checking_type"] = checking_type?.value
 
-    createLogs({ req: 'onFocusInstitution()', queryString: { ...queryString } })
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
@@ -321,9 +327,13 @@ const FormRegisterContainer = ({ register, setRegister }) => {
                 className="w-100 select-py-2 with-input"
                 value={institution_id.value}
                 onFocus={onFocusInstitution}
-                onSearch={onSearchInstitution}
+                onSearch={val => {
+                  onSearchInstitution(val)
+                  dispatch(actions.getInstitutionStart())
+                }}
                 onChange={e => onChangeHandler(e, "institution_id")}
                 getPopupContainer={triggerNode => triggerNode.parentElement}
+                notFoundContent={<NotFoundSelect loading={loadingInstitutions} />}
                 filterOption={(input, option) =>
                   option?.children?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }

@@ -3,8 +3,9 @@ import { withAuth } from 'lib/withAuth'
 import { useState, useEffect } from 'react'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, message, Grid } from 'antd'
 
+import { useDebounce } from 'lib/useDebounce'
 import { formGuardian } from 'formdata/guardian'
 import { columns_guardian } from 'data/tableGuardian'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
@@ -47,10 +48,12 @@ const ProductCellEditable = ({ index, record, editable, type, onDeleteHandler, o
 const per_page = 20
 const addTitle = "Tambah Penjamin"
 const editTitle = "Edit Penjamin"
+const useBreakpoint = Grid.useBreakpoint
 message.config({ maxCount: 1 })
 
 const GuardiansContainer = () => {
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const guardians = useSelector(state => state.guardian.guardian)
 
@@ -60,6 +63,8 @@ const GuardiansContainer = () => {
   const [page, setPage] = useState(guardians?.page)
   const [guardian, setGuardian] = useState(formGuardian)
   const [modalTitle, setModalTitle] = useState(addTitle)
+
+  const debouncedSearchGuardian = useDebounce(q, 500)
 
   const onCloseModalHandler = () => {
     setShowModal(false)
@@ -130,25 +135,40 @@ const GuardiansContainer = () => {
     dispatch(actions.getGuardian({...queryString}))
   }, [page])
 
-  useEffect(() => {
+
+  const fetchGuardian = val => {
     setPage(1)
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(q) queryString["q"] = q
+    if(val) queryString["q"] = val
     else delete queryString["q"]
-
-    dispatch(actions.getGuardian({...queryString}))
-  }, [q])
+    dispatch(actions.getGuardian({ ...queryString }))
+  }
 
   useEffect(() => {
-    if(guardians && guardians.data && guardians.data.length < 1 && guardians.page > 1 && guardians.total > 1){
-      setPage(guardians.page - 1)
+    fetchGuardian(debouncedSearchGuardian)
+  }, [debouncedSearchGuardian])
+
+
+  useEffect(() => {
+    if(guardians && guardians?.data && guardians?.data?.length < 1 && guardians?.page > 1 && guardians?.total > 1){
+      setPage(guardians?.page - 1)
     }
   }, [guardians])
 
-
+  let scrollY = 'calc(100vh - 300px)'
+  if(guardians?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(88vh - 195px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
+    else scrollY = 'calc(100vh - 255px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(88vh - 234px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
+    else scrollY = 'calc(100vh - 300px)'
+  } 
 
   return (
     <>
@@ -192,7 +212,7 @@ const GuardiansContainer = () => {
             columns={columnsGuardians}
             dataSource={guardians?.data} 
             rowKey={record => record.guardians_id}
-            scroll={{ y: 485, x: 800 }} 
+            scroll={{ y: scrollY, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -221,7 +241,7 @@ const GuardiansContainer = () => {
         isUpdate={isUpdate}
         dataGuardian={guardian}
         setIsUpdate={setIsUpdate}
-        getGuardian={() => dispatch(actions.getGuardian({ page: 1, per_page: per_page, q: '' }))}
+        getGuardian={() => dispatch(actions.getGuardian({ page: page, per_page: per_page, q: q }))}
         onCloseHandler={onCloseModalHandler}
       />
     </>

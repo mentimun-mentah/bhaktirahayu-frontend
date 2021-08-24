@@ -3,9 +3,10 @@ import { Card } from 'react-bootstrap'
 import { withAuth } from 'lib/withAuth'
 import { SearchOutlined } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
-import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, Dropdown, Menu } from 'antd'
+import { Form, Input, Row, Col, Button, Space, Tooltip, Popconfirm, Dropdown, Menu, Grid } from 'antd'
 
 import { formImage } from 'formdata/image'
+import { useDebounce } from 'lib/useDebounce'
 import { columns_instansi } from 'data/tableInstansi'
 import { formInstitution } from 'formdata/institution'
 import { jsonHeaderHandler, formErrorMessage, signature_exp } from 'lib/axios'
@@ -34,8 +35,9 @@ const ProductCellEditable = (
 
   if(editable){
     let availableCheckType = []
-    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
     if(record?.institutions_antigen) availableCheckType.push({label: 'Antigen', value: 'antigen'})
+    if(record?.institutions_genose) availableCheckType.push({label: 'GeNose', value: 'genose'})
+    if(record?.institutions_pcr) availableCheckType.push({label: 'PCR', value: 'pcr'})
 
     childNode = (
       type === "action" && (
@@ -70,9 +72,11 @@ const ProductCellEditable = (
 const per_page = 20
 const addTitle = "Tambah Instansi"
 const editTitle = "Edit Instansi"
+const useBreakpoint = Grid.useBreakpoint
 
 const InstitutionContainer = () => {
   const dispatch = useDispatch()
+  const screens = useBreakpoint()
 
   const institutions = useSelector(state => state.institution.institution)
 
@@ -81,10 +85,13 @@ const InstitutionContainer = () => {
   const [isUpdate, setIsUpdate] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [modalTitle, setModalTitle] = useState(addTitle)
+  const [imagePcr, setImagePcr] = useState(formImage)
   const [imageStamp, setImageStamp] = useState(formImage)
   const [imageGenose, setImageGenose] = useState(formImage)
   const [imageAntigen, setImageAntigen] = useState(formImage)
   const [institution, setInstitution] = useState(formInstitution)
+
+  const debouncedSearchInstitution = useDebounce(q, 500)
 
   const columnsInstitution = columns_instansi.map(col => {
     if (!col.editable) return col;
@@ -134,6 +141,21 @@ const InstitutionContainer = () => {
       checking_type.push('genose')
     }
 
+    if(record.institutions_pcr !== null) {
+      const dataPcr = {
+        file: { 
+          value: [{
+            uid: -Math.abs(Math.random()),
+            url: `${process.env.NEXT_PUBLIC_API_URL}/static/institution/${record.institutions_pcr}`
+          }], 
+          isValid: true, 
+          message: null 
+        }
+      }
+      setImagePcr(dataPcr)
+      checking_type.push('pcr')
+    }
+
     const dataStamp = {
       file: { 
         value: [{
@@ -160,17 +182,15 @@ const InstitutionContainer = () => {
 
   const onPreviewDocument = (institution_id, checking_type) => {
     const params = { checking_type: checking_type }
-    axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+    axios.get(`/covid-checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
       .then(res => {
-        console.log(res.data)
         pdfGenerator(res.data)
       })
       .catch(err => {
         const errDetail = err.response?.data.detail
         if(errDetail === signature_exp){
-          axios.get(`/covid_checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
+          axios.get(`/covid-checkups/preview-document/${institution_id}`, { params: params }, jsonHeaderHandler())
             .then(res => {
-              console.log(res.data)
               pdfGenerator(res.data)
             })
         } else if(typeof(errDetail) === "string") {
@@ -210,6 +230,7 @@ const InstitutionContainer = () => {
   const onCloseModalHandler = () => {
     setShowModal(false)
     setModalTitle(addTitle)
+    setImagePcr(formImage)
     setImageStamp(formImage)
     setImageGenose(formImage)
     setImageAntigen(formImage)
@@ -225,26 +246,43 @@ const InstitutionContainer = () => {
     if(q) queryString["q"] = q
     else delete queryString["q"]
 
-    dispatch(actions.getInstitution({...queryString}))
+    dispatch(actions.getInstitution({ ...queryString }))
   }, [page])
 
-  useEffect(() => {
+
+  const fetchInstitution = val => {
     setPage(1)
     let queryString = {}
     queryString["page"] = 1
     queryString["per_page"] = per_page
 
-    if(q) queryString["q"] = q
+    if(val) queryString["q"] = val
     else delete queryString["q"]
+    dispatch(actions.getInstitution({ ...queryString }))
+  }
 
-    dispatch(actions.getInstitution({...queryString}))
-  }, [q])
+  useEffect(() => {
+    fetchInstitution(debouncedSearchInstitution)
+  }, [debouncedSearchInstitution])
+
 
   useEffect(() => {
     if(institutions && institutions.data && institutions.data.length < 1 && institutions.page > 1 && institutions.total > 1){
       setPage(institutions.page - 1)
     }
   }, [institutions])
+
+  let scrollY = 'calc(100vh - 300px)'
+  if(institutions?.iter_pages?.length === 1) { // if pagination is hidden
+    if(screens.xs) scrollY = 'calc(88vh - 195px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 255px)'
+    else scrollY = 'calc(100vh - 255px)'
+  }
+  else { // when pagination is shown
+    if(screens.xs) scrollY = 'calc(88vh - 234px)'
+    else if(screens.sm && !screens.md) scrollY = 'calc(100vh - 300px)'
+    else scrollY = 'calc(100vh - 300px)'
+  } 
 
   return (
     <>
@@ -288,7 +326,7 @@ const InstitutionContainer = () => {
             columns={columnsInstitution}
             dataSource={institutions?.data} 
             rowKey={record => record.institutions_id}
-            scroll={{ y: 485, x: 800 }} 
+            scroll={{ y: scrollY, x: 800 }} 
             components={{ body: { cell: ProductCellEditable } }}
           />
 
@@ -315,12 +353,13 @@ const InstitutionContainer = () => {
         visible={showModal}
         isUpdate={isUpdate}
         setIsUpdate={setIsUpdate}
+        dataPcr={imagePcr}
         dataStamp={imageStamp}
         dataGenose={imageGenose}
         dataAntigen={imageAntigen}
         dataInstitution={institution}
         onCloseHandler={onCloseModalHandler}
-        getInstitution={() => dispatch(actions.getInstitution({ page: 1, per_page: per_page, q: '', checking_type: '' }))}
+        getInstitution={() => dispatch(actions.getInstitution({ page: page, per_page: per_page, q: q }))}
       />
     </>
   )

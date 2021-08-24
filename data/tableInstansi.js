@@ -39,6 +39,21 @@ export const columns_instansi = [
     ) : <i className="far fa-times"></i>,
   },
   {
+    title: 'PCR',
+    dataIndex: 'institutions_pcr',
+    key: 'institutions_pcr',
+    align: 'center',
+    width: 200,
+    render: (item) => item ? (
+      <Image
+        className="bor-rad-5px"
+        height={40}
+        src={`${process.env.NEXT_PUBLIC_API_URL}/static/institution/${item}`}
+        alt="kop-pcr" 
+      />
+    ) : <i className="far fa-times"></i>,
+  },
+  {
     title: 'Cap',
     dataIndex: 'institutions_stamp',
     key: 'institutions_stamp',

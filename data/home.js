@@ -28,7 +28,7 @@ export const preparation_list = [
 export const howToCrop = (
   <>
     <AntImage
-      src="/static/images/how_to_crop_2.png"
+      src="/static/images/how_to_crop.png"
       alt="how to crop"
     />
     <p className="mb-0">
