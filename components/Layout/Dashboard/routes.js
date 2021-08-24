@@ -59,13 +59,13 @@ export const dashboard_routes = [
     label: 'Profile',
     role: ['admin','doctor']
   },
-  {
-    key: GUIDES,
-    icon: 'far fa-book',
-    route: '/guides',
-    label: 'Panduan',
-    role: ['admin','doctor','']
-  },
+  // {
+  //   key: GUIDES,
+  //   icon: 'far fa-book',
+  //   route: '/guides',
+  //   label: 'Panduan',
+  //   role: ['admin','doctor','']
+  // },
   {
     key: LOGOUT,
     icon: 'far fa-sign-out',
