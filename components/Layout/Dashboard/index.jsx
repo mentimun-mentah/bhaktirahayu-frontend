@@ -52,7 +52,7 @@ const DashboardLayout = ({ children }) => {
       dispatch(actions.logout())
       if(typeof window !== 'undefined') window.location.replace('/')
       router.replace('/')
-    }, 1000)
+    }, 700)
   }
 
   const renderSidemenu = useCallback(() => {
