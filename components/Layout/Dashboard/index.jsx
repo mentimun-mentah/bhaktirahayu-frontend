@@ -48,8 +48,11 @@ const DashboardLayout = ({ children }) => {
 
   const onLogoutHandler = () => {
     dispatch(actions.logout())
-    if(typeof window !== 'undefined') window.location.replace('/')
-    router.replace('/')
+    setTimeout(() => {
+      dispatch(actions.logout())
+      if(typeof window !== 'undefined') window.location.replace('/')
+      router.replace('/')
+    }, 1000)
   }
 
   const renderSidemenu = useCallback(() => {

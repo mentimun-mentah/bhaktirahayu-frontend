@@ -76,7 +76,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
   const [checkup, setCheckup] = useState(formCheckup)
   const [showCheckupDrawer, setShowCheckupDrawer] = useState(false)
 
-  const { nik, name, birth_place, birth_date, gender, address, covid_checkups } = patient
+  const { nik, name, birth_place, birth_date, gender, address, phone, covid_checkups } = patient
 
   const onCloseDetailPatientDrawerHandler = e => {
     e?.preventDefault()
@@ -246,6 +246,10 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
             <tr>
               <th scope="row">Alamat</th>
               <td>{address.value}</td>
+            </tr>
+            <tr>
+              <th scope="row">No. Telepon</th>
+              <td>{phone.value}</td>
             </tr>
           </tbody>
         </table>
