@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { Layout, Menu, Grid, Button, Drawer } from 'antd'
 import { useState, useEffect, useCallback, memo } from 'react'
 
-import { dashboard_routes, DASHBOARD, LOGOUT, CLIENTS } from './routes'
+import { dashboard_routes, DASHBOARD, LOGOUT, CLIENTS, GUIDES } from './routes'
 
 import _ from 'lodash'
 import Image from 'next/image'
@@ -55,6 +55,12 @@ const DashboardLayout = ({ children }) => {
     }, 700)
   }
 
+  const onRedirectGuides = (url) => {
+    const openWindow = window.open('', '_blank')
+    if(openWindow) openWindow.location = url // open document on new window
+    else window.location.assign(url) // work on same tab
+  }
+
   const renderSidemenu = useCallback(() => {
     return dashboard_routes.map(route => {
       if(isIn(users?.role || "", route.role)) {
@@ -63,7 +69,12 @@ const DashboardLayout = ({ children }) => {
             key={route.key} 
             className="user-select-none"
             icon={<i className={route.icon} />}
-            onClick={route.key === LOGOUT ? () => onLogoutHandler() : (router.pathname === "/dashboard/clients" && route.key === CLIENTS) ? () => {} : () => router.push(route.route)}
+            onClick={
+              route.key === LOGOUT ? () => onLogoutHandler() : 
+              route.key === GUIDES ? () => onRedirectGuides(route.route) : 
+              (router.pathname === "/dashboard/clients" && route.key === CLIENTS) ? () => {} : 
+              () => router.push(route.route)
+            }
           >
             {route.label}
           </Menu.Item>
