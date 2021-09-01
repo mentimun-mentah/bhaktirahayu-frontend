@@ -4,6 +4,7 @@ const imageDomains = process.env.NEXT_PUBLIC_IMAGE_HOSTNAME ? process.env.NEXT_P
 
 module.exports = withAntdLess({
   modifyVars: theme,
+  generateEtags: false,
   reactStrictMode: false,
   images: {
     deviceSizes: [320, 420, 768, 1024, 1200],

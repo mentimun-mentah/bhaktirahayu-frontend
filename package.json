@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ant-design/charts": "^1.2.8",
     "antd": "^4.16.9",
     "apexcharts": "^3.27.3",
     "axios": "^0.21.1",
@@ -22,7 +21,6 @@
     "html2canvas": "^1.1.4",
     "jspdf": "^2.3.1",
     "jspdf-autotable": "^3.5.15",
-    "mgr-pdf-viewer-react": "^1.0.3",
     "moment": "^2.29.1",
     "next": "11.0.1",
     "next-plugin-antd-less": "^1.3.0",
@@ -34,7 +32,6 @@
     "react-dom": "17.0.2",
     "react-easy-crop": "^3.5.2",
     "react-pdf": "^5.3.2",
-    "react-perspective-cropper": "git+https://github.com/paulussimanjuntak/react-perspective-cropper.git",
     "react-redux": "^7.2.4",
     "react-signature-canvas": "^1.0.3",
     "redux": "^4.1.0",

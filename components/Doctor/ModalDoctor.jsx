@@ -64,7 +64,7 @@ const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChan
           transition={{ duration: ".2" }}
         >
           <Upload
-            accept="image/jpeg,image/png"
+            accept="image/png"
             listType="picture-card"
             className={`${!file.isValid && file.message ? 'ant-image-error' : ''} signature-uploader`}
             disabled={loading}
@@ -108,26 +108,6 @@ const SignatureComponent = ({ file, loading, setLoading, imagePreview, imageChan
                   <p className="mb-0">Buat tanda tangan</p>
                 </div>
               </Button>
-            </Col>
-            <Col span="auto" className="text-muted user-select-none text-center">
-              <div className="w-170">
-                atau
-              </div>
-            </Col>
-            <Col span="auto">
-              <Upload
-                accept="image/jpeg,image/png"
-                listType="picture-card"
-                className={`${!file.isValid && file.message ? 'ant-image-error' : ''} signature-uploader`}
-                disabled={loading}
-                onPreview={imagePreview}
-                onChange={imageChangeHandler}
-                onRemove={onRemoveImageHandler}
-                fileList={file.value}
-                beforeUpload={(f) => imageValidation(f, "image", config.url, config.method, setLoading, () => {}, "")}
-              >
-                {file.value.length >= 1 ? null : uploadButton(loading)}
-              </Upload>
             </Col>
           </Row>
           <ErrorMessage item={file} />
