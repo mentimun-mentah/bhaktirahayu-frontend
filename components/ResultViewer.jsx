@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { Affix, Button, Space, Row, Col, Modal } from 'antd'
-import { exportComponentAsJPEG } from 'react-component-export-image'
 import { Document, Page, pdfjs } from 'react-pdf/dist/esm/entry.webpack'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import { motion } from 'framer-motion'
@@ -34,11 +33,6 @@ const ResultViewer = ({ pdf, filename }) => {
     downloadFile(pdf, `Test result for ${filename}`)
   }
 
-  const exportToJpegHandler = () => {
-    window && window.scrollTo(0, 0)
-    if(pdfRef?.current) exportComponentAsJPEG(pdfRef, { fileName: `Test result for ${filename}` })
-  }
-
   const onDocumentLoadError = () => {
     setShowButton(false)
     Modal.error({
@@ -52,6 +46,11 @@ const ResultViewer = ({ pdf, filename }) => {
     setShowButton(true)
   }
 
+  const printHandler = (event) => {
+    event.preventDefault();
+    window.open(pdf, "PRINT");
+  }
+
   return (
     <>
       <div className="container-documentation-pdf">
@@ -61,6 +60,7 @@ const ResultViewer = ({ pdf, filename }) => {
           loading={<LoadingComponent />}
           onLoadError={onDocumentLoadError}
           onLoadSuccess={onDocumentLoadSuccess}
+          onContextMenu={(e) => e.preventDefault()}
         >
           <Page 
             scale={1.5}
@@ -76,8 +76,8 @@ const ResultViewer = ({ pdf, filename }) => {
           <Col>
             <Affix offsetBottom={20}>
               <Space>
-                <Button type="primary" size="large" className="shadow-lg" onClick={exportToJpegHandler}>
-                  Download JPEG
+                <Button type="primary" size="large" className="shadow-lg" onClick={printHandler}>
+                  Print PDF
                 </Button>
 
                 <Button onClick={onDownload} size="large" className="shadow-lg">
