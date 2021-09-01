@@ -359,12 +359,6 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
                   setShowModalSignature={setShowModalSignature}
                 />
               </Form>
-
-              <h2 className="fs-14 bold m-b-0 mt-3">Note:</h2>
-              <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
-                <li>Ukuran file: maks. 5MB</li>
-                <li>Ukuran gambar: 500 × 500 px</li>
-              </ul>
             </Tabs.TabPane>
 
             <Tabs.TabPane tab="Reset Password" key="password">
@@ -408,8 +402,6 @@ const ModalDoctor = ({ title, visible, onCloseHandler, isUpdate, setIsUpdate, da
             />
             <h2 className="fs-14 bold m-b-0 mt-3">Note:</h2>
             <ul className="mb-0" style={{ paddingInlineStart: '25px' }}>
-              <li>Ukuran file: maks. 5MB</li>
-              <li>Ukuran gambar: 500 × 500 px</li>
               <li>Password default adalah <mark>bhaktirahayu</mark></li>
               <li>Silahkan beritahu dokter yang bersangkutan untuk login menggunakan password <mark>bhaktirahayu</mark> dan mengubah passwordnya pada halaman profile
               </li>
