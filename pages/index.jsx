@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Container } from 'react-bootstrap'
+import { motion } from 'framer-motion'
+import { useSelector } from 'react-redux'
+import { Container, Card } from 'react-bootstrap'
 import { LoadingOutlined } from '@ant-design/icons'
-import { message, Modal, Row, Col, Steps, Button, Image as AntImage } from 'antd'
+import { message, Modal, Row, Col, Steps, Button, Image as AntImage, Radio } from 'antd'
 
 import { formImage } from 'formdata/image'
 import { formErrorMessage, errPhone } from 'lib/axios'
 import { formIdentityCard } from 'formdata/identityCard'
 import { DATE_FORMAT } from 'lib/disabledDate'
-import { step_list } from 'data/home'
+import { step_list, document_list, role_list } from 'data/home'
 import { formRegister, formRegisterIsValid } from 'formdata/register'
 
 import _ from 'lodash'
@@ -30,7 +32,13 @@ const ButtonAction = ({ onClick, title, type, disabled }) => (
   </Button>
 )
 
+const DOCTOR = role_list[1].value
+const PATIENT = role_list[0].value
+const PASPOR = document_list[1].value
+
 const Home = () => {
+  const user = useSelector(state => state.auth.user)
+
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [imageSrc, setImageSrc] = useState(null)
@@ -39,17 +47,24 @@ const Home = () => {
   const [loadingImage, setLoadingImage] = useState(false)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
   const [identityCard, setIdentityCard] = useState(formIdentityCard)
+  const [userRole, setUserRole] = useState(role_list[0].value)
 
   const { file } = imageList
   const { kind } = identityCard
-  const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id } = register
+  const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id, location_service_id, type_identity } = register
 
   const onNextStep = val => setStep(val)
+  const LAST_STEP = step === (step_list.length - 1)
 
   const onSubmitHandler = e => {
     e.preventDefault()
-    if(formRegisterIsValid(register, setRegister)) {
+    let isPaspor = false
+    if(type_identity?.value?.toLowerCase() === PASPOR) isPaspor = true
+    else isPaspor = false
+
+    if(formRegisterIsValid(register, setRegister, isPaspor)) {
       setLoading(true)
+
       const data = {
         nik: nik?.value.toUpperCase(),
         name: name?.value.toUpperCase(),
@@ -59,8 +74,13 @@ const Home = () => {
         address: address?.value.toUpperCase(),
         phone: phone?.value,
         checking_type: checking_type?.value,
-        institution_id: institution_id?.value
+        institution_id: institution_id?.value,
+        type_identity: type_identity?.value?.toLowerCase(),
       }
+      if(location_service_id && location_service_id?.value && location_service_id?.value.length > 0) {
+        data['location_service_id'] = location_service_id?.value
+      }
+
       axios.post('/clients/create', data)
         .then(res => {
           setStep(0)
@@ -87,7 +107,11 @@ const Home = () => {
           else {
             errDetail.map((data) => {
               const key = data.loc[data.loc.length - 1];
-              if(state[key]) {
+              if(key === "type_identity") {
+                state['nik'].isValid = false
+                state['nik'].message = data.msg
+              }
+              else if(state[key]) {
                 state[key].isValid = false
                 state[key].message = data.msg
               }
@@ -100,8 +124,9 @@ const Home = () => {
 
   const onUploadPhotoHandler = e => {
     e.preventDefault()
+
     if(file.value.length <= 0) {
-      setStep(2)
+      setStep(type_identity?.value?.toLowerCase() === PASPOR ? 4 : 4)
       return
     }
     setLoading(true)
@@ -131,7 +156,7 @@ const Home = () => {
           }
         }
         setRegister(state)
-        setStep(2)
+        setStep(4)
       })
       .catch(err => {
         setLoading(false)
@@ -168,6 +193,19 @@ const Home = () => {
       })
   }
 
+  /* REGISTER CHANGE FUNCTION */
+  const onChangeHandler = (e, item) => {
+    const name = !item && e.target.name;
+    const value = !item && e.target.value;
+
+    const data = {
+      ...register,
+      [name]: { ...register[name], value: value, isValid: true, message: null }
+    }
+    setRegister(data)
+  }
+  /* REGISTER CHANGE FUNCTION */
+
   return (
     <>
       <Container className="container-height">
@@ -195,17 +233,18 @@ const Home = () => {
                     <div className="w-100 user-select-none">
                       <h6 className="text-center font-weight-bold mb-4">{step_list[step].title}</h6>
                       <Steps size="small" current={step} className="w-100 check-item-step mb-2">
-                        <Steps.Step />
-                        <Steps.Step />
-                        <Steps.Step 
-                          icon={
-                            <AntImage 
-                              preview={false} 
-                              width={24} height={24} 
-                              src={`/static/images/fireworks${step == 2 ? '-green' : ''}.svg`} 
-                            />
-                          } 
-                        />
+                        {[...Array(step_list.length)].map((_,i) => (
+                          <Steps.Step 
+                            key={i} 
+                            icon={i === (step_list.length - 1) ?
+                              <AntImage 
+                                preview={false} 
+                                width={24} height={24} 
+                                src={`/static/images/fireworks${step === (step_list.length - 1) ? '-green' : ''}.svg`} 
+                              /> : false
+                            } 
+                          />
+                        ))}
                       </Steps>
                     </div>
 
@@ -213,21 +252,149 @@ const Home = () => {
 
                     {step == 0 && (
                       <>
-                        <PreparationContainer />
+                        <div className="d-flex flex-column justify-content-center">
+                          <h5 className="mb-4">Kamu disini sebagai apa ?</h5>
+                          <Radio.Group 
+                            value={userRole} 
+                            onChange={e => setUserRole(e?.target?.value)} 
+                          >
+                            {role_list.map((data) => (
+                              <motion.div
+                                key={data.value} 
+                                whileHover={{ boxShadow: '0 .125rem .25rem rgba(0,0,0,.075)' }}
+                                whileTap={{ scale: 0.97, y: 0 }}
+                                className="card card-checkup-type mb-3"
+                              >
+                                <Card.Body className="p-2 pl-3 user-select-none">
+                                  <Radio value={data.value} key={data.value} className="radio-checkup-list"> 
+                                    <Row align="middle">
+                                      <Col span={18}>{data.title}</Col>
+                                      <Col span={6}>
+                                        <div className="float-right">
+                                          <AntImage
+                                            width={50}
+                                            height={50}
+                                            preview={false}
+                                            src={data.image}
+                                            alt="chekcup-list"
+                                          />
+                                        </div>
+                                      </Col>
+                                    </Row>
+                                  </Radio>
+                                </Card.Body>
+                              </motion.div>
+                            ))}
+                          </Radio.Group>
+                        </div>
+
                         <br />
-                        <Row gutter={[10,10]} className="mb-3">
+                        <Row gutter={[10,10]}>
                           <Col span={24}>
-                            <ButtonAction 
-                              type="primary" 
-                              title="Berikutnya"
-                              onClick={() => onNextStep(1)}
-                            />
+                            {userRole === DOCTOR && (
+                              <a href="/login">
+                                <ButtonAction type="primary" title="Berikutnya" />
+                              </a>
+                            )}
+                            {userRole === PATIENT && (
+                              <ButtonAction 
+                                type="primary" 
+                                title="Berikutnya"
+                                onClick={() => onNextStep(1)}
+                              />
+                            )}
                           </Col>
                         </Row>
                       </>
                     )}
 
                     {step == 1 && (
+                      <>
+                        <PreparationContainer />
+                        <br />
+                        <Row gutter={[10,10]} className="mb-3">
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="text" 
+                              title="Sebelumnya"
+                              disabled={loading}
+                              onClick={() => onNextStep(0)}
+                            />
+                          </Col>
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="primary"
+                              title="Berikutnya"
+                              disabled={loading}
+                              onClick={() => onNextStep(2)}
+                            />
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+
+                    {step == 2 && (
+                      <>
+                        <div className="d-flex flex-column justify-content-center">
+                          <h5 className="mb-4">Pilih Jenis Dokumen</h5>
+                          <Radio.Group 
+                            name="type_identity"
+                            value={type_identity.value?.toLowerCase()}
+                            onChange={onChangeHandler} 
+                          >
+                            {document_list.map((data) => (
+                              <motion.div
+                                key={data.value} 
+                                whileHover={{ boxShadow: '0 .125rem .25rem rgba(0,0,0,.075)' }}
+                                whileTap={{ scale: 0.97, y: 0 }}
+                                className="card card-checkup-type mb-3"
+                              >
+                                <Card.Body className="p-2 pl-3 user-select-none">
+                                  <Radio value={data.value} key={data.value} className="radio-checkup-list"> 
+                                    <Row align="middle">
+                                      <Col span={18}>{data.title}</Col>
+                                      <Col span={6}>
+                                        <div className="float-right">
+                                          <AntImage
+                                            width={50}
+                                            height={50}
+                                            preview={false}
+                                            src={data.image}
+                                            alt="chekcup-list"
+                                          />
+                                        </div>
+                                      </Col>
+                                    </Row>
+                                  </Radio>
+                                </Card.Body>
+                              </motion.div>
+                            ))}
+                          </Radio.Group>
+                        </div>
+
+                        <br />
+                        <Row gutter={[10,10]}>
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="text" 
+                              title="Sebelumnya"
+                              disabled={loading}
+                              onClick={() => onNextStep(1)}
+                            />
+                          </Col>
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="primary"
+                              title="Berikutnya"
+                              disabled={loading}
+                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 4 : 3)}
+                            />
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+
+                    {step == 3 && (
                       <>
                         <div className="d-flex flex-column justify-content-center">
                           <CardUploadContainer 
@@ -247,7 +414,7 @@ const Home = () => {
                               type="text" 
                               title="Sebelumnya"
                               disabled={loading}
-                              onClick={() => onNextStep(0)}
+                              onClick={() => onNextStep(2)}
                             />
                           </Col>
                           <Col span={12}>
@@ -262,10 +429,10 @@ const Home = () => {
                       </>
                     )}
 
-                    {step == 2 && (
+                    {LAST_STEP && (
                       <>
                         <div className="d-flex flex-column w-100">
-                          <h5 className="mb-3">Cek dulu data KTP / KIS kamu yuk 👌</h5>
+                          <h5 className="mb-3">Cek dulu data KTP / KIS / Paspor kamu yuk 👌</h5>
                           <FormRegisterContainer 
                             register={register}
                             setRegister={setRegister}
@@ -279,7 +446,7 @@ const Home = () => {
                               type="text" 
                               title="Sebelumnya"
                               disabled={loading}
-                              onClick={() => onNextStep(1)} 
+                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 2 : 3)}
                             />
                           </Col>
                           <Col span={12}>
@@ -329,6 +496,10 @@ const Home = () => {
       :global(.container-height) {
         height: 100vh;
         max-height: 100vh;
+      }
+
+      :global(.radio-checkup-list, .radio-checkup-list > span:last-child) {
+        width: 100%!important;
       }
 
       @media only screen and (max-device-width: 667px) and (-webkit-device-pixel-ratio: 2) {

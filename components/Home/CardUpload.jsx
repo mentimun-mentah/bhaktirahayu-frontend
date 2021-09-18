@@ -4,12 +4,15 @@ import { Form, Upload, Radio } from 'antd'
 
 import Image from 'next/image'
 
+import { document_list } from 'data/home'
 import { formImage } from 'formdata/image'
 import { imagePreview, uploadButton, imageValidationNoHeader, getBase64, fixRotationOfFile } from 'lib/imageUploader'
 
 import ErrorMessage from 'components/ErrorMessage'
 
 const Loader = '/static/images/loader.gif'
+
+const PASPOR = document_list[1].value
 
 const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, identityCard, setIdentityCard }) => {
   const [loadingImage, setLoadingImage] = useState(false)
@@ -69,6 +72,7 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
       ) : (
         <div className="text-center">
           <Upload
+            disabled={kind.value === PASPOR}
             accept="image/jpeg,image/png"
             listType="picture-card"
             className="ktp-kis-uploader text-center user-select-none"
@@ -101,11 +105,22 @@ const CardUploadContainer = ({ loading, imageList, setImageList, setImageSrc, id
             </Form.Item>
           </Form>
 
-          <h5 className="mb-1 mt-2">Sekarang foto {kind.value.toUpperCase()} kamu 👤 </h5>
-          <p className="text-muted text-center">
-            Upload foto {kind.value.toUpperCase()} kamu agar mempercepat registrasi, 
-            kamu juga bisa melewati proses ini dan mengisi identitasmu secara manual pada proses selanjutnya ✌
-          </p>
+          {kind.value === PASPOR ? (
+            <>
+              <h5 className="mb-1 mt-2">Sekarang klik berikutnya ya 👌 </h5>
+              <p className="text-muted text-center">
+                Agar kamu bisa mengisi identitasmu secara manual pada proses selanjutnya ✌
+              </p>
+            </>
+          ) : (
+            <>
+              <h5 className="mb-1 mt-2">Sekarang foto {kind.value.toUpperCase()} kamu 👤 </h5>
+              <p className="text-muted text-center">
+                Upload foto {kind.value.toUpperCase()} kamu agar mempercepat registrasi, 
+                kamu juga bisa melewati proses ini dan mengisi identitasmu secara manual pada proses selanjutnya ✌
+              </p>
+            </>
+          )}
         </div>
       )}
 

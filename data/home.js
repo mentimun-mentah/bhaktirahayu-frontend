@@ -1,9 +1,37 @@
 import { Image as AntImage } from 'antd'
 
 export const step_list = [
+  { title: 'Pendahuluan', },
   { title: 'Persiapan', },
+  { title: "Dokumen" },
   { title: 'Foto KTP / KIS', },
   { title: 'Registrasi', }
+]
+
+export const document_list = [
+  {
+    title: 'KTP / KIS',
+    value: 'nik',
+    image: '/static/images/id-card.png'
+  },
+  {
+    title: 'PASPOR',
+    value: 'paspor',
+    image: '/static/images/passport.png'
+  }
+]
+
+export const role_list = [
+  {
+    title: 'Pasien',
+    value: 'patient',
+    image: '/static/images/customer.png'
+  },
+  {
+    title: 'Dokter',
+    value: 'doctor',
+    image: '/static/images/medical-team.png'
+  }
 ]
 
 export const preparation_list = [

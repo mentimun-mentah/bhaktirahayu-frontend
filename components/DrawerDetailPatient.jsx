@@ -228,7 +228,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
         <table className="table mb-4">
           <tbody>
             <tr>
-              <th className="border-0" scope="row">NIK</th>
+              <th className="border-0" scope="row">NIK / Paspor</th>
               <td className="border-0">{nik.value}</td>
             </tr>
             <tr>

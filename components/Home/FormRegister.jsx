@@ -1,7 +1,9 @@
+import { CloseCircleFilled } from '@ant-design/icons'
 import { useSelector, useDispatch } from 'react-redux'
 import { memo, useEffect, useCallback, useMemo } from 'react'
 import { DatePicker, Select, Input, Row, Col, Form } from 'antd'
 
+import { document_list } from 'data/home'
 import { genderList, checkTypeList } from 'data/all'
 import { disabledTomorrow, DATE_FORMAT } from 'lib/disabledDate'
 
@@ -16,13 +18,18 @@ import ErrorMessage from 'components/ErrorMessage'
 import NotFoundSelect from 'components/NotFoundSelect'
 
 const per_page = 10
+const NIK = document_list[0].value
 
 const FormRegisterContainer = ({ register, setRegister }) => {
   const dispatch = useDispatch()
+
   const institutions = useSelector(state => state.institution.institution)
   const loadingInstitutions = useSelector(state => state.institution.loading)
 
-  const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id } = register
+  const locationServices = useSelector(state => state.locationService.locationService)
+  const loadingLocationServices = useSelector(state => state.locationService.loading)
+
+  const { nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id, location_service_id, type_identity } = register
 
   const getDataByNik = (nik) => {
     const query = { nik: nik }
@@ -51,7 +58,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
           }
           setRegister(state)
         }
-        else if(res?.data === null) {
+        else if(res?.data === null && type_identity?.value?.toLowerCase() === NIK) {
           getInfoByNik(nik)
         }
         else {
@@ -94,8 +101,17 @@ const FormRegisterContainer = ({ register, setRegister }) => {
 
     if(item === "nik"){
       const { value } = e.target;
-      const reg = /^-?\d*(\.\d*)?$/;
-      if ((!isNaN(value) && reg.test(value)) || value === '') {
+      if(type_identity?.value?.toLowerCase() === NIK) {
+        const reg = /^-?\d*(\.\d*)?$/;
+        if ((!isNaN(value) && reg.test(value)) || value === '') {
+          const data = {
+            ...register,
+            nik: { ...register['nik'], value: value, isValid: true, message: null }
+          }
+          setRegister(data)
+        }
+      } 
+      else {
         const data = {
           ...register,
           nik: { ...register['nik'], value: value, isValid: true, message: null }
@@ -136,6 +152,14 @@ const FormRegisterContainer = ({ register, setRegister }) => {
       setRegister(data)
     }
   }
+
+  const onClearSelectHandler = (item) => {
+    const data = {
+      ...register,
+      [item]: { value: [], isValid: true, message: null }
+    }
+    setRegister(data)
+  }
   /* REGISTER CHANGE FUNCTION */
 
   const fetchInstitution = useCallback(val => {
@@ -166,8 +190,34 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     dispatch(actions.getInstitution({ ...queryString }))
   }
 
+  const fetchLocationServices = useCallback(val => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    if(val) queryString["q"] = val
+    else delete queryString["q"]
+
+    dispatch(actions.getLocationService({ ...queryString }))
+  }, [])
+
+  const onSearchLocationServices = useMemo(() => {
+    const loadOptions = val => {
+      fetchLocationServices(val)
+    }
+    return _.debounce(loadOptions, 500)
+  }, [fetchLocationServices])
+
+  const onFocusLocationServices = () => {
+    let queryString = {}
+    queryString["page"] = 1
+    queryString["per_page"] = per_page
+
+    dispatch(actions.getLocationService({ ...queryString }))
+  }
+
   useEffect(() => {
-    if(nik?.value?.length === 16) {
+    if(nik?.value?.length >= 3) {
       getDataByNik(nik.value)
     }
   }, [nik.value])
@@ -176,7 +226,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
     <>
       <Form layout="vertical" className="w-100">
         <Form.Item 
-          label="NIK"
+          label="NIK / Paspor"
           validateStatus={!nik.isValid && nik.message && "error"}
         >
           <Input 
@@ -184,7 +234,7 @@ const FormRegisterContainer = ({ register, setRegister }) => {
             value={nik.value}
             className="py-2 text-uppercase"
             onChange={(e) => onChangeHandler(e, "nik")}
-            placeholder="Nomor Induk Kependudukan"
+            placeholder="Nomor Induk Kependudukan / Paspor"
           />
           <ErrorMessage item={nik} />
         </Form.Item>
@@ -345,6 +395,41 @@ const FormRegisterContainer = ({ register, setRegister }) => {
                 ))}
               </Select>
               <ErrorMessage item={institution_id} />
+            </Form.Item>
+          </Col>
+
+          <Col span={24}>
+            <Form.Item 
+              label="Lokasi Pelayanan"
+              validateStatus={!location_service_id.isValid && location_service_id.message && "error"}
+            >
+              <Select 
+                allowClear
+                showSearch 
+                placeholder="Lokasi Pelayanan"
+                className="w-100 select-py-2 with-input"
+                value={location_service_id.value}
+                onFocus={onFocusLocationServices}
+                onSearch={val => {
+                  onSearchLocationServices(val)
+                  dispatch(actions.getLocationServiceStart())
+                }}
+                onChange={e => onChangeHandler(e, "location_service_id")}
+                onClear={() => onClearSelectHandler("location_service_id")}
+                clearIcon={<CloseCircleFilled onClick={() => onClearSelectHandler("location_service_id")} />}
+                getPopupContainer={triggerNode => triggerNode.parentElement}
+                notFoundContent={<NotFoundSelect loading={loadingLocationServices} />}
+                filterOption={(input, option) =>
+                  option?.children?.props?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }
+              >
+                {locationServices?.data?.length > 0 && locationServices?.data.map(loct => (
+                  <Select.Option value={loct.location_services_id} key={loct.location_services_id}>
+                    <span className="va-sub">{loct.location_services_name}</span>
+                  </Select.Option>
+                ))}
+              </Select>
+              <ErrorMessage item={location_service_id} />
             </Form.Item>
           </Col>
         </Row>
