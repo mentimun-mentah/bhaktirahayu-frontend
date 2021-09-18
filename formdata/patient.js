@@ -10,10 +10,11 @@ export const formPatient = {
   gender: { value: [], isValid: true, message: null },
   address: { value: "", isValid: true, message: null },
   phone: { value: "", isValid: true, message: null },
-  covid_checkups: { value: [], isValid: true, message: null }
+  covid_checkups: { value: [], isValid: true, message: null },
+  type_identity: { value: "", isValid: true, message: null },
 }
 
-export const formPatientIsValid = (state, setState) => {
+export const formPatientIsValid = (state, setState, isPaspor) => {
   const nik = { ...state.nik }
   const name = { ...state.name }
   const birth_place = { ...state.birth_place }
@@ -21,13 +22,14 @@ export const formPatientIsValid = (state, setState) => {
   const gender = { ...state.gender }
   const phone = { ...state.phone }
   const address = { ...state.address }
+  const type_identity = { ...state.type_identity }
 
   let isGood = true
 
-  if(!isLength(nik?.value || "", { min: 16, max: 16 })){
+  if(!isLength(nik?.value || "", { min: isPaspor ? 1 : 16, max: isPaspor ? 100 : 16 })){
     isGood = false;
     nik.isValid = false;
-    nik.message = "Value must only have 16 characters";
+    nik.message = isPaspor ? "Value can't be empty" : "Value must only have 16 characters";
   }
 
   if(isEmpty(name?.value || "")){
@@ -66,7 +68,13 @@ export const formPatientIsValid = (state, setState) => {
     address.message = "Value can't be empty";
   }
 
-  if(!isGood) setState({ ...state, nik, name, birth_place, birth_date, gender, phone, address })
+  if(type_identity?.value?.length < 1) {
+    isGood = false
+    type_identity.isValid = false
+    type_identity.message = "Value can't be empty"
+  }
+
+  if(!isGood) setState({ ...state, nik, name, birth_place, birth_date, gender, phone, address, type_identity })
 
   return isGood
 }

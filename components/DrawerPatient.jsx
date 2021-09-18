@@ -2,8 +2,9 @@ import { memo, useState, useEffect } from 'react'
 import { Drawer, Form, Row, Col, Input, Select, Grid, DatePicker, Button } from 'antd'
 
 import { genderList } from 'data/all'
-import { formPatient } from 'formdata/patient'
+import { document_list } from 'data/home'
 import { disabledTomorrow, DATE_FORMAT } from 'lib/disabledDate'
+import { formPatient, formPatientIsValid } from 'formdata/patient'
 import { jsonHeaderHandler, formErrorMessage, errNik, errPhone, signature_exp } from 'lib/axios'
 
 import _ from 'lodash'
@@ -17,6 +18,8 @@ import ErrorMessage from 'components/ErrorMessage'
 
 moment.locale('id')
 
+const NIK = document_list[0].value
+const PASPOR = document_list[1].value
 const useBreakpoint = Grid.useBreakpoint;
 
 const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
@@ -24,7 +27,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
 
   const [loading, setLoading] = useState(false)
   const [patient, setPatient] = useState(formPatient)
-  const { id, nik, name, birth_place, birth_date, gender, address, phone } = patient
+  const { id, nik, name, birth_place, birth_date, gender, address, phone, type_identity } = patient
 
   const onClosePatientDrawerHandler = e => {
     e?.preventDefault()
@@ -34,56 +37,67 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
 
   const onSubmitHandler = e => {
     e.preventDefault()
-    const data ={
-      nik: nik?.value.toUpperCase(),
-      name: name?.value.toUpperCase(),
-      birth_place: birth_place?.value.toUpperCase(),
-      birth_date: birth_date.value,
-      gender: gender?.value.toUpperCase(),
-      address: address?.value.toUpperCase(),
-      phone: phone?.value
-    }
+    let isPaspor = false
+    if(type_identity?.value.toLowerCase() === PASPOR) isPaspor = true
+    else isPaspor = false
 
-    setLoading(true)
-    axios.put(`/clients/update/${id.value}`, data, jsonHeaderHandler())
-      .then(res => {
-        setLoading(false)
-        formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
-        onClosePatientDrawerHandler()
-      })
-      .catch(err => {
-        setLoading(false)
-        const state = _.cloneDeep(patient)
-        const errDetail = err.response?.data.detail
+    if(formPatientIsValid(patient, setPatient, isPaspor)){
+      const data ={
+        nik: nik?.value.toUpperCase(),
+        name: name?.value.toUpperCase(),
+        birth_place: birth_place?.value.toUpperCase(),
+        birth_date: birth_date.value,
+        gender: gender?.value.toUpperCase(),
+        address: address?.value.toUpperCase(),
+        phone: phone?.value,
+        type_identity: type_identity?.value?.toLowerCase()
+      }
 
-        if(errDetail === signature_exp) {
-          formErrorMessage(err.response.status === 404 ? 'error' : 'success', 'Successfully update the client.')
+      setLoading(true)
+      axios.put(`/clients/update/${id.value}`, data, jsonHeaderHandler())
+        .then(res => {
+          setLoading(false)
+          formErrorMessage(res.status === 404 ? 'error' : 'success', res.data?.detail)
           onClosePatientDrawerHandler()
-        }
-        else if(typeof errDetail === "string" && isIn(errDetail, errNik)) {
-          state.nik.value = state.nik.value
-          state.nik.isValid = false
-          state.nik.message = errDetail
-        }
-        else if(typeof errDetail === "string" && isIn(errDetail, errPhone)) {
-          state.phone.value = state.phone.value
-          state.phone.isValid = false
-          state.phone.message = errDetail
-        }
-        else if(typeof errDetail === "string" && !isIn(errDetail, errNik) && !isIn(errDetail, errPhone)) {
-          formErrorMessage("error", errDetail)
-        }
-        else {
-          errDetail.map((data) => {
-            const key = data.loc[data.loc.length - 1];
-            if(state[key]){
-              state[key].isValid = false
-              state[key].message = data.msg
-            }
-          });
-        }
-        setPatient(state)
-      })
+        })
+        .catch(err => {
+          setLoading(false)
+          const state = _.cloneDeep(patient)
+          const errDetail = err.response?.data.detail
+
+          if(errDetail === signature_exp) {
+            formErrorMessage(err.response.status === 404 ? 'error' : 'success', 'Successfully update the client.')
+            onClosePatientDrawerHandler()
+          }
+          else if(typeof errDetail === "string" && isIn(errDetail, errNik)) {
+            state.nik.value = state.nik.value
+            state.nik.isValid = false
+            state.nik.message = errDetail
+          }
+          else if(typeof errDetail === "string" && isIn(errDetail, errPhone)) {
+            state.phone.value = state.phone.value
+            state.phone.isValid = false
+            state.phone.message = errDetail
+          }
+          else if(typeof errDetail === "string" && !isIn(errDetail, errNik) && !isIn(errDetail, errPhone)) {
+            formErrorMessage("error", errDetail)
+          }
+          else {
+            errDetail.map((data) => {
+              const key = data.loc[data.loc.length - 1];
+              if(key === "type_identity") {
+                state['nik'].isValid = false
+                state['nik'].message = data.msg
+              }
+              else if(state[key]) {
+                state[key].isValid = false
+                state[key].message = data.msg
+              }
+            });
+          }
+          setPatient(state)
+        })
+    }
   }
 
   /* INPUT CHANGE FUNCTION */
@@ -93,8 +107,17 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
 
     if(item === "nik"){
       const { value } = e.target;
-      const reg = /^-?\d*(\.\d*)?$/;
-      if ((!isNaN(value) && reg.test(value)) || value === '') {
+      if(type_identity?.value?.toLowerCase() === NIK) {
+        const reg = /^-?\d*(\.\d*)?$/;
+        if ((!isNaN(value) && reg.test(value)) || value === '') {
+          const data = {
+            ...patient,
+            nik: { ...patient['nik'], value: value, isValid: true, message: null }
+          }
+          setPatient(data)
+        }
+      }
+      else {
         const data = {
           ...patient,
           nik: { ...patient['nik'], value: value, isValid: true, message: null }
@@ -145,9 +168,27 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
       >
         <Form layout="vertical">
           <Row gutter={[10, 0]}>
+            <Col span={24}>
+              <Form.Item
+                label="Tipe Dokumen"
+                validateStatus={!type_identity.isValid && type_identity.message && "error"}
+              >
+                <Select 
+                  value={type_identity?.value?.toLowerCase()}
+                  placeholder="Tipe Dokumen"
+                  className="w-100"
+                  onChange={e => onChangeHandler(e, "type_identity")}
+                >
+                  {document_list.map(data => (
+                    <Select.Option value={data.value} key={data.value}>{data.title}</Select.Option>
+                  ))}
+                </Select>
+                <ErrorMessage item={type_identity} />
+              </Form.Item>
+            </Col>
             <Col xl={12} lg={12} md={12} sm={24} xs={24}>
               <Form.Item 
-                label="NIK"
+                label="NIK / Paspor"
                 validateStatus={!nik.isValid && nik.message && "error"}
               >
                 <Input 
@@ -155,7 +196,7 @@ const DrawerPatient = ({ visible, dataPatient, onCloseHandler }) => {
                   value={nik.value}
                   className="text-uppercase"
                   onChange={(e) => onChangeHandler(e, "nik")}
-                  placeholder="Nomor Induk Kependudukan"
+                  placeholder="Nomor Induk Kependudukan / Paspor"
                 />
                 <ErrorMessage item={nik} />
               </Form.Item>

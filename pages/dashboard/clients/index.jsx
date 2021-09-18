@@ -113,7 +113,8 @@ const ClientsContainer = ({ searchQuery }) => {
       gender: { value: record.clients_gender, isValid: true, message: null },
       address: { value: record.clients_address, isValid: true, message: null },
       phone: { value: realPhone.join(""), isValid: true, message: null },
-      covid_checkups: { value: record.covid_checkups, isValid: true, message: null }
+      type_identity: { value: record.clients_type_identity.toLowerCase(), isValid: true, message: null },
+      covid_checkups: { value: record.covid_checkups, isValid: true, message: null },
     }
     setPatient(data)
     setShowDrawer(true)

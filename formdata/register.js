@@ -1,6 +1,10 @@
 import isEmpty from 'validator/lib/isEmpty'
 import isLength from 'validator/lib/isLength'
 
+import { document_list } from 'data/home'
+
+const NIK = document_list[0].value
+
 export const formRegister = {
   nik: { value: "", isValid: true, message: null },
   name: { value: "", isValid: true, message: null },
@@ -11,9 +15,11 @@ export const formRegister = {
   phone: { value: "", isValid: true, message: null },
   checking_type: { value: [], isValid: true, message: null },
   institution_id: { value: [], isValid: true, message: null },
+  location_service_id: { value: [], isValid: true, message: null },
+  type_identity: { value: NIK, isValid: true, message: null },
 }
 
-export const formRegisterIsValid = (state, setState) => {
+export const formRegisterIsValid = (state, setState, isPaspor) => {
   const nik = { ...state.nik }
   const name = { ...state.name }
   const birth_place = { ...state.birth_place }
@@ -23,13 +29,14 @@ export const formRegisterIsValid = (state, setState) => {
   const phone = { ...state.phone }
   const checking_type = { ...state.checking_type }
   const institution_id = { ...state.institution_id }
+  const type_identity = { ...state.type_identity }
 
   let isGood = true
 
-  if(!isLength(nik?.value || "", { min: 16, max: 16 })){
+  if(!isLength(nik?.value || "", { min: isPaspor ? 1 : 16, max: isPaspor ? 100 : 16 })){
     isGood = false;
     nik.isValid = false;
-    nik.message = "Value must only have 16 characters";
+    nik.message = isPaspor ? "Value can't be empty" : "Value must only have 16 characters";
   }
 
   if(isEmpty(name?.value || "")){
@@ -80,7 +87,13 @@ export const formRegisterIsValid = (state, setState) => {
     institution_id.message = "Value can't be empty";
   }
 
-  if(!isGood) setState({ ...state, nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id })
+  if(isEmpty(type_identity?.value || "")){
+    isGood = false;
+    type_identity.isValid = false;
+    type_identity.message = "Value can't be empty";
+  }
+
+  if(!isGood) setState({ ...state, nik, name, birth_place, birth_date, gender, address, phone, checking_type, institution_id, type_identity })
 
   return isGood
 }

@@ -1,3 +1,4 @@
+import { document_list } from 'data/home'
 import { Tag, Tooltip } from 'antd'
 
 import _ from "lodash"
@@ -5,10 +6,13 @@ import moment from 'moment'
 import 'moment/locale/id'
 moment.locale('id')
 
+const NIK = document_list[0].value
+const PASPOR = document_list[1].value
+
 export const columnsReports = [
   {
     key: 'clients',
-    title: 'NIK',
+    title: 'NIK / Paspor',
     dataIndex: 'clients',
     width: 220,
     render: (item) => (
@@ -165,7 +169,12 @@ export const reformatData = listData => {
   const copyData = _.cloneDeep(listData)
 
   copyData.forEach(data => {
+    let documentType = 'KTP / KIS'
+    if(data?.clients_type_identity?.toLowerCase() === PASPOR) documentType = 'PASPOR'
+    if(data?.clients_type_identity?.toLowerCase() === NIK) documentType = 'KTP / KIS'
+
     data['No'] = data.clients_no ? data?.clients_no : '-'
+    data['Tipe Dokumen'] = documentType ? documentType?.toUpperCase() : '-'
     data['NIK'] = data?.clients_nik ? data?.clients_nik?.toUpperCase() : '-'
     data['Nama'] = data?.clients_gender ? data?.clients_name?.toUpperCase() : '-'
     data['Jenis Kelamin'] = data?.clients_gender ? data?.clients_gender?.toUpperCase() : '-'
