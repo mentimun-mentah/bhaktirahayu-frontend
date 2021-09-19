@@ -2,8 +2,8 @@ import { Image as AntImage } from 'antd'
 
 export const step_list = [
   { title: 'Pendahuluan', },
-  { title: 'Persiapan', },
   { title: "Dokumen" },
+  { title: 'Persiapan', },
   { title: 'Foto KTP / KIS', },
   { title: 'Registrasi', }
 ]

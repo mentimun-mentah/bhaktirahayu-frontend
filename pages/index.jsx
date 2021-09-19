@@ -310,31 +310,6 @@ const Home = () => {
 
                     {step == 1 && (
                       <>
-                        <PreparationContainer />
-                        <br />
-                        <Row gutter={[10,10]} className="mb-3">
-                          <Col span={12}>
-                            <ButtonAction 
-                              type="text" 
-                              title="Sebelumnya"
-                              disabled={loading}
-                              onClick={() => onNextStep(0)}
-                            />
-                          </Col>
-                          <Col span={12}>
-                            <ButtonAction 
-                              type="primary"
-                              title="Berikutnya"
-                              disabled={loading}
-                              onClick={() => onNextStep(2)}
-                            />
-                          </Col>
-                        </Row>
-                      </>
-                    )}
-
-                    {step == 2 && (
-                      <>
                         <div className="d-flex flex-column justify-content-center">
                           <h5 className="mb-4">Pilih Jenis Dokumen</h5>
                           <Radio.Group 
@@ -379,6 +354,31 @@ const Home = () => {
                               type="text" 
                               title="Sebelumnya"
                               disabled={loading}
+                              onClick={() => onNextStep(0)}
+                            />
+                          </Col>
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="primary"
+                              title="Berikutnya"
+                              disabled={loading}
+                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 4 : 2)}
+                            />
+                          </Col>
+                        </Row>
+                      </>
+                    )}
+
+                    {step == 2 && (
+                      <>
+                        <PreparationContainer />
+                        <br />
+                        <Row gutter={[10,10]} className="mb-3">
+                          <Col span={12}>
+                            <ButtonAction 
+                              type="text" 
+                              title="Sebelumnya"
+                              disabled={loading}
                               onClick={() => onNextStep(1)}
                             />
                           </Col>
@@ -387,12 +387,13 @@ const Home = () => {
                               type="primary"
                               title="Berikutnya"
                               disabled={loading}
-                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 4 : 3)}
+                              onClick={() => onNextStep(3)}
                             />
                           </Col>
                         </Row>
                       </>
                     )}
+
 
                     {step == 3 && (
                       <>
@@ -446,7 +447,7 @@ const Home = () => {
                               type="text" 
                               title="Sebelumnya"
                               disabled={loading}
-                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 2 : 3)}
+                              onClick={() => onNextStep(type_identity?.value?.toLowerCase() === PASPOR ? 1 : 3)}
                             />
                           </Col>
                           <Col span={12}>
